@@ -269,7 +269,7 @@ function DispatcherPage() {
 
       {showForm && <NewOrderModal onClose={() => setShowForm(false)} userId={user!.id} />}
       {showDriverForm && <NewDriverModal onClose={() => setShowDriverForm(false)} onCreated={loadDrivers} />}
-      {driverDetail && <DriverDetailModal driver={driverDetail} onClose={() => setDriverDetail(null)} />}
+      {driverDetail && <DriverDetailModal driver={driverDetail} onClose={() => setDriverDetail(null)} onChanged={loadDrivers} />}
       {archiveOrderDetail && <ArchiveOrderDetailModal order={archiveOrderDetail} onClose={() => setArchiveOrderDetail(null)} />}
 
       {user && <WalkieTalkie userId={user.id} callSign={callSign} />}
