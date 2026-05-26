@@ -421,20 +421,69 @@ function In({ label, value, onChange, required }: { label: string; value: string
   );
 }
 
-function DriverDetailModal({ driver, onClose }: { driver: Driver; onClose: () => void }) {
+function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onClose: () => void; onChanged: () => void }) {
+  const updateDriverFn = useServerFn(updateDriver);
+  const deleteDriverFn = useServerFn(deleteDriver);
+  const resetDriverRidesFn = useServerFn(resetDriverRides);
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [fullName, setFullName] = useState(driver.full_name);
+  const [callSign, setCallSign] = useState(driver.call_sign);
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
+    setLoading(true);
     supabase.from("rides")
       .select("id,driver_id,amount,payment_method,pickup_address,destination,completed_at")
       .eq("driver_id", driver.id)
       .order("completed_at", { ascending: false })
       .then(({ data }) => { setRides((data ?? []) as Ride[]); setLoading(false); });
-  }, [driver.id]);
+  }, [driver.id, refreshKey]);
 
   const cash = rides.filter(r => r.payment_method === "cash").reduce((s, r) => s + Number(r.amount), 0);
   const card = rides.filter(r => r.payment_method === "card").reduce((s, r) => s + Number(r.amount), 0);
+
+  const saveEdit = async () => {
+    setBusy(true);
+    try {
+      await updateDriverFn({ data: {
+        driver_id: driver.id,
+        full_name: fullName !== driver.full_name ? fullName : undefined,
+        call_sign: callSign !== driver.call_sign ? callSign : undefined,
+        password: password ? password : undefined,
+      }});
+      toast.success("▸ ULOŽENO");
+      setPassword("");
+      setEditing(false);
+      onChanged();
+    } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+    finally { setBusy(false); }
+  };
+
+  const doReset = async () => {
+    if (!confirm(`Opravdu vynulovat tržby a smazat všechny jízdy řidiče ${driver.call_sign}?`)) return;
+    setBusy(true);
+    try {
+      await resetDriverRidesFn({ data: { driver_id: driver.id } });
+      toast.success("▸ TRŽBY VYNULOVÁNY");
+      setRefreshKey(k => k + 1);
+    } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+    finally { setBusy(false); }
+  };
+
+  const doDelete = async () => {
+    if (!confirm(`SMAZAT řidiče ${driver.call_sign} (${driver.full_name})? Akce je nevratná.`)) return;
+    setBusy(true);
+    try {
+      await deleteDriverFn({ data: { driver_id: driver.id } });
+      toast.success("▸ ŘIDIČ SMAZÁN");
+      onChanged();
+      onClose();
+    } catch (e: any) { toast.error(e?.message ?? "Chyba"); setBusy(false); }
+  };
 
   return (
     <div className="fixed inset-0 bg-black z-[1900] flex flex-col">
@@ -463,6 +512,42 @@ function DriverDetailModal({ driver, onClose }: { driver: Driver; onClose: () =>
           <div className="text-lg text-primary font-display">{(cash + card).toFixed(0)} Kč</div>
         </div>
       </div>
+
+      <div className="p-3 border-b border-primary/40 space-y-2">
+        {!editing ? (
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setEditing(true)} disabled={busy}
+              className="border border-primary/60 text-primary px-3 py-1.5 text-xs hover:bg-primary/10 disabled:opacity-50">
+              ▸ UPRAVIT / ZMĚNIT HESLO
+            </button>
+            <button onClick={doReset} disabled={busy}
+              className="border border-amber-warn text-amber-warn px-3 py-1.5 text-xs hover:bg-amber-warn/10 disabled:opacity-50">
+              ▸ VYNULOVAT TRŽBY
+            </button>
+            <button onClick={doDelete} disabled={busy}
+              className="border border-destructive text-destructive px-3 py-1.5 text-xs hover:bg-destructive/10 disabled:opacity-50 ml-auto">
+              ▸ SMAZAT ŘIDIČE
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <In label="CELÉ JMÉNO" value={fullName} onChange={setFullName} />
+            <In label="VOLACÍ ZNAK" value={callSign} onChange={setCallSign} />
+            <In label="NOVÉ HESLO (nech prázdné = neměnit, min. 6)" value={password} onChange={setPassword} />
+            <div className="flex gap-2">
+              <button onClick={saveEdit} disabled={busy}
+                className="flex-1 border border-primary text-primary py-1.5 text-xs hover:bg-primary hover:text-primary-foreground disabled:opacity-50">
+                {busy ? "▸ UKLÁDÁM..." : "▸ ULOŽIT"}
+              </button>
+              <button onClick={() => { setEditing(false); setPassword(""); setFullName(driver.full_name); setCallSign(driver.call_sign); }} disabled={busy}
+                className="border border-muted-foreground text-muted-foreground px-3 py-1.5 text-xs hover:bg-muted/20">
+                ZRUŠIT
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="flex-1 overflow-y-auto">
         {loading && <div className="p-6 text-center text-muted-foreground text-xs">Načítám...</div>}
         {!loading && rides.length === 0 && <div className="p-6 text-center text-muted-foreground text-xs">Žádné jízdy.</div>}
