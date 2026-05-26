@@ -104,7 +104,7 @@ function DriverPage() {
     toast.success(next ? "▸ ONLINE" : "▸ OFFLINE");
   };
 
-  const setOrderStatus = async (id: string, status: string) => {
+  const setOrderStatus = async (id: string, status: "accepted" | "in_progress" | "completed") => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", id);
     if (error) toast.error(error.message);
   };
