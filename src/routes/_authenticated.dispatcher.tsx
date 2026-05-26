@@ -119,9 +119,10 @@ function DispatcherPage() {
       </header>
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_400px]">
-        <div className="relative border-r border-primary/40 min-h-[400px] lg:min-h-0">
+        <div className="relative border-r border-primary/40 h-[35vh] lg:h-auto lg:min-h-0">
           <LiveMap showOrders />
         </div>
+
 
         <div className="flex flex-col max-h-[60vh] lg:max-h-none overflow-hidden">
           <div className="border-b border-primary/40 p-3 flex items-center justify-between">
