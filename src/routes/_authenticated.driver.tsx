@@ -48,6 +48,7 @@ function DriverPage() {
   const [completing, setCompleting] = useState<Order | null>(null);
   const watchIdRef = useRef<number | null>(null);
   const lastSentRef = useRef<number>(0);
+  const wakeLockRef = useRef<any>(null);
 
   useEffect(() => {
     if (!user) return;
