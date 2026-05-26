@@ -196,8 +196,23 @@ function DispatcherPage() {
         </div>
       </div>
 
+      {showMap && (
+        <div className="fixed inset-0 z-[1500] bg-black flex flex-col">
+          <div className="border-b border-primary/40 p-3 flex items-center justify-between">
+            <h2 className="font-display text-primary glow-text">▸ MAPA · ŘIDIČI</h2>
+            <button onClick={() => setShowMap(false)} className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1">
+              <X className="w-3 h-3" /> ZAVŘÍT
+            </button>
+          </div>
+          <div className="flex-1">
+            <LiveMap showOrders />
+          </div>
+        </div>
+      )}
+
       {showForm && <NewOrderModal onClose={() => setShowForm(false)} userId={user!.id} />}
       {showDriverForm && <NewDriverModal onClose={() => setShowDriverForm(false)} onCreated={loadDrivers} />}
+
       {user && <WalkieTalkie userId={user.id} callSign={callSign} />}
     </div>
   );
