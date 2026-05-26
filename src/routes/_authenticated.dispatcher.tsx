@@ -293,30 +293,44 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const [pickup, setPickup] = useState("");
   const [pickupCoords, setPickupCoords] = useState<{ lat?: number; lng?: number }>({});
   const [destination, setDestination] = useState("");
+  const [destCoords, setDestCoords] = useState<{ lat?: number; lng?: number }>({});
   const [when, setWhen] = useState<"now" | "later">("now");
   const [scheduledTime, setScheduledTime] = useState("");
   const [passengers, setPassengers] = useState(1);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const autoAssignFn = useServerFn(autoAssignOrder);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    const { error } = await supabase.from("orders").insert({
+    const { data: inserted, error } = await supabase.from("orders").insert({
       pickup_address: pickup,
       pickup_lat: pickupCoords.lat ?? null,
       pickup_lng: pickupCoords.lng ?? null,
       destination: destination || null,
+      destination_lat: destCoords.lat ?? null,
+      destination_lng: destCoords.lng ?? null,
       scheduled_time: when === "later" && scheduledTime ? new Date(scheduledTime).toISOString() : null,
       passengers,
       notes: notes || null,
       created_by: userId,
       status: "pending",
-    });
+    }).select("id").maybeSingle();
     setSubmitting(false);
     if (error) { toast.error(error.message); return; }
     toast.success("▸ ZAKÁZKA ODESLÁNA");
     onClose();
+    // Auto-assign nearest driver for immediate rides with known pickup.
+    if (inserted?.id && when === "now" && pickupCoords.lat != null && pickupCoords.lng != null) {
+      try {
+        const res = await autoAssignFn({ data: { order_id: inserted.id } });
+        if (res?.ok) toast.success("▸ AUTOMATICKY PŘIDĚLENO");
+        else if (res?.reason === "no_drivers") toast.message("▸ Žádný volný řidič – zakázka čeká");
+      } catch (err: any) {
+        toast.error(err?.message ?? "Auto-přidělení selhalo");
+      }
+    }
   };
 
   return (
@@ -336,9 +350,10 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
         <AddressAutocomplete
           label="KAM (cíl)"
           value={destination}
-          onChange={setDestination}
-          onSelect={(p) => setDestination(p.address)}
+          onChange={(v) => { setDestination(v); setDestCoords({}); }}
+          onSelect={(p) => { setDestination(p.address); setDestCoords({ lat: p.lat, lng: p.lng }); }}
         />
+
 
         <div>
           <div className="text-[10px] text-muted-foreground mb-1">ČAS</div>
