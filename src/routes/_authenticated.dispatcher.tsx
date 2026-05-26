@@ -127,6 +127,9 @@ function DispatcherPage() {
           <button onClick={() => setShowMap(true)} className="border border-primary/40 px-2 py-1 text-xs hover:border-primary flex items-center gap-1">
             <MapIcon className="w-3 h-3" /> MAPA
           </button>
+          <button onClick={() => setShowArchive(true)} className="border border-primary/40 px-2 py-1 text-xs hover:border-primary flex items-center gap-1">
+            <Archive className="w-3 h-3" /> ARCHIV
+          </button>
           <button onClick={() => setShowDriverForm(true)} className="border border-primary/40 px-2 py-1 text-xs hover:border-primary flex items-center gap-1">
             <UserPlus className="w-3 h-3" /> ŘIDIČ
           </button>
