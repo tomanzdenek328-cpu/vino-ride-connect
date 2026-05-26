@@ -65,6 +65,7 @@ function DispatcherPage() {
   const [showArchive, setShowArchive] = useState(false);
   const [callSign, setCallSign] = useState("DISP");
   const [driverDetail, setDriverDetail] = useState<Driver | null>(null);
+  const [archiveOrderDetail, setArchiveOrderDetail] = useState<Order | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -244,7 +245,7 @@ function DispatcherPage() {
             {orders.filter(o => o.status === "completed" || o.status === "cancelled").length === 0 ? (
               <div className="p-6 text-center text-muted-foreground text-xs">Archiv je prázdný.</div>
             ) : orders.filter(o => o.status === "completed" || o.status === "cancelled").map((o) => (
-              <div key={o.id} className="border-b border-primary/20 p-3 text-sm">
+              <div key={o.id} onClick={() => setArchiveOrderDetail(o)} className="border-b border-primary/20 p-3 text-sm cursor-pointer hover:bg-primary/5">
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="text-primary truncate">▸ {o.pickup_address}</div>
@@ -253,6 +254,7 @@ function DispatcherPage() {
                       {new Date(o.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
                       {" · "}👥 {o.passengers}
                     </div>
+                    <div className="text-[10px] text-primary/60 mt-0.5">Klikni pro detail</div>
                   </div>
                   <span className={`text-[10px] px-1.5 py-0.5 border ${
                     o.status === "completed" ? "border-muted-foreground text-muted-foreground" :
@@ -268,6 +270,7 @@ function DispatcherPage() {
       {showForm && <NewOrderModal onClose={() => setShowForm(false)} userId={user!.id} />}
       {showDriverForm && <NewDriverModal onClose={() => setShowDriverForm(false)} onCreated={loadDrivers} />}
       {driverDetail && <DriverDetailModal driver={driverDetail} onClose={() => setDriverDetail(null)} />}
+      {archiveOrderDetail && <ArchiveOrderDetailModal order={archiveOrderDetail} onClose={() => setArchiveOrderDetail(null)} />}
 
       {user && <WalkieTalkie userId={user.id} callSign={callSign} />}
     </div>
@@ -480,6 +483,103 @@ function DriverDetailModal({ driver, onClose }: { driver: Driver; onClose: () =>
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function ArchiveOrderDetailModal({ order, onClose }: { order: Order; onClose: () => void }) {
+  const [ride, setRide] = useState<any>(null);
+  const [driver, setDriver] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      if (order.assigned_driver_id) {
+        const { data: d } = await supabase.from("profiles").select("full_name,call_sign").eq("id", order.assigned_driver_id).maybeSingle();
+        setDriver(d);
+      }
+      const { data: r } = await supabase.from("rides").select("*").eq("order_id", order.id).maybeSingle();
+      setRide(r);
+      setLoading(false);
+    };
+    load();
+  }, [order.id, order.assigned_driver_id]);
+
+  return (
+    <div className="fixed inset-0 z-[1900] bg-black/90 flex items-center justify-center p-4">
+      <div className="bg-black border border-primary glow p-5 max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-primary font-display text-lg">▸ DETAIL ZAKÁZKY</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-primary"><X className="w-5 h-5" /></button>
+        </div>
+        {loading ? (
+          <div className="text-center text-muted-foreground text-xs">Načítám...</div>
+        ) : (
+          <div className="space-y-3 text-sm">
+            <div>
+              <div className="text-[10px] text-muted-foreground">ODKUD</div>
+              <div className="text-primary font-bold">{order.pickup_address}</div>
+            </div>
+            {order.destination && (
+              <div>
+                <div className="text-[10px] text-muted-foreground">KAM</div>
+                <div className="text-primary">{order.destination}</div>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <div className="text-[10px] text-muted-foreground">VYTVÁŘENO</div>
+                <div className="text-primary">{new Date(order.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-muted-foreground">STATUS</div>
+                <div className="text-primary">{STATUS_LABEL[order.status]}</div>
+              </div>
+            </div>
+            {driver ? (
+              <div>
+                <div className="text-[10px] text-muted-foreground">ŘIDIČ</div>
+                <div className="text-primary">{driver.call_sign} · {driver.full_name}</div>
+              </div>
+            ) : (
+              <div>
+                <div className="text-[10px] text-muted-foreground">ŘIDIČ</div>
+                <div className="text-muted-foreground">Nepřiřazen</div>
+              </div>
+            )}
+            {ride ? (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <div className="text-[10px] text-muted-foreground">DOKONČENO</div>
+                    <div className="text-primary">{new Date(ride.completed_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-muted-foreground">ČÁSTKA</div>
+                    <div className="text-primary font-display">{Number(ride.amount).toFixed(0)} Kč</div>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-muted-foreground">PLATBA</div>
+                  <div className={ride.payment_method === "cash" ? "text-amber-warn" : "text-primary"}>
+                    {ride.payment_method === "cash" ? "HOTOVĚ" : "KARTOU"}
+                  </div>
+                </div>
+              </>
+            ) : order.status === "cancelled" ? (
+              <div className="text-destructive text-xs">Zakázka byla zrušena — bez jízdy.</div>
+            ) : (
+              <div className="text-muted-foreground text-xs">Jízda nebyla zaznamenána.</div>
+            )}
+            {order.notes && (
+              <div>
+                <div className="text-[10px] text-muted-foreground">POZNÁMKA</div>
+                <div className="text-amber-warn text-xs">{order.notes}</div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
