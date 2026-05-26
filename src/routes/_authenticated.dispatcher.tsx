@@ -173,8 +173,10 @@ function DispatcherPage() {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
-
-            {orders.map((o) => (
+            {(() => {
+              const active = orders.filter(o => o.status !== "completed" && o.status !== "cancelled");
+              if (!active.length) return <div className="p-6 text-center text-muted-foreground text-xs">Žádné aktivní zakázky.</div>;
+              return active.map((o) => (
               <div key={o.id} className="border-b border-primary/20 p-3 text-sm">
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
@@ -188,35 +190,29 @@ function DispatcherPage() {
                   </div>
                   <span className={`text-[10px] px-1.5 py-0.5 border ${
                     o.status === "pending" ? "border-amber-warn text-amber-warn" :
-                    o.status === "completed" ? "border-muted-foreground text-muted-foreground" :
-                    o.status === "cancelled" ? "border-destructive text-destructive" :
                     "border-primary text-primary"
                   }`}>{STATUS_LABEL[o.status]}</span>
                 </div>
-                {o.status !== "completed" && o.status !== "cancelled" && (
-                  <div className="mt-2 flex gap-2 items-center">
-                    <select
-                      value={o.assigned_driver_id ?? ""}
-                      onChange={(e) => e.target.value && assignDriver(o.id, e.target.value)}
-                      className="flex-1 bg-input border border-primary/40 text-xs px-2 py-1 text-primary"
-                    >
-                      <option value="">— vyber řidiče —</option>
-                      {drivers.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.call_sign} · {d.full_name} {d.online ? "●" : "○"}
-                        </option>
-                      ))}
-                    </select>
-                    <button onClick={() => cancelOrder(o.id)} className="text-destructive hover:text-red-400 p-1" title="Zrušit">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
+                <div className="mt-2 flex gap-2 items-center">
+                  <select
+                    value={o.assigned_driver_id ?? ""}
+                    onChange={(e) => e.target.value && assignDriver(o.id, e.target.value)}
+                    className="flex-1 bg-input border border-primary/40 text-xs px-2 py-1 text-primary"
+                  >
+                    <option value="">— vyber řidiče —</option>
+                    {drivers.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.call_sign} · {d.full_name} {d.online ? "●" : "○"}
+                      </option>
+                    ))}
+                  </select>
+                  <button onClick={() => cancelOrder(o.id)} className="text-destructive hover:text-red-400 p-1" title="Zrušit">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            ))}
-            {!orders.length && (
-              <div className="p-6 text-center text-muted-foreground text-xs">Žádné zakázky.</div>
-            )}
+              ));
+            })()}
           </div>
         </div>
       </div>
