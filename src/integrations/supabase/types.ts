@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       driver_locations: {
         Row: {
+          busy: boolean
           driver_id: string
           heading: number | null
           lat: number | null
@@ -25,6 +26,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          busy?: boolean
           driver_id: string
           heading?: number | null
           lat?: number | null
@@ -34,6 +36,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          busy?: boolean
           driver_id?: string
           heading?: number | null
           lat?: number | null
@@ -119,6 +122,42 @@ export type Database = {
           full_name?: string
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      rides: {
+        Row: {
+          amount: number
+          completed_at: string
+          created_at: string
+          destination: string | null
+          driver_id: string
+          id: string
+          order_id: string
+          payment_method: string
+          pickup_address: string | null
+        }
+        Insert: {
+          amount: number
+          completed_at?: string
+          created_at?: string
+          destination?: string | null
+          driver_id: string
+          id?: string
+          order_id: string
+          payment_method: string
+          pickup_address?: string | null
+        }
+        Update: {
+          amount?: number
+          completed_at?: string
+          created_at?: string
+          destination?: string | null
+          driver_id?: string
+          id?: string
+          order_id?: string
+          payment_method?: string
+          pickup_address?: string | null
         }
         Relationships: []
       }

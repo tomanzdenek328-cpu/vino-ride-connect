@@ -32,6 +32,17 @@ interface Driver {
   full_name: string;
   call_sign: string;
   online: boolean;
+  busy: boolean;
+}
+
+interface Ride {
+  id: string;
+  driver_id: string;
+  amount: number;
+  payment_method: "cash" | "card";
+  pickup_address: string | null;
+  destination: string | null;
+  completed_at: string;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -51,6 +62,7 @@ function DispatcherPage() {
   const [showDriverForm, setShowDriverForm] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [callSign, setCallSign] = useState("DISP");
+  const [driverDetail, setDriverDetail] = useState<Driver | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -64,13 +76,14 @@ function DispatcherPage() {
     if (!ids.length) { setDrivers([]); return; }
     const [{ data: profs }, { data: locs }] = await Promise.all([
       supabase.from("profiles").select("id,full_name,call_sign").in("id", ids),
-      supabase.from("driver_locations").select("driver_id,online").in("driver_id", ids),
+      supabase.from("driver_locations").select("driver_id,online,busy").in("driver_id", ids),
     ]);
-    const onlineMap: Record<string, boolean> = {};
-    (locs ?? []).forEach((l: any) => { onlineMap[l.driver_id] = l.online; });
+    const locMap: Record<string, { online: boolean; busy: boolean }> = {};
+    (locs ?? []).forEach((l: any) => { locMap[l.driver_id] = { online: l.online, busy: !!l.busy }; });
     setDrivers((profs ?? []).map((p: any) => ({
       id: p.id, full_name: p.full_name, call_sign: p.call_sign,
-      online: !!onlineMap[p.id],
+      online: !!locMap[p.id]?.online,
+      busy: !!locMap[p.id]?.busy,
     })));
   };
 
@@ -134,9 +147,17 @@ function DispatcherPage() {
             ) : (
               <div className="flex flex-wrap gap-1">
                 {drivers.map((d) => (
-                  <div key={d.id} className={`text-[10px] px-2 py-1 border ${d.online ? "border-primary text-primary" : "border-muted-foreground/40 text-muted-foreground"}`}>
-                    {d.online ? "●" : "○"} {d.call_sign} · {d.full_name}
-                  </div>
+                  <button
+                    key={d.id}
+                    onClick={() => setDriverDetail(d)}
+                    className={`text-[10px] px-2 py-1 border hover:bg-primary/10 ${
+                      d.busy ? "border-amber-warn text-amber-warn" :
+                      d.online ? "border-primary text-primary" :
+                      "border-muted-foreground/40 text-muted-foreground"
+                    }`}
+                  >
+                    {d.online ? (d.busy ? "◐" : "●") : "○"} {d.call_sign} · {d.full_name}
+                  </button>
                 ))}
               </div>
             )}
@@ -212,6 +233,7 @@ function DispatcherPage() {
 
       {showForm && <NewOrderModal onClose={() => setShowForm(false)} userId={user!.id} />}
       {showDriverForm && <NewDriverModal onClose={() => setShowDriverForm(false)} onCreated={loadDrivers} />}
+      {driverDetail && <DriverDetailModal driver={driverDetail} onClose={() => setDriverDetail(null)} />}
 
       {user && <WalkieTalkie userId={user.id} callSign={callSign} />}
     </div>
@@ -357,5 +379,72 @@ function In({ label, value, onChange, required }: { label: string; value: string
       <input value={value} onChange={(e) => onChange(e.target.value)} required={required}
         className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm focus:border-primary focus:outline-none" />
     </label>
+  );
+}
+
+function DriverDetailModal({ driver, onClose }: { driver: Driver; onClose: () => void }) {
+  const [rides, setRides] = useState<Ride[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.from("rides")
+      .select("id,driver_id,amount,payment_method,pickup_address,destination,completed_at")
+      .eq("driver_id", driver.id)
+      .order("completed_at", { ascending: false })
+      .then(({ data }) => { setRides((data ?? []) as Ride[]); setLoading(false); });
+  }, [driver.id]);
+
+  const cash = rides.filter(r => r.payment_method === "cash").reduce((s, r) => s + Number(r.amount), 0);
+  const card = rides.filter(r => r.payment_method === "card").reduce((s, r) => s + Number(r.amount), 0);
+
+  return (
+    <div className="fixed inset-0 bg-black z-[1900] flex flex-col">
+      <div className="border-b border-primary/40 p-3 flex items-center justify-between">
+        <div>
+          <h2 className="font-display text-primary glow-text">▸ {driver.call_sign} · {driver.full_name}</h2>
+          <div className="text-[10px] text-muted-foreground">
+            {driver.online ? (driver.busy ? "◐ ONLINE · OBSAZENO" : "● ONLINE · VOLNÝ") : "○ OFFLINE"}
+          </div>
+        </div>
+        <button onClick={onClose} className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1">
+          <X className="w-3 h-3" /> ZAVŘÍT
+        </button>
+      </div>
+      <div className="p-3 grid grid-cols-3 gap-2 border-b border-primary/40">
+        <div className="border border-primary/60 p-2">
+          <div className="text-[10px] text-muted-foreground">HOTOVĚ</div>
+          <div className="text-lg text-primary font-display">{cash.toFixed(0)} Kč</div>
+        </div>
+        <div className="border border-primary/60 p-2">
+          <div className="text-[10px] text-muted-foreground">KARTOU</div>
+          <div className="text-lg text-primary font-display">{card.toFixed(0)} Kč</div>
+        </div>
+        <div className="border border-primary p-2 glow">
+          <div className="text-[10px] text-muted-foreground">CELKEM ({rides.length})</div>
+          <div className="text-lg text-primary font-display">{(cash + card).toFixed(0)} Kč</div>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto">
+        {loading && <div className="p-6 text-center text-muted-foreground text-xs">Načítám...</div>}
+        {!loading && rides.length === 0 && <div className="p-6 text-center text-muted-foreground text-xs">Žádné jízdy.</div>}
+        {rides.map((r) => (
+          <div key={r.id} className="border-b border-primary/20 p-3 text-sm flex justify-between items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="text-primary truncate">▸ {r.pickup_address ?? "—"}</div>
+              {r.destination && <div className="text-xs text-muted-foreground truncate">→ {r.destination}</div>}
+              <div className="text-[10px] text-muted-foreground">
+                {new Date(r.completed_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="text-primary font-display">{Number(r.amount).toFixed(0)} Kč</div>
+              <div className={`text-[10px] ${r.payment_method === "cash" ? "text-amber-warn" : "text-primary"}`}>
+                {r.payment_method === "cash" ? "HOTOVĚ" : "KARTOU"}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
