@@ -1,0 +1,1 @@
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS destination_lat double precision; ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS destination_lng double precision;

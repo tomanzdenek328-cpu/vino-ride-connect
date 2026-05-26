@@ -55,6 +55,8 @@ export type Database = {
           customer_name: string | null
           customer_phone: string | null
           destination: string | null
+          destination_lat: number | null
+          destination_lng: number | null
           id: string
           notes: string | null
           passengers: number
@@ -72,6 +74,8 @@ export type Database = {
           customer_name?: string | null
           customer_phone?: string | null
           destination?: string | null
+          destination_lat?: number | null
+          destination_lng?: number | null
           id?: string
           notes?: string | null
           passengers?: number
@@ -89,6 +93,8 @@ export type Database = {
           customer_name?: string | null
           customer_phone?: string | null
           destination?: string | null
+          destination_lat?: number | null
+          destination_lng?: number | null
           id?: string
           notes?: string | null
           passengers?: number
