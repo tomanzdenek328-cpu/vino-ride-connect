@@ -245,7 +245,7 @@ function DispatcherPage() {
             {orders.filter(o => o.status === "completed" || o.status === "cancelled").length === 0 ? (
               <div className="p-6 text-center text-muted-foreground text-xs">Archiv je prázdný.</div>
             ) : orders.filter(o => o.status === "completed" || o.status === "cancelled").map((o) => (
-              <div key={o.id} className="border-b border-primary/20 p-3 text-sm">
+              <div key={o.id} onClick={() => setArchiveOrderDetail(o)} className="border-b border-primary/20 p-3 text-sm cursor-pointer hover:bg-primary/5">
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="text-primary truncate">▸ {o.pickup_address}</div>
@@ -254,6 +254,7 @@ function DispatcherPage() {
                       {new Date(o.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
                       {" · "}👥 {o.passengers}
                     </div>
+                    <div className="text-[10px] text-primary/60 mt-0.5">Klikni pro detail</div>
                   </div>
                   <span className={`text-[10px] px-1.5 py-0.5 border ${
                     o.status === "completed" ? "border-muted-foreground text-muted-foreground" :
@@ -269,6 +270,7 @@ function DispatcherPage() {
       {showForm && <NewOrderModal onClose={() => setShowForm(false)} userId={user!.id} />}
       {showDriverForm && <NewDriverModal onClose={() => setShowDriverForm(false)} onCreated={loadDrivers} />}
       {driverDetail && <DriverDetailModal driver={driverDetail} onClose={() => setDriverDetail(null)} />}
+      {archiveOrderDetail && <ArchiveOrderDetailModal order={archiveOrderDetail} onClose={() => setArchiveOrderDetail(null)} />}
 
       {user && <WalkieTalkie userId={user.id} callSign={callSign} />}
     </div>
