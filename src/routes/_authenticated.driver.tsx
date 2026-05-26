@@ -132,6 +132,10 @@ function DriverPage() {
           <div className="text-[10px] text-muted-foreground">VINNÉ TAXI · ŘIDIČ</div>
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={() => setShowMap(true)}
+            className="border border-primary/60 px-3 py-1.5 text-xs flex items-center gap-1 hover:border-primary hover:bg-primary/10">
+            <MapIcon className="w-3 h-3" /> MAPA
+          </button>
           <button onClick={toggleOnline}
             className={`border px-3 py-1.5 text-xs flex items-center gap-1 ${
               online ? "border-primary bg-primary text-primary-foreground glow" : "border-muted-foreground text-muted-foreground"
@@ -144,9 +148,19 @@ function DriverPage() {
         </div>
       </header>
 
-      <div className="h-[40vh] border-b border-primary/40 relative">
-        <LiveMap showOrders followDriverId={user?.id} />
-      </div>
+      {showMap && (
+        <div className="fixed inset-0 z-[1500] bg-black flex flex-col">
+          <div className="border-b border-primary/40 p-3 flex items-center justify-between">
+            <div className="font-display text-primary text-sm">▸ MAPA</div>
+            <button onClick={() => setShowMap(false)} className="border border-primary/60 px-2 py-1 text-xs hover:border-primary flex items-center gap-1">
+              <X className="w-3 h-3" /> ZAVŘÍT
+            </button>
+          </div>
+          <div className="flex-1 relative">
+            <LiveMap showOrders followDriverId={user?.id} />
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-3 space-y-3 pb-28">
         {myOrders.length > 0 && (
