@@ -87,6 +87,13 @@ function DriverPage() {
       .then(({ data }) => { if (data?.call_sign) setCallSign(data.call_sign); });
     supabase.from("driver_locations").select("online,busy").eq("driver_id", user.id).maybeSingle()
       .then(({ data }) => { setOnline(!!data?.online); setBusy(!!data?.busy); });
+    // Vyžádej povolení desktop notifikací
+    try {
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission().catch(() => {});
+      }
+    } catch {}
+  }, [user]);
   }, [user]);
 
   useEffect(() => {
