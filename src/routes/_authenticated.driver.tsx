@@ -190,6 +190,10 @@ function DriverPage() {
             <div key={o.id} className="border border-amber-warn/60 p-3 mb-2">
               <div className="text-amber-warn font-bold">▸ {o.pickup_address}</div>
               {o.destination && <div className="text-xs text-muted-foreground">→ {o.destination}</div>}
+              <div className="text-[10px] text-muted-foreground mt-1">
+                {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
+                {" · "}👥 {o.passengers}
+              </div>
               {o.notes && <div className="text-xs mt-1">⚠ {o.notes}</div>}
               <button onClick={() => acceptPending(o.id)} disabled={!online}
                 className="mt-2 w-full border border-amber-warn text-amber-warn py-1.5 text-xs hover:bg-amber-warn hover:text-black disabled:opacity-40">
