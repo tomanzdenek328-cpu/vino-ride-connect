@@ -267,13 +267,27 @@ function DriverPage() {
                   {(o.status === "accepted" || o.status === "in_progress" || o.status === "assigned") && (
                     <button onClick={() => setCompleting(o)} className="border border-primary px-3 py-1 text-xs bg-primary text-primary-foreground">▸ DOKONČIT</button>
                   )}
-                  <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(o.pickup_address)}&travelmode=driving`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="ml-auto border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1"
-                  >
-                    <Navigation className="w-3 h-3" /> NAVIGOVAT
-                  </a>
+                  {o.status !== "in_progress" && (
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(o.pickup_address)}&travelmode=driving`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="ml-auto border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1"
+                    >
+                      <Navigation className="w-3 h-3" /> K ZÁKAZNÍKOVI
+                    </a>
+                  )}
+                  {o.status === "in_progress" && o.destination && (
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(o.destination)}&travelmode=driving`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="ml-auto border border-amber-warn text-amber-warn px-3 py-1 text-xs hover:bg-amber-warn hover:text-black flex items-center gap-1"
+                    >
+                      <Navigation className="w-3 h-3" /> DO CÍLE
+                    </a>
+                  )}
+                  {o.status === "in_progress" && !o.destination && (
+                    <span className="ml-auto text-[10px] text-muted-foreground self-center">Cíl nezadán</span>
+                  )}
                 </div>
               </div>
             ))}
