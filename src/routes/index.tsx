@@ -1,26 +1,27 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+function Index() {
+  const { user, role, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-primary glow-text font-display text-3xl">
+          ▸ NAVAZUJE SE SPOJENÍ<span className="blink">_</span>
+        </div>
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/login" />;
+  if (role === "dispatcher") return <Navigate to="/dispatcher" />;
+  if (role === "driver") return <Navigate to="/driver" />;
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="text-primary">Načítám roli...</div>
     </div>
   );
-}
-
-function Index() {
-  return <PlaceholderIndex />;
 }
