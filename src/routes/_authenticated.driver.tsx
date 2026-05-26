@@ -6,6 +6,8 @@ import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { toast } from "sonner";
 import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote } from "lucide-react";
+import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
+
 
 export const Route = createFileRoute("/_authenticated/driver")({
   component: DriverPage,
@@ -316,37 +318,51 @@ function DriverPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-primary/40 p-3 flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <h1 className="text-lg text-primary glow-text font-display truncate">▸ {callSign}</h1>
+      <header className="border-b border-primary/40 px-3 pt-3 pb-4 relative">
+        <button
+          onClick={() => supabase.auth.signOut()}
+          className="absolute top-2 right-2 border border-primary/40 px-2 py-1.5 text-xs hover:border-primary"
+          aria-label="Odhlásit"
+        >
+          <LogOut className="w-3 h-3" />
+        </button>
+        <div className="flex justify-center">
+          <img
+            src={logoVinneTaxi}
+            alt="VINNÉ TAXI"
+            className="h-20 sm:h-24 w-auto object-contain"
+          />
+        </div>
+        <div className="mt-2 text-center">
+          <div className="text-xl text-primary glow-text font-display">▸ {callSign}</div>
           <div className="text-[10px] text-muted-foreground">VINNÉ TAXI · ŘIDIČ</div>
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap justify-end">
-          <button onClick={() => setShowRides(true)}
-            className="border border-primary/60 px-2 py-1.5 text-xs flex items-center gap-1 hover:border-primary hover:bg-primary/10">
-            <Wallet className="w-3 h-3" /> {totals.total.toFixed(0)} Kč
-          </button>
-          <button onClick={() => setShowMap(true)}
-            className="border border-primary/60 px-2 py-1.5 text-xs flex items-center gap-1 hover:border-primary hover:bg-primary/10">
-            <MapIcon className="w-3 h-3" /> MAPA
-          </button>
-          <button onClick={toggleBusy} disabled={!online}
-            className={`border px-2 py-1.5 text-xs ${
-              busy ? "border-amber-warn bg-amber-warn text-black" : "border-primary/60 text-primary"
-            } disabled:opacity-40`}>
-            {busy ? "OBSAZ." : "VOLNÝ"}
-          </button>
+        <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
           <button onClick={toggleOnline}
-            className={`border px-2 py-1.5 text-xs flex items-center gap-1 ${
+            className={`border px-4 py-2 text-sm font-bold flex items-center gap-2 ${
               online ? "border-primary bg-primary text-primary-foreground glow" : "border-muted-foreground text-muted-foreground"
             }`}>
-            <Power className="w-3 h-3" /> {online ? "ONLINE" : "OFFLINE"}
+            <Power className="w-4 h-4" /> {online ? "ONLINE" : "OFFLINE"}
           </button>
-          <button onClick={() => supabase.auth.signOut()} className="border border-primary/40 px-2 py-1.5 text-xs hover:border-primary">
-            <LogOut className="w-3 h-3" />
+          <button onClick={toggleBusy} disabled={!online}
+            className={`border px-4 py-2 text-sm font-bold ${
+              busy ? "border-amber-warn bg-amber-warn text-black" : "border-primary/60 text-primary"
+            } disabled:opacity-40`}>
+            {busy ? "OBSAZENO" : "VOLNÝ"}
+          </button>
+          <button onClick={() => setShowMap(true)}
+            className="border border-primary/60 px-4 py-2 text-sm font-bold flex items-center gap-2 hover:border-primary hover:bg-primary/10">
+            <MapIcon className="w-4 h-4" /> MAPA
+          </button>
+        </div>
+        <div className="mt-2 flex justify-center">
+          <button onClick={() => setShowRides(true)}
+            className="border border-primary/60 px-5 py-2 text-sm font-bold flex items-center gap-2 hover:border-primary hover:bg-primary/10">
+            <Wallet className="w-4 h-4" /> MOJE JÍZDY · {totals.total.toFixed(0)} Kč
           </button>
         </div>
       </header>
+
 
       {showMap && (
         <div className="fixed inset-0 z-[1500] bg-black flex flex-col">
