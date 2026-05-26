@@ -54,9 +54,11 @@ export type Database = {
           destination: string | null
           id: string
           notes: string | null
+          passengers: number
           pickup_address: string
           pickup_lat: number | null
           pickup_lng: number | null
+          scheduled_time: string | null
           status: Database["public"]["Enums"]["order_status"]
           updated_at: string
         }
@@ -69,9 +71,11 @@ export type Database = {
           destination?: string | null
           id?: string
           notes?: string | null
+          passengers?: number
           pickup_address: string
           pickup_lat?: number | null
           pickup_lng?: number | null
+          scheduled_time?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           updated_at?: string
         }
@@ -84,9 +88,11 @@ export type Database = {
           destination?: string | null
           id?: string
           notes?: string | null
+          passengers?: number
           pickup_address?: string
           pickup_lat?: number | null
           pickup_lng?: number | null
+          scheduled_time?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           updated_at?: string
         }

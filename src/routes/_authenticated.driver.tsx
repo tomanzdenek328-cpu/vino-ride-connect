@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { toast } from "sonner";
-import { LogOut, Power } from "lucide-react";
+import { LogOut, Power, Navigation } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/driver")({
   component: DriverPage,
@@ -15,8 +15,8 @@ interface Order {
   id: string;
   pickup_address: string;
   destination: string | null;
-  customer_name: string | null;
-  customer_phone: string | null;
+  scheduled_time: string | null;
+  passengers: number;
   notes: string | null;
   status: string;
   assigned_driver_id: string | null;
@@ -155,7 +155,10 @@ function DriverPage() {
               <div key={o.id} className="border border-primary p-3 mb-2 glow">
                 <div className="text-primary font-bold">▸ {o.pickup_address}</div>
                 {o.destination && <div className="text-xs text-muted-foreground">→ {o.destination}</div>}
-                {o.customer_name && <div className="text-xs mt-1">{o.customer_name} {o.customer_phone && `· ${o.customer_phone}`}</div>}
+                <div className="text-[10px] text-muted-foreground mt-1">
+                  {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
+                  {" · "}👥 {o.passengers}
+                </div>
                 {o.notes && <div className="text-xs text-amber-warn mt-1">⚠ {o.notes}</div>}
                 <div className="text-[10px] mt-1">STAV: {STATUS_LABEL[o.status]}</div>
                 <div className="mt-2 flex gap-2 flex-wrap">
@@ -168,6 +171,13 @@ function DriverPage() {
                   {o.status === "in_progress" && (
                     <button onClick={() => setOrderStatus(o.id, "completed")} className="border border-primary px-3 py-1 text-xs bg-primary text-primary-foreground">▸ DOKONČIT</button>
                   )}
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(o.pickup_address)}&travelmode=driving`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="ml-auto border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1"
+                  >
+                    <Navigation className="w-3 h-3" /> NAVIGOVAT
+                  </a>
                 </div>
               </div>
             ))}
@@ -180,6 +190,10 @@ function DriverPage() {
             <div key={o.id} className="border border-amber-warn/60 p-3 mb-2">
               <div className="text-amber-warn font-bold">▸ {o.pickup_address}</div>
               {o.destination && <div className="text-xs text-muted-foreground">→ {o.destination}</div>}
+              <div className="text-[10px] text-muted-foreground mt-1">
+                {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
+                {" · "}👥 {o.passengers}
+              </div>
               {o.notes && <div className="text-xs mt-1">⚠ {o.notes}</div>}
               <button onClick={() => acceptPending(o.id)} disabled={!online}
                 className="mt-2 w-full border border-amber-warn text-amber-warn py-1.5 text-xs hover:bg-amber-warn hover:text-black disabled:opacity-40">

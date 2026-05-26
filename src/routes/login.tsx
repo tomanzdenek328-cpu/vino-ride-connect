@@ -1,7 +1,8 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -30,8 +31,8 @@ function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md border border-primary glow p-6 bg-card">
         <div className="text-center mb-6">
-          <h1 className="text-4xl text-primary glow-text font-display">VINNÉ TAXI</h1>
-          <div className="text-xs text-muted-foreground mt-1">▸ DISPATCH TERMINAL v1.0</div>
+          <img src={logo} alt="Vinné Taxi" className="w-full max-w-[260px] mx-auto drop-shadow-[0_0_18px_rgba(57,255,20,0.5)]" />
+          <div className="text-xs text-muted-foreground mt-2 tracking-widest">▸ DISPATCH TERMINAL v1.0</div>
         </div>
         <form onSubmit={onSubmit} className="space-y-4">
           <Field label="EMAIL" value={email} onChange={setEmail} type="email" required />
@@ -44,9 +45,8 @@ function LoginPage() {
             {loading ? "▸ NAVAZUJI..." : "▸ PŘIHLÁSIT"}
           </button>
         </form>
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          Žádný účet?{" "}
-          <Link to="/signup" className="text-primary hover:underline">REGISTROVAT</Link>
+        <div className="mt-6 text-center text-[11px] text-muted-foreground">
+          Účet zakládá dispečer.
         </div>
       </div>
     </div>
