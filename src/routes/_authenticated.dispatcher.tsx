@@ -241,7 +241,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   };
 
   return (
-    <div className="fixed inset-0 bg-black/85 z-40 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/90 z-[2000] flex items-center justify-center p-4">
       <form onSubmit={submit} className="bg-black border border-primary glow p-5 max-w-md w-full space-y-3">
         <div className="flex justify-between items-center">
           <h3 className="text-primary font-display text-lg">▸ NOVÁ ZAKÁZKA</h3>
@@ -312,7 +312,7 @@ function NewDriverModal({ onClose, onCreated }: { onClose: () => void; onCreated
   };
 
   return (
-    <div className="fixed inset-0 bg-black/85 z-40 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/90 z-[2000] flex items-center justify-center p-4">
       <form onSubmit={submit} className="bg-black border border-primary glow p-5 max-w-md w-full space-y-3">
         <div className="flex justify-between items-center">
           <h3 className="text-primary font-display text-lg">▸ NOVÝ ŘIDIČ</h3>
