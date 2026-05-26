@@ -147,7 +147,8 @@ export function LiveMap({ center, showOrders = false, onOrderClick, followDriver
     : null;
   const mapCenter: [number, number] = focusDriver?.lat && focusDriver?.lng
     ? [focusDriver.lat, focusDriver.lng]
-    : center;
+    : center ?? geoCenter ?? [50.0755, 14.4378];
+
 
   return (
     <MapContainer center={mapCenter} zoom={13} className="w-full h-full" style={{ minHeight: 300 }}>
