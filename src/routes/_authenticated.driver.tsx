@@ -69,7 +69,22 @@ function DriverPage() {
     };
     load();
     const ch = supabase.channel("driver_orders_rt")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
+        const row: any = payload.new;
+        if (payload.eventType === "INSERT" && row?.status === "pending") {
+          playClink();
+          toast.success("▸ NOVÁ ZAKÁZKA", {
+            description: row.pickup_address ?? "Nová jízda čeká",
+            duration: 8000,
+          });
+          try {
+            if ("Notification" in window && Notification.permission === "granted") {
+              new Notification("▸ NOVÁ ZAKÁZKA", { body: row.pickup_address ?? "Nová jízda čeká" });
+            }
+          } catch {}
+        }
+        load();
+      })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [user]);
