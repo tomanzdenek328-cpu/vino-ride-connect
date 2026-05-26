@@ -57,7 +57,7 @@ export const updateDriver = createServerFn({ method: "POST" })
     await assertDispatcher(context.supabase, context.userId);
 
     if (data.full_name || data.call_sign) {
-      const patch: Record<string, string> = {};
+      const patch: { full_name?: string; call_sign?: string } = {};
       if (data.full_name) patch.full_name = data.full_name;
       if (data.call_sign) patch.call_sign = data.call_sign;
       const { error } = await supabaseAdmin.from("profiles").update(patch).eq("id", data.driver_id);
