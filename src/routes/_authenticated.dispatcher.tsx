@@ -61,6 +61,7 @@ function DispatcherPage() {
   const [showForm, setShowForm] = useState(false);
   const [showDriverForm, setShowDriverForm] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [showArchive, setShowArchive] = useState(false);
   const [callSign, setCallSign] = useState("DISP");
   const [driverDetail, setDriverDetail] = useState<Driver | null>(null);
 
