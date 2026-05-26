@@ -231,6 +231,39 @@ function DispatcherPage() {
         </div>
       )}
 
+      {showArchive && (
+        <div className="fixed inset-0 z-[1800] bg-black flex flex-col">
+          <div className="border-b border-primary/40 p-3 flex items-center justify-between">
+            <h2 className="font-display text-primary glow-text">▸ ARCHIV JÍZD ({orders.filter(o => o.status === "completed" || o.status === "cancelled").length})</h2>
+            <button onClick={() => setShowArchive(false)} className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1">
+              <X className="w-3 h-3" /> ZAVŘÍT
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {orders.filter(o => o.status === "completed" || o.status === "cancelled").length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground text-xs">Archiv je prázdný.</div>
+            ) : orders.filter(o => o.status === "completed" || o.status === "cancelled").map((o) => (
+              <div key={o.id} className="border-b border-primary/20 p-3 text-sm">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-primary truncate">▸ {o.pickup_address}</div>
+                    {o.destination && <div className="text-xs text-muted-foreground truncate">→ {o.destination}</div>}
+                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                      {new Date(o.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
+                      {" · "}👥 {o.passengers}
+                    </div>
+                  </div>
+                  <span className={`text-[10px] px-1.5 py-0.5 border ${
+                    o.status === "completed" ? "border-muted-foreground text-muted-foreground" :
+                    "border-destructive text-destructive"
+                  }`}>{STATUS_LABEL[o.status]}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {showForm && <NewOrderModal onClose={() => setShowForm(false)} userId={user!.id} />}
       {showDriverForm && <NewDriverModal onClose={() => setShowDriverForm(false)} onCreated={loadDrivers} />}
       {driverDetail && <DriverDetailModal driver={driverDetail} onClose={() => setDriverDetail(null)} />}
