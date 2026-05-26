@@ -9,6 +9,7 @@ import { createDriver, updateDriver, deleteDriver, resetDriverRides } from "@/li
 import { toast } from "sonner";
 import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive } from "lucide-react";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
+import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
 
 export const Route = createFileRoute("/_authenticated/dispatcher")({
   component: DispatcherPage,
@@ -120,26 +121,36 @@ function DispatcherPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-primary/40 p-3 flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <h1 className="text-xl text-primary glow-text font-display truncate">▸ DISPEČINK · {callSign}</h1>
-          <div className="text-[10px] text-muted-foreground">VINNÉ TAXI · {drivers.filter(d => d.online).length}/{drivers.length} ONLINE</div>
+      <header className="border-b border-primary/40 px-3 pt-3 pb-3">
+        <div className="flex justify-center">
+          <img
+            src={logoVinneTaxi}
+            alt="VINNÉ TAXI"
+            className="h-20 sm:h-24 w-auto object-contain"
+          />
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => setShowMap(true)} className="border border-primary/40 px-2 py-1 text-xs hover:border-primary flex items-center gap-1">
-            <MapIcon className="w-3 h-3" /> MAPA
-          </button>
-          <button onClick={() => setShowArchive(true)} className="border border-primary/40 px-2 py-1 text-xs hover:border-primary flex items-center gap-1">
-            <Archive className="w-3 h-3" /> ARCHIV
-          </button>
-          <button onClick={() => setShowDriverForm(true)} className="border border-primary/40 px-2 py-1 text-xs hover:border-primary flex items-center gap-1">
-            <UserPlus className="w-3 h-3" /> ŘIDIČ
-          </button>
-          <button onClick={() => supabase.auth.signOut()} className="border border-primary/40 px-2 py-1 text-xs hover:border-primary flex items-center gap-1">
-            <LogOut className="w-3 h-3" /> ODHL.
-          </button>
+        <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
+          <div className="min-w-0">
+            <h1 className="text-xl text-primary glow-text font-display truncate">▸ DISPEČINK · {callSign}</h1>
+            <div className="text-[10px] text-muted-foreground">VINNÉ TAXI · {drivers.filter(d => d.online).length}/{drivers.length} ONLINE</div>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={() => setShowMap(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
+              <MapIcon className="w-4 h-4" /> MAPA
+            </button>
+            <button onClick={() => setShowArchive(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
+              <Archive className="w-4 h-4" /> ARCHIV
+            </button>
+            <button onClick={() => setShowDriverForm(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
+              <UserPlus className="w-4 h-4" /> ŘIDIČ
+            </button>
+            <button onClick={() => supabase.auth.signOut()} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
+              <LogOut className="w-4 h-4" /> ODHL.
+            </button>
+          </div>
         </div>
       </header>
+
 
       <div className="flex-1 flex flex-col">
 
