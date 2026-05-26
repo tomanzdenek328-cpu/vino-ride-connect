@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { toast } from "sonner";
-import { LogOut, Power } from "lucide-react";
+import { LogOut, Power, Navigation } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/driver")({
   component: DriverPage,
@@ -15,8 +15,8 @@ interface Order {
   id: string;
   pickup_address: string;
   destination: string | null;
-  customer_name: string | null;
-  customer_phone: string | null;
+  scheduled_time: string | null;
+  passengers: number;
   notes: string | null;
   status: string;
   assigned_driver_id: string | null;
