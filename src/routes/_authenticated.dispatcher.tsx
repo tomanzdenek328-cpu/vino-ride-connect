@@ -49,6 +49,7 @@ function DispatcherPage() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [showDriverForm, setShowDriverForm] = useState(false);
+  const [showMap, setShowMap] = useState(false);
   const [callSign, setCallSign] = useState("DISP");
 
   useEffect(() => {
