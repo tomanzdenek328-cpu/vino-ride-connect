@@ -7,7 +7,7 @@ import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { createDriver } from "@/lib/drivers.functions";
 import { toast } from "sonner";
-import { LogOut, Plus, X, UserPlus, Map as MapIcon } from "lucide-react";
+import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dispatcher")({
   component: DispatcherPage,
