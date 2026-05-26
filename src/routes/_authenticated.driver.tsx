@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { toast } from "sonner";
-import { LogOut, Power, Navigation } from "lucide-react";
+import { LogOut, Power, Navigation, Map as MapIcon, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/driver")({
   component: DriverPage,
