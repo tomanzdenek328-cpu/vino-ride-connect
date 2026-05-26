@@ -110,6 +110,9 @@ function DispatcherPage() {
           <div className="text-[10px] text-muted-foreground">VINNÉ TAXI · {drivers.filter(d => d.online).length}/{drivers.length} ONLINE</div>
         </div>
         <div className="flex gap-2">
+          <button onClick={() => setShowMap(true)} className="border border-primary/40 px-2 py-1 text-xs hover:border-primary flex items-center gap-1">
+            <MapIcon className="w-3 h-3" /> MAPA
+          </button>
           <button onClick={() => setShowDriverForm(true)} className="border border-primary/40 px-2 py-1 text-xs hover:border-primary flex items-center gap-1">
             <UserPlus className="w-3 h-3" /> ŘIDIČ
           </button>
@@ -119,10 +122,8 @@ function DispatcherPage() {
         </div>
       </header>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_400px]">
-        <div className="relative border-r border-primary/40 h-[35vh] lg:h-auto lg:min-h-0">
-          <LiveMap showOrders />
-        </div>
+      <div className="flex-1 flex flex-col">
+
 
 
         <div className="flex flex-col max-h-[65vh] lg:max-h-none overflow-hidden">
