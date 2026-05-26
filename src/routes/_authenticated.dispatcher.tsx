@@ -7,7 +7,7 @@ import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { createDriver } from "@/lib/drivers.functions";
 import { toast } from "sonner";
-import { LogOut, Plus, X, UserPlus, Map as MapIcon } from "lucide-react";
+import { LogOut, Plus, X, UserPlus, Map as MapIcon, Wallet } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dispatcher")({
   component: DispatcherPage,
@@ -32,6 +32,17 @@ interface Driver {
   full_name: string;
   call_sign: string;
   online: boolean;
+  busy: boolean;
+}
+
+interface Ride {
+  id: string;
+  driver_id: string;
+  amount: number;
+  payment_method: "cash" | "card";
+  pickup_address: string | null;
+  destination: string | null;
+  completed_at: string;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -51,6 +62,7 @@ function DispatcherPage() {
   const [showDriverForm, setShowDriverForm] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [callSign, setCallSign] = useState("DISP");
+  const [driverDetail, setDriverDetail] = useState<Driver | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -64,13 +76,14 @@ function DispatcherPage() {
     if (!ids.length) { setDrivers([]); return; }
     const [{ data: profs }, { data: locs }] = await Promise.all([
       supabase.from("profiles").select("id,full_name,call_sign").in("id", ids),
-      supabase.from("driver_locations").select("driver_id,online").in("driver_id", ids),
+      supabase.from("driver_locations").select("driver_id,online,busy").in("driver_id", ids),
     ]);
-    const onlineMap: Record<string, boolean> = {};
-    (locs ?? []).forEach((l: any) => { onlineMap[l.driver_id] = l.online; });
+    const locMap: Record<string, { online: boolean; busy: boolean }> = {};
+    (locs ?? []).forEach((l: any) => { locMap[l.driver_id] = { online: l.online, busy: !!l.busy }; });
     setDrivers((profs ?? []).map((p: any) => ({
       id: p.id, full_name: p.full_name, call_sign: p.call_sign,
-      online: !!onlineMap[p.id],
+      online: !!locMap[p.id]?.online,
+      busy: !!locMap[p.id]?.busy,
     })));
   };
 
@@ -134,9 +147,17 @@ function DispatcherPage() {
             ) : (
               <div className="flex flex-wrap gap-1">
                 {drivers.map((d) => (
-                  <div key={d.id} className={`text-[10px] px-2 py-1 border ${d.online ? "border-primary text-primary" : "border-muted-foreground/40 text-muted-foreground"}`}>
-                    {d.online ? "●" : "○"} {d.call_sign} · {d.full_name}
-                  </div>
+                  <button
+                    key={d.id}
+                    onClick={() => setDriverDetail(d)}
+                    className={`text-[10px] px-2 py-1 border hover:bg-primary/10 ${
+                      d.busy ? "border-amber-warn text-amber-warn" :
+                      d.online ? "border-primary text-primary" :
+                      "border-muted-foreground/40 text-muted-foreground"
+                    }`}
+                  >
+                    {d.online ? (d.busy ? "◐" : "●") : "○"} {d.call_sign} · {d.full_name}
+                  </button>
                 ))}
               </div>
             )}
@@ -212,6 +233,7 @@ function DispatcherPage() {
 
       {showForm && <NewOrderModal onClose={() => setShowForm(false)} userId={user!.id} />}
       {showDriverForm && <NewDriverModal onClose={() => setShowDriverForm(false)} onCreated={loadDrivers} />}
+      {driverDetail && <DriverDetailModal driver={driverDetail} onClose={() => setDriverDetail(null)} />}
 
       {user && <WalkieTalkie userId={user.id} callSign={callSign} />}
     </div>
