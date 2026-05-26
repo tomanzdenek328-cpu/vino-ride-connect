@@ -7,7 +7,7 @@ import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { createDriver } from "@/lib/drivers.functions";
 import { toast } from "sonner";
-import { LogOut, Plus, X, UserPlus, Map as MapIcon } from "lucide-react";
+import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dispatcher")({
   component: DispatcherPage,
@@ -61,6 +61,7 @@ function DispatcherPage() {
   const [showForm, setShowForm] = useState(false);
   const [showDriverForm, setShowDriverForm] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [showArchive, setShowArchive] = useState(false);
   const [callSign, setCallSign] = useState("DISP");
   const [driverDetail, setDriverDetail] = useState<Driver | null>(null);
 
@@ -126,6 +127,9 @@ function DispatcherPage() {
           <button onClick={() => setShowMap(true)} className="border border-primary/40 px-2 py-1 text-xs hover:border-primary flex items-center gap-1">
             <MapIcon className="w-3 h-3" /> MAPA
           </button>
+          <button onClick={() => setShowArchive(true)} className="border border-primary/40 px-2 py-1 text-xs hover:border-primary flex items-center gap-1">
+            <Archive className="w-3 h-3" /> ARCHIV
+          </button>
           <button onClick={() => setShowDriverForm(true)} className="border border-primary/40 px-2 py-1 text-xs hover:border-primary flex items-center gap-1">
             <UserPlus className="w-3 h-3" /> ŘIDIČ
           </button>
@@ -169,8 +173,10 @@ function DispatcherPage() {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
-
-            {orders.map((o) => (
+            {(() => {
+              const active = orders.filter(o => o.status !== "completed" && o.status !== "cancelled");
+              if (!active.length) return <div className="p-6 text-center text-muted-foreground text-xs">Žádné aktivní zakázky.</div>;
+              return active.map((o) => (
               <div key={o.id} className="border-b border-primary/20 p-3 text-sm">
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
@@ -184,35 +190,29 @@ function DispatcherPage() {
                   </div>
                   <span className={`text-[10px] px-1.5 py-0.5 border ${
                     o.status === "pending" ? "border-amber-warn text-amber-warn" :
-                    o.status === "completed" ? "border-muted-foreground text-muted-foreground" :
-                    o.status === "cancelled" ? "border-destructive text-destructive" :
                     "border-primary text-primary"
                   }`}>{STATUS_LABEL[o.status]}</span>
                 </div>
-                {o.status !== "completed" && o.status !== "cancelled" && (
-                  <div className="mt-2 flex gap-2 items-center">
-                    <select
-                      value={o.assigned_driver_id ?? ""}
-                      onChange={(e) => e.target.value && assignDriver(o.id, e.target.value)}
-                      className="flex-1 bg-input border border-primary/40 text-xs px-2 py-1 text-primary"
-                    >
-                      <option value="">— vyber řidiče —</option>
-                      {drivers.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.call_sign} · {d.full_name} {d.online ? "●" : "○"}
-                        </option>
-                      ))}
-                    </select>
-                    <button onClick={() => cancelOrder(o.id)} className="text-destructive hover:text-red-400 p-1" title="Zrušit">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
+                <div className="mt-2 flex gap-2 items-center">
+                  <select
+                    value={o.assigned_driver_id ?? ""}
+                    onChange={(e) => e.target.value && assignDriver(o.id, e.target.value)}
+                    className="flex-1 bg-input border border-primary/40 text-xs px-2 py-1 text-primary"
+                  >
+                    <option value="">— vyber řidiče —</option>
+                    {drivers.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.call_sign} · {d.full_name} {d.online ? "●" : "○"}
+                      </option>
+                    ))}
+                  </select>
+                  <button onClick={() => cancelOrder(o.id)} className="text-destructive hover:text-red-400 p-1" title="Zrušit">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            ))}
-            {!orders.length && (
-              <div className="p-6 text-center text-muted-foreground text-xs">Žádné zakázky.</div>
-            )}
+              ));
+            })()}
           </div>
         </div>
       </div>
@@ -227,6 +227,39 @@ function DispatcherPage() {
           </div>
           <div className="flex-1">
             <LiveMap showOrders />
+          </div>
+        </div>
+      )}
+
+      {showArchive && (
+        <div className="fixed inset-0 z-[1800] bg-black flex flex-col">
+          <div className="border-b border-primary/40 p-3 flex items-center justify-between">
+            <h2 className="font-display text-primary glow-text">▸ ARCHIV JÍZD ({orders.filter(o => o.status === "completed" || o.status === "cancelled").length})</h2>
+            <button onClick={() => setShowArchive(false)} className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1">
+              <X className="w-3 h-3" /> ZAVŘÍT
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {orders.filter(o => o.status === "completed" || o.status === "cancelled").length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground text-xs">Archiv je prázdný.</div>
+            ) : orders.filter(o => o.status === "completed" || o.status === "cancelled").map((o) => (
+              <div key={o.id} className="border-b border-primary/20 p-3 text-sm">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-primary truncate">▸ {o.pickup_address}</div>
+                    {o.destination && <div className="text-xs text-muted-foreground truncate">→ {o.destination}</div>}
+                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                      {new Date(o.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
+                      {" · "}👥 {o.passengers}
+                    </div>
+                  </div>
+                  <span className={`text-[10px] px-1.5 py-0.5 border ${
+                    o.status === "completed" ? "border-muted-foreground text-muted-foreground" :
+                    "border-destructive text-destructive"
+                  }`}>{STATUS_LABEL[o.status]}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
