@@ -48,6 +48,7 @@ function DriverPage() {
   const [completing, setCompleting] = useState<Order | null>(null);
   const watchIdRef = useRef<number | null>(null);
   const lastSentRef = useRef<number>(0);
+  const wakeLockRef = useRef<any>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -84,40 +85,106 @@ function DriverPage() {
 
   useEffect(() => { loadRides(); }, [user]);
 
-  // Geolocation streaming
+  // Geolocation streaming + Wake Lock to keep tracking when screen would otherwise sleep
   useEffect(() => {
-    if (!user || !online) {
+    if (!user) return;
+
+    const stopWatch = () => {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
       }
+    };
+
+    const startWatch = () => {
+      if (!navigator.geolocation) { toast.error("Geolokace není dostupná"); return; }
+      stopWatch();
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        async (pos) => {
+          const now = Date.now();
+          if (now - lastSentRef.current < 4000) return;
+          lastSentRef.current = now;
+          await supabase.from("driver_locations").upsert({
+            driver_id: user.id,
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            heading: pos.coords.heading ?? null,
+            speed: pos.coords.speed ?? null,
+            online: true,
+          });
+        },
+        (err) => { console.error(err); },
+        { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 },
+      );
+    };
+
+    const requestWakeLock = async () => {
+      try {
+        // @ts-ignore - wakeLock not in all TS libs
+        if (navigator.wakeLock?.request) {
+          // @ts-ignore
+          wakeLockRef.current = await navigator.wakeLock.request("screen");
+          wakeLockRef.current?.addEventListener?.("release", () => {
+            wakeLockRef.current = null;
+          });
+        }
+      } catch (e) {
+        console.warn("WakeLock selhal", e);
+      }
+    };
+
+    const releaseWakeLock = async () => {
+      try { await wakeLockRef.current?.release?.(); } catch {}
+      wakeLockRef.current = null;
+    };
+
+    if (!online) {
+      stopWatch();
+      releaseWakeLock();
       return;
     }
-    if (!navigator.geolocation) { toast.error("Geolokace není dostupná"); return; }
 
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      async (pos) => {
-        const now = Date.now();
-        if (now - lastSentRef.current < 4000) return;
-        lastSentRef.current = now;
-        await supabase.from("driver_locations").upsert({
-          driver_id: user.id,
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          heading: pos.coords.heading ?? null,
-          speed: pos.coords.speed ?? null,
-          online: true,
-        });
-      },
-      (err) => { console.error(err); toast.error("Nelze získat polohu"); },
-      { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 },
-    );
+    startWatch();
+    requestWakeLock();
+
+    // When the tab/screen returns from background, re-acquire wake lock
+    // and restart the geolocation watcher (browsers often pause it when hidden).
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        if (!wakeLockRef.current) requestWakeLock();
+        startWatch();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", onVisibility);
+
+    // Periodic ping: re-send last known location and keep the row alive even
+    // if watchPosition is throttled in the background.
+    const keepAlive = window.setInterval(() => {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          lastSentRef.current = Date.now();
+          await supabase.from("driver_locations").upsert({
+            driver_id: user.id,
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            heading: pos.coords.heading ?? null,
+            speed: pos.coords.speed ?? null,
+            online: true,
+          });
+        },
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 },
+      );
+    }, 15000);
 
     return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
+      stopWatch();
+      releaseWakeLock();
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", onVisibility);
+      window.clearInterval(keepAlive);
     };
   }, [user, online]);
 
