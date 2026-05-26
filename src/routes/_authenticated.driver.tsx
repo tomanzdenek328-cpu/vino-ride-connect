@@ -94,7 +94,6 @@ function DriverPage() {
       }
     } catch {}
   }, [user]);
-  }, [user]);
 
   useEffect(() => {
     if (!user) return;
