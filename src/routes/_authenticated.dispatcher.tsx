@@ -126,7 +126,7 @@ function DispatcherPage() {
 
 
 
-        <div className="flex flex-col max-h-[65vh] lg:max-h-none overflow-hidden">
+        <div className="flex flex-col flex-1 overflow-hidden">
           <div className="border-b border-primary/40 p-2">
             <div className="text-[10px] text-muted-foreground mb-1">ŘIDIČI ({drivers.length})</div>
             {drivers.length === 0 ? (
