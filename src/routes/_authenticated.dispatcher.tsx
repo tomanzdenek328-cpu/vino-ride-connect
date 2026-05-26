@@ -487,3 +487,100 @@ function DriverDetailModal({ driver, onClose }: { driver: Driver; onClose: () =>
     </div>
   );
 }
+
+function ArchiveOrderDetailModal({ order, onClose }: { order: Order; onClose: () => void }) {
+  const [ride, setRide] = useState<any>(null);
+  const [driver, setDriver] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      if (order.assigned_driver_id) {
+        const { data: d } = await supabase.from("profiles").select("full_name,call_sign").eq("id", order.assigned_driver_id).maybeSingle();
+        setDriver(d);
+      }
+      const { data: r } = await supabase.from("rides").select("*").eq("order_id", order.id).maybeSingle();
+      setRide(r);
+      setLoading(false);
+    };
+    load();
+  }, [order.id, order.assigned_driver_id]);
+
+  return (
+    <div className="fixed inset-0 z-[1900] bg-black/90 flex items-center justify-center p-4">
+      <div className="bg-black border border-primary glow p-5 max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-primary font-display text-lg">▸ DETAIL ZAKÁZKY</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-primary"><X className="w-5 h-5" /></button>
+        </div>
+        {loading ? (
+          <div className="text-center text-muted-foreground text-xs">Načítám...</div>
+        ) : (
+          <div className="space-y-3 text-sm">
+            <div>
+              <div className="text-[10px] text-muted-foreground">ODKUD</div>
+              <div className="text-primary font-bold">{order.pickup_address}</div>
+            </div>
+            {order.destination && (
+              <div>
+                <div className="text-[10px] text-muted-foreground">KAM</div>
+                <div className="text-primary">{order.destination}</div>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <div className="text-[10px] text-muted-foreground">VYTVÁŘENO</div>
+                <div className="text-primary">{new Date(order.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-muted-foreground">STATUS</div>
+                <div className="text-primary">{STATUS_LABEL[order.status]}</div>
+              </div>
+            </div>
+            {driver ? (
+              <div>
+                <div className="text-[10px] text-muted-foreground">ŘIDIČ</div>
+                <div className="text-primary">{driver.call_sign} · {driver.full_name}</div>
+              </div>
+            ) : (
+              <div>
+                <div className="text-[10px] text-muted-foreground">ŘIDIČ</div>
+                <div className="text-muted-foreground">Nepřiřazen</div>
+              </div>
+            )}
+            {ride ? (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <div className="text-[10px] text-muted-foreground">DOKONČENO</div>
+                    <div className="text-primary">{new Date(ride.completed_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-muted-foreground">ČÁSTKA</div>
+                    <div className="text-primary font-display">{Number(ride.amount).toFixed(0)} Kč</div>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-muted-foreground">PLATBA</div>
+                  <div className={ride.payment_method === "cash" ? "text-amber-warn" : "text-primary"}>
+                    {ride.payment_method === "cash" ? "HOTOVĚ" : "KARTOU"}
+                  </div>
+                </div>
+              </>
+            ) : order.status === "cancelled" ? (
+              <div className="text-destructive text-xs">Zakázka byla zrušena — bez jízdy.</div>
+            ) : (
+              <div className="text-muted-foreground text-xs">Jízda nebyla zaznamenána.</div>
+            )}
+            {order.notes && (
+              <div>
+                <div className="text-[10px] text-muted-foreground">POZNÁMKA</div>
+                <div className="text-amber-warn text-xs">{order.notes}</div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
