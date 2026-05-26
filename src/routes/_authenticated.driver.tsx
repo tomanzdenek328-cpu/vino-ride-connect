@@ -36,6 +36,37 @@ const STATUS_LABEL: Record<string, string> = {
   in_progress: "JEDE", completed: "HOTOVO", cancelled: "ZRUŠENO",
 };
 
+// Cinkot sklenicek – syntetizováno přes Web Audio API
+function playClink() {
+  try {
+    const Ctx = (window.AudioContext || (window as any).webkitAudioContext);
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const now = ctx.currentTime;
+    // Dva krátké jasné tóny imitující ťuknutí skla
+    const tones = [
+      { f: 2400, t: 0 },
+      { f: 1800, t: 0.06 },
+      { f: 3200, t: 0.12 },
+    ];
+    tones.forEach(({ f, t }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(f, now + t);
+      gain.gain.setValueAtTime(0.0001, now + t);
+      gain.gain.exponentialRampToValueAtTime(0.35, now + t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.5);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now + t);
+      osc.stop(now + t + 0.55);
+    });
+    setTimeout(() => ctx.close().catch(() => {}), 900);
+  } catch (e) {
+    console.warn("playClink failed", e);
+  }
+}
+
 function DriverPage() {
   const { user, role, loading } = useAuth();
   const [online, setOnline] = useState(false);
@@ -56,6 +87,12 @@ function DriverPage() {
       .then(({ data }) => { if (data?.call_sign) setCallSign(data.call_sign); });
     supabase.from("driver_locations").select("online,busy").eq("driver_id", user.id).maybeSingle()
       .then(({ data }) => { setOnline(!!data?.online); setBusy(!!data?.busy); });
+    // Vyžádej povolení desktop notifikací
+    try {
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission().catch(() => {});
+      }
+    } catch {}
   }, [user]);
 
   useEffect(() => {
@@ -69,7 +106,22 @@ function DriverPage() {
     };
     load();
     const ch = supabase.channel("driver_orders_rt")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
+        const row: any = payload.new;
+        if (payload.eventType === "INSERT" && row?.status === "pending") {
+          playClink();
+          toast.success("▸ NOVÁ ZAKÁZKA", {
+            description: row.pickup_address ?? "Nová jízda čeká",
+            duration: 8000,
+          });
+          try {
+            if ("Notification" in window && Notification.permission === "granted") {
+              new Notification("▸ NOVÁ ZAKÁZKA", { body: row.pickup_address ?? "Nová jízda čeká" });
+            }
+          } catch {}
+        }
+        load();
+      })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [user]);
