@@ -7,7 +7,7 @@ import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { createDriver } from "@/lib/drivers.functions";
 import { toast } from "sonner";
-import { LogOut, Plus, X, UserPlus } from "lucide-react";
+import { LogOut, Plus, X, UserPlus, Map as MapIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dispatcher")({
   component: DispatcherPage,
@@ -49,6 +49,7 @@ function DispatcherPage() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [showDriverForm, setShowDriverForm] = useState(false);
+  const [showMap, setShowMap] = useState(false);
   const [callSign, setCallSign] = useState("DISP");
 
   useEffect(() => {
@@ -109,6 +110,9 @@ function DispatcherPage() {
           <div className="text-[10px] text-muted-foreground">VINNÉ TAXI · {drivers.filter(d => d.online).length}/{drivers.length} ONLINE</div>
         </div>
         <div className="flex gap-2">
+          <button onClick={() => setShowMap(true)} className="border border-primary/40 px-2 py-1 text-xs hover:border-primary flex items-center gap-1">
+            <MapIcon className="w-3 h-3" /> MAPA
+          </button>
           <button onClick={() => setShowDriverForm(true)} className="border border-primary/40 px-2 py-1 text-xs hover:border-primary flex items-center gap-1">
             <UserPlus className="w-3 h-3" /> ŘIDIČ
           </button>
@@ -118,13 +122,11 @@ function DispatcherPage() {
         </div>
       </header>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_400px]">
-        <div className="relative border-r border-primary/40 h-[35vh] lg:h-auto lg:min-h-0">
-          <LiveMap showOrders />
-        </div>
+      <div className="flex-1 flex flex-col">
 
 
-        <div className="flex flex-col max-h-[65vh] lg:max-h-none overflow-hidden">
+
+        <div className="flex flex-col flex-1 overflow-hidden">
           <div className="border-b border-primary/40 p-2">
             <div className="text-[10px] text-muted-foreground mb-1">ŘIDIČI ({drivers.length})</div>
             {drivers.length === 0 ? (
@@ -194,8 +196,23 @@ function DispatcherPage() {
         </div>
       </div>
 
+      {showMap && (
+        <div className="fixed inset-0 z-[1500] bg-black flex flex-col">
+          <div className="border-b border-primary/40 p-3 flex items-center justify-between">
+            <h2 className="font-display text-primary glow-text">▸ MAPA · ŘIDIČI</h2>
+            <button onClick={() => setShowMap(false)} className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1">
+              <X className="w-3 h-3" /> ZAVŘÍT
+            </button>
+          </div>
+          <div className="flex-1">
+            <LiveMap showOrders />
+          </div>
+        </div>
+      )}
+
       {showForm && <NewOrderModal onClose={() => setShowForm(false)} userId={user!.id} />}
       {showDriverForm && <NewDriverModal onClose={() => setShowDriverForm(false)} onCreated={loadDrivers} />}
+
       {user && <WalkieTalkie userId={user.id} callSign={callSign} />}
     </div>
   );
