@@ -32,6 +32,7 @@ function DriverPage() {
   const [online, setOnline] = useState(false);
   const [callSign, setCallSign] = useState("—");
   const [orders, setOrders] = useState<Order[]>([]);
+  const [showMap, setShowMap] = useState(false);
   const watchIdRef = useRef<number | null>(null);
   const lastSentRef = useRef<number>(0);
 
