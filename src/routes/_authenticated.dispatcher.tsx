@@ -311,8 +311,19 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
           <h3 className="text-primary font-display text-lg">▸ NOVÁ ZAKÁZKA</h3>
           <button type="button" onClick={onClose} className="text-muted-foreground hover:text-primary"><X className="w-5 h-5" /></button>
         </div>
-        <In label="ODKUD (adresa vyzvednutí) *" value={pickup} onChange={setPickup} required />
-        <In label="KAM (cíl)" value={destination} onChange={setDestination} />
+        <AddressAutocomplete
+          label="ODKUD (adresa vyzvednutí) *"
+          value={pickup}
+          onChange={(v) => { setPickup(v); setPickupCoords({}); }}
+          onSelect={(p) => { setPickup(p.address); setPickupCoords({ lat: p.lat, lng: p.lng }); }}
+          required
+        />
+        <AddressAutocomplete
+          label="KAM (cíl)"
+          value={destination}
+          onChange={setDestination}
+          onSelect={(p) => setDestination(p.address)}
+        />
 
         <div>
           <div className="text-[10px] text-muted-foreground mb-1">ČAS</div>
