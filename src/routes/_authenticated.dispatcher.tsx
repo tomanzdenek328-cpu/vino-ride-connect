@@ -8,6 +8,7 @@ import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { createDriver } from "@/lib/drivers.functions";
 import { toast } from "sonner";
 import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive } from "lucide-react";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 
 export const Route = createFileRoute("/_authenticated/dispatcher")({
   component: DispatcherPage,
@@ -275,6 +276,7 @@ function DispatcherPage() {
 
 function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: string }) {
   const [pickup, setPickup] = useState("");
+  const [pickupCoords, setPickupCoords] = useState<{ lat?: number; lng?: number }>({});
   const [destination, setDestination] = useState("");
   const [when, setWhen] = useState<"now" | "later">("now");
   const [scheduledTime, setScheduledTime] = useState("");
@@ -282,23 +284,13 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const geocode = async (q: string): Promise<{ lat: number; lng: number } | null> => {
-    try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`);
-      const j = await r.json();
-      if (j[0]) return { lat: parseFloat(j[0].lat), lng: parseFloat(j[0].lon) };
-    } catch {}
-    return null;
-  };
-
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    const coords = await geocode(pickup);
     const { error } = await supabase.from("orders").insert({
       pickup_address: pickup,
-      pickup_lat: coords?.lat ?? null,
-      pickup_lng: coords?.lng ?? null,
+      pickup_lat: pickupCoords.lat ?? null,
+      pickup_lng: pickupCoords.lng ?? null,
       destination: destination || null,
       scheduled_time: when === "later" && scheduledTime ? new Date(scheduledTime).toISOString() : null,
       passengers,
