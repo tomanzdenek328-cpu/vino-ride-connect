@@ -64,10 +64,22 @@ function Recenter({ center }: { center: [number, number] }) {
   return null;
 }
 
-export function LiveMap({ center = [50.0755, 14.4378], showOrders = false, onOrderClick, followDriverId }: Props) {
+export function LiveMap({ center, showOrders = false, onOrderClick, followDriverId }: Props) {
   const [drivers, setDrivers] = useState<DriverLoc[]>([]);
   const [orders, setOrders] = useState<OrderMarker[]>([]);
+  const [geoCenter, setGeoCenter] = useState<[number, number] | null>(null);
   const profilesRef = useRef<Record<string, { call_sign: string; full_name: string }>>({});
+
+  // Try to center on the viewer's current position once at mount
+  useEffect(() => {
+    if (center || !navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setGeoCenter([pos.coords.latitude, pos.coords.longitude]),
+      () => {},
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
+    );
+  }, [center]);
+
 
   useEffect(() => {
     const load = async () => {
