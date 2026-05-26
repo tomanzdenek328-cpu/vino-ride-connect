@@ -124,7 +124,21 @@ function DispatcherPage() {
         </div>
 
 
-        <div className="flex flex-col max-h-[60vh] lg:max-h-none overflow-hidden">
+        <div className="flex flex-col max-h-[65vh] lg:max-h-none overflow-hidden">
+          <div className="border-b border-primary/40 p-2">
+            <div className="text-[10px] text-muted-foreground mb-1">ŘIDIČI ({drivers.length})</div>
+            {drivers.length === 0 ? (
+              <div className="text-xs text-muted-foreground py-1">Žádní řidiči. Klikni ŘIDIČ pro založení.</div>
+            ) : (
+              <div className="flex flex-wrap gap-1">
+                {drivers.map((d) => (
+                  <div key={d.id} className={`text-[10px] px-2 py-1 border ${d.online ? "border-primary text-primary" : "border-muted-foreground/40 text-muted-foreground"}`}>
+                    {d.online ? "●" : "○"} {d.call_sign} · {d.full_name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="border-b border-primary/40 p-3 flex items-center justify-between">
             <h2 className="font-display text-primary">ZAKÁZKY ({orders.filter(o => o.status !== "completed" && o.status !== "cancelled").length})</h2>
             <button onClick={() => setShowForm(true)} className="border border-primary px-2 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1 glow">
@@ -132,6 +146,7 @@ function DispatcherPage() {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
+
             {orders.map((o) => (
               <div key={o.id} className="border-b border-primary/20 p-3 text-sm">
                 <div className="flex justify-between items-start gap-2">
