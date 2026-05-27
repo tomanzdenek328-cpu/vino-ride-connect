@@ -436,8 +436,13 @@ function DriverPage() {
           <section>
             <h2 className="font-display text-primary text-sm mb-2">▸ MOJE JÍZDA</h2>
             {myOrders.map((o) => (
-              <div key={o.id} className="border border-primary p-3 mb-2 glow">
-                <div className="text-primary font-bold">▸ {o.pickup_address}</div>
+              <div key={o.id} className={`p-3 mb-2 ${o.priority ? "urgent-flash bg-destructive/10" : "border border-primary glow"}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="text-primary font-bold flex-1 min-w-0">▸ {o.pickup_address}</div>
+                  {o.priority && (
+                    <span className="text-[10px] px-1.5 py-0.5 border border-destructive text-destructive font-bold blink shrink-0">🚨 URGENT</span>
+                  )}
+                </div>
                 {o.destination && <div className="text-xs text-muted-foreground">→ {o.destination}</div>}
                 <div className="text-sm text-primary mt-1.5 font-medium">
                   {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
@@ -445,46 +450,54 @@ function DriverPage() {
                 </div>
                 {o.notes && <div className="text-xs text-amber-warn mt-1">⚠ {o.notes}</div>}
                 <div className="text-[10px] mt-1">STAV: {STATUS_LABEL[o.status]}</div>
-                {o.customer_phone && (
-                  <a
-                    href={`tel:${o.customer_phone}`}
-                    className="mt-2 w-full border border-primary text-primary py-2 text-sm flex items-center justify-center gap-2 hover:bg-primary hover:text-primary-foreground"
-                  >
-                    📞 ZAVOLAT ZÁKAZNÍKOVI · {o.customer_phone}
-                  </a>
+                {!o.released ? (
+                  <div className="mt-2 w-full border border-amber-warn text-amber-warn py-2 text-xs text-center font-bold">
+                    🔒 ČEKÁ NA UVOLNĚNÍ DISPEČEREM
+                  </div>
+                ) : (
+                  <>
+                    {o.customer_phone && (
+                      <a
+                        href={`tel:${o.customer_phone}`}
+                        className="mt-2 w-full border border-primary text-primary py-2 text-sm flex items-center justify-center gap-2 hover:bg-primary hover:text-primary-foreground"
+                      >
+                        📞 ZAVOLAT ZÁKAZNÍKOVI · {o.customer_phone}
+                      </a>
+                    )}
+                    <div className="mt-2 flex gap-2 flex-wrap">
+                      {o.status === "assigned" && (
+                        <button onClick={() => setOrderStatus(o.id, "accepted")} className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground">▸ PŘIJMOUT</button>
+                      )}
+                      {(o.status === "accepted" || o.status === "assigned") && (
+                        <button onClick={() => setOrderStatus(o.id, "in_progress")} className="border border-amber-warn text-amber-warn px-3 py-1 text-xs">▸ JEDU</button>
+                      )}
+                      {(o.status === "accepted" || o.status === "in_progress" || o.status === "assigned") && (
+                        <button onClick={() => setCompleting(o)} className="border border-primary px-3 py-1 text-xs bg-primary text-primary-foreground">▸ DOKONČIT</button>
+                      )}
+                      {o.status !== "in_progress" && (
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(o.pickup_address)}&travelmode=driving`}
+                          target="_blank" rel="noopener noreferrer"
+                          className="ml-auto border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1"
+                        >
+                          <Navigation className="w-3 h-3" /> K ZÁKAZNÍKOVI
+                        </a>
+                      )}
+                      {o.status === "in_progress" && o.destination && (
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(o.destination)}&travelmode=driving`}
+                          target="_blank" rel="noopener noreferrer"
+                          className="ml-auto border border-amber-warn text-amber-warn px-3 py-1 text-xs hover:bg-amber-warn hover:text-black flex items-center gap-1"
+                        >
+                          <Navigation className="w-3 h-3" /> DO CÍLE
+                        </a>
+                      )}
+                      {o.status === "in_progress" && !o.destination && (
+                        <span className="ml-auto text-[10px] text-muted-foreground self-center">Cíl nezadán</span>
+                      )}
+                    </div>
+                  </>
                 )}
-                <div className="mt-2 flex gap-2 flex-wrap">
-                  {o.status === "assigned" && (
-                    <button onClick={() => setOrderStatus(o.id, "accepted")} className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground">▸ PŘIJMOUT</button>
-                  )}
-                  {(o.status === "accepted" || o.status === "assigned") && (
-                    <button onClick={() => setOrderStatus(o.id, "in_progress")} className="border border-amber-warn text-amber-warn px-3 py-1 text-xs">▸ JEDU</button>
-                  )}
-                  {(o.status === "accepted" || o.status === "in_progress" || o.status === "assigned") && (
-                    <button onClick={() => setCompleting(o)} className="border border-primary px-3 py-1 text-xs bg-primary text-primary-foreground">▸ DOKONČIT</button>
-                  )}
-                  {o.status !== "in_progress" && (
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(o.pickup_address)}&travelmode=driving`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="ml-auto border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1"
-                    >
-                      <Navigation className="w-3 h-3" /> K ZÁKAZNÍKOVI
-                    </a>
-                  )}
-                  {o.status === "in_progress" && o.destination && (
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(o.destination)}&travelmode=driving`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="ml-auto border border-amber-warn text-amber-warn px-3 py-1 text-xs hover:bg-amber-warn hover:text-black flex items-center gap-1"
-                    >
-                      <Navigation className="w-3 h-3" /> DO CÍLE
-                    </a>
-                  )}
-                  {o.status === "in_progress" && !o.destination && (
-                    <span className="ml-auto text-[10px] text-muted-foreground self-center">Cíl nezadán</span>
-                  )}
-                </div>
               </div>
             ))}
           </section>
