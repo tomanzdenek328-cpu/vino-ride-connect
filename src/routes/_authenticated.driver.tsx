@@ -25,6 +25,15 @@ interface Order {
   customer_phone: string | null;
   status: string;
   assigned_driver_id: string | null;
+  released: boolean;
+  created_at: string;
+}
+
+// Sort by scheduled time ascending (earliest first); fall back to created_at.
+function sortByTimeAsc(a: Order, b: Order): number {
+  const ta = a.scheduled_time ? new Date(a.scheduled_time).getTime() : new Date(a.created_at).getTime();
+  const tb = b.scheduled_time ? new Date(b.scheduled_time).getTime() : new Date(b.created_at).getTime();
+  return ta - tb;
 }
 
 interface Ride {
@@ -120,15 +129,15 @@ function DriverPage() {
     const load = async () => {
       const { data } = await supabase.from("orders")
         .select("*")
-        .or(`assigned_driver_id.eq.${user.id},status.eq.pending`)
-        .order("created_at", { ascending: false });
+        .or(`assigned_driver_id.eq.${user.id},status.eq.pending`);
       setOrders((data ?? []) as Order[]);
     };
     load();
     const ch = supabase.channel("driver_orders_rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
         const row: any = payload.new;
-        if (payload.eventType === "INSERT" && row?.status === "pending") {
+        // Pingni jen u zakázek, které jsou už uvolněné a může je řidič přijmout.
+        if (payload.eventType === "INSERT" && row?.status === "pending" && row?.released !== false) {
           playClink();
           toast.success("▸ NOVÁ ZAKÁZKA", {
             description: row.pickup_address ?? "Nová jízda čeká",
@@ -338,8 +347,12 @@ function DriverPage() {
   if (loading) return null;
   if (role && role !== "driver") return <Navigate to="/dispatcher" />;
 
-  const myOrders = orders.filter((o) => o.assigned_driver_id === user?.id && o.status !== "completed" && o.status !== "cancelled");
-  const pending = orders.filter((o) => o.status === "pending" && !o.assigned_driver_id);
+  const myOrders = orders
+    .filter((o) => o.assigned_driver_id === user?.id && o.status !== "completed" && o.status !== "cancelled")
+    .sort(sortByTimeAsc);
+  const pending = orders
+    .filter((o) => o.status === "pending" && !o.assigned_driver_id)
+    .sort(sortByTimeAsc);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -476,18 +489,24 @@ function DriverPage() {
         <section>
           <h2 className="font-display text-primary text-sm mb-2">▸ VOLNÉ ZAKÁZKY ({pending.length})</h2>
           {pending.map((o) => (
-            <div key={o.id} className="border border-amber-warn/60 p-3 mb-2">
-              <div className="text-amber-warn font-bold">▸ {o.pickup_address}</div>
+            <div key={o.id} className={`border p-3 mb-2 ${o.released ? "border-amber-warn/60" : "border-muted-foreground/40 opacity-70"}`}>
+              <div className={`font-bold ${o.released ? "text-amber-warn" : "text-muted-foreground"}`}>▸ {o.pickup_address}</div>
               {o.destination && <div className="text-xs text-muted-foreground">→ {o.destination}</div>}
               <div className="text-[10px] text-muted-foreground mt-1">
                 {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                 {" · "}👥 {o.passengers}
               </div>
               {o.notes && <div className="text-xs mt-1">⚠ {o.notes}</div>}
-              <button onClick={() => acceptPending(o.id)} disabled={!online}
-                className="mt-2 w-full border border-amber-warn text-amber-warn py-1.5 text-xs hover:bg-amber-warn hover:text-black disabled:opacity-40">
-                ▸ VZÍT
-              </button>
+              {o.released ? (
+                <button onClick={() => acceptPending(o.id)} disabled={!online}
+                  className="mt-2 w-full border border-amber-warn text-amber-warn py-1.5 text-xs hover:bg-amber-warn hover:text-black disabled:opacity-40">
+                  ▸ VZÍT
+                </button>
+              ) : (
+                <div className="mt-2 w-full border border-muted-foreground/60 text-muted-foreground py-1.5 text-xs text-center">
+                  🔒 ČEKÁ NA UVOLNĚNÍ DISPEČEREM
+                </div>
+              )}
             </div>
           ))}
           {!pending.length && <div className="text-xs text-muted-foreground text-center p-4">Žádné volné zakázky.</div>}

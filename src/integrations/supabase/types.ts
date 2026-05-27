@@ -75,6 +75,7 @@ export type Database = {
           pickup_address: string
           pickup_lat: number | null
           pickup_lng: number | null
+          released: boolean
           scheduled_time: string | null
           status: Database["public"]["Enums"]["order_status"]
           updated_at: string
@@ -96,6 +97,7 @@ export type Database = {
           pickup_address: string
           pickup_lat?: number | null
           pickup_lng?: number | null
+          released?: boolean
           scheduled_time?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           updated_at?: string
@@ -117,6 +119,7 @@ export type Database = {
           pickup_address?: string
           pickup_lat?: number | null
           pickup_lng?: number | null
+          released?: boolean
           scheduled_time?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           updated_at?: string
