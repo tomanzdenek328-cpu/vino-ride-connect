@@ -207,7 +207,7 @@ function DispatcherPage() {
                   <div className="flex-1 min-w-0">
                     <div className="text-primary font-bold truncate">▸ {o.pickup_address}</div>
                     {o.destination && <div className="text-xs text-muted-foreground truncate">→ {o.destination}</div>}
-                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                    <div className="text-sm text-primary mt-1 font-medium">
                       {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                       {" · "}👥 {o.passengers}
                     </div>
@@ -273,10 +273,10 @@ function DispatcherPage() {
                   <div className="flex-1 min-w-0">
                     <div className="text-primary truncate">▸ {o.pickup_address}</div>
                     {o.destination && <div className="text-xs text-muted-foreground truncate">→ {o.destination}</div>}
-                    <div className="text-[10px] text-muted-foreground mt-0.5">
-                      {new Date(o.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
-                      {" · "}👥 {o.passengers}
-                    </div>
+                    <div className="text-sm text-primary mt-1 font-medium">
+                       {new Date(o.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
+                       {" · "}👥 {o.passengers}
+                     </div>
                     <div className="text-[10px] text-primary/60 mt-0.5">Klikni pro detail</div>
                   </div>
                   <span className={`text-[10px] px-1.5 py-0.5 border ${

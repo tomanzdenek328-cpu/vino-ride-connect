@@ -413,7 +413,7 @@ function DriverPage() {
               <div key={o.id} className="border border-primary p-3 mb-2 glow">
                 <div className="text-primary font-bold">▸ {o.pickup_address}</div>
                 {o.destination && <div className="text-xs text-muted-foreground">→ {o.destination}</div>}
-                <div className="text-[10px] text-muted-foreground mt-1">
+                <div className="text-sm text-primary mt-1.5 font-medium">
                   {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                   {" · "}👥 {o.passengers}
                 </div>
