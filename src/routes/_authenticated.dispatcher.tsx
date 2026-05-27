@@ -145,6 +145,11 @@ function DispatcherPage() {
     await supabase.from("orders").update({ status: "cancelled" }).eq("id", orderId);
   };
 
+  const releaseOrder = async (orderId: string) => {
+    const { error } = await supabase.from("orders").update({ released: true }).eq("id", orderId);
+    if (error) toast.error(error.message); else toast.success("▸ UVOLNĚNO PRO ŘIDIČE");
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-primary/40 px-3 pt-3 pb-2">
