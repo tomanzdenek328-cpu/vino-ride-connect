@@ -506,8 +506,13 @@ function DriverPage() {
         <section>
           <h2 className="font-display text-primary text-sm mb-2">▸ VOLNÉ ZAKÁZKY ({pending.length})</h2>
           {pending.map((o) => (
-            <div key={o.id} className={`border p-3 mb-2 ${o.released ? "border-amber-warn/60" : "border-muted-foreground/40 opacity-70"}`}>
-              <div className={`font-bold ${o.released ? "text-amber-warn" : "text-muted-foreground"}`}>▸ {o.pickup_address}</div>
+            <div key={o.id} className={`p-3 mb-2 ${o.priority ? "urgent-flash bg-destructive/10" : `border ${o.released ? "border-amber-warn/60" : "border-muted-foreground/40 opacity-70"}`}`}>
+              <div className="flex items-start justify-between gap-2">
+                <div className={`font-bold flex-1 min-w-0 ${o.released ? (o.priority ? "text-destructive" : "text-amber-warn") : "text-muted-foreground"}`}>▸ {o.pickup_address}</div>
+                {o.priority && (
+                  <span className="text-[10px] px-1.5 py-0.5 border border-destructive text-destructive font-bold blink shrink-0">🚨 URGENT</span>
+                )}
+              </div>
               {o.destination && <div className="text-xs text-muted-foreground">→ {o.destination}</div>}
               <div className="text-[10px] text-muted-foreground mt-1">
                 {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
