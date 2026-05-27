@@ -26,6 +26,7 @@ interface Order {
   scheduled_time: string | null;
   passengers: number;
   notes: string | null;
+  customer_phone: string | null;
   status: string;
   assigned_driver_id: string | null;
   created_at: string;
