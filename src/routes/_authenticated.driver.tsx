@@ -140,13 +140,14 @@ function DriverPage() {
         // Pingni jen u zakázek, které jsou už uvolněné a může je řidič přijmout.
         if (payload.eventType === "INSERT" && row?.status === "pending" && row?.released !== false) {
           playClink();
-          toast.success("▸ NOVÁ ZAKÁZKA", {
+          const title = row?.priority ? "🚨 URGENTNÍ ZAKÁZKA" : "▸ NOVÁ ZAKÁZKA";
+          toast.success(title, {
             description: row.pickup_address ?? "Nová jízda čeká",
-            duration: 8000,
+            duration: row?.priority ? 15000 : 8000,
           });
           try {
             if ("Notification" in window && Notification.permission === "granted") {
-              new Notification("▸ NOVÁ ZAKÁZKA", { body: row.pickup_address ?? "Nová jízda čeká" });
+              new Notification(title, { body: row.pickup_address ?? "Nová jízda čeká" });
             }
           } catch {}
         }
