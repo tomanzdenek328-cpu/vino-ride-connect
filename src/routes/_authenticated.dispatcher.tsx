@@ -390,16 +390,34 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
         </div>
 
         <div>
-          <div className="text-[10px] text-muted-foreground mb-1">POČET OSOB</div>
-          <div className="flex gap-2">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-              <button key={n} type="button" onClick={() => setPassengers(n)}
-                className={`flex-1 border py-1.5 text-xs ${passengers === n ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
-                {n}
+          <div className="text-[10px] text-muted-foreground mb-1">TYP AUTA</div>
+          <div className="grid grid-cols-2 gap-2">
+            {([["car", "🚗 OSOBNÍ"], ["van", "🚐 DODÁVKA"]] as const).map(([v, label]) => (
+              <button key={v} type="button" onClick={() => setVehicleType(v)}
+                className={`border py-1.5 text-xs ${vehicleType === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
+                {label}
               </button>
             ))}
           </div>
         </div>
+
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">POČET OSOB ({passengers})</div>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => setPassengers(Math.max(1, passengers - 1))}
+              className="border border-primary/40 text-primary w-10 h-10 text-lg">−</button>
+            <input
+              type="number" min={1} max={30} value={passengers}
+              onChange={(e) => setPassengers(Math.min(30, Math.max(1, parseInt(e.target.value) || 1)))}
+              className="flex-1 bg-input border border-primary/40 px-2 py-2 text-primary text-center text-lg"
+            />
+            <button type="button" onClick={() => setPassengers(Math.min(30, passengers + 1))}
+              className="border border-primary/40 text-primary w-10 h-10 text-lg">+</button>
+          </div>
+          <div className="text-[10px] text-muted-foreground mt-1">Max. 30 osob</div>
+        </div>
+
+
 
         <div>
           <div className="text-[10px] text-muted-foreground mb-1">TELEFON ZÁKAZNÍKA *</div>
