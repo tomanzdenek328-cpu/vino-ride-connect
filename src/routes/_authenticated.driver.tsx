@@ -341,11 +341,11 @@ function DriverPage() {
         >
           <LogOut className="w-3 h-3" />
         </button>
-        <div className="flex justify-center px-1">
+        <div className="flex justify-center -mx-3">
           <img
             src={logoVinneTaxi}
             alt="VINNÉ TAXI"
-            className="h-32 sm:h-44 w-full object-contain"
+            className="h-36 sm:h-48 w-full object-contain"
           />
         </div>
         <div className="mt-0.5 text-center">
