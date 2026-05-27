@@ -328,7 +328,9 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
       destination_lng: destCoords.lng ?? null,
       scheduled_time: when === "later" && scheduledTime ? new Date(scheduledTime).toISOString() : null,
       passengers,
+      vehicle_type: vehicleType,
       notes: notes || null,
+
       customer_phone: customerPhone || null,
       created_by: userId,
       status: "pending",
