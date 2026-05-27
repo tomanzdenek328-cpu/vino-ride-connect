@@ -61,6 +61,7 @@ export type Database = {
       orders: {
         Row: {
           assigned_driver_id: string | null
+          assigned_driver_ids: string[]
           created_at: string
           created_by: string
           customer_name: string | null
@@ -77,9 +78,11 @@ export type Database = {
           scheduled_time: string | null
           status: Database["public"]["Enums"]["order_status"]
           updated_at: string
+          vehicle_type: string | null
         }
         Insert: {
           assigned_driver_id?: string | null
+          assigned_driver_ids?: string[]
           created_at?: string
           created_by: string
           customer_name?: string | null
@@ -96,9 +99,11 @@ export type Database = {
           scheduled_time?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           updated_at?: string
+          vehicle_type?: string | null
         }
         Update: {
           assigned_driver_id?: string | null
+          assigned_driver_ids?: string[]
           created_at?: string
           created_by?: string
           customer_name?: string | null
@@ -115,6 +120,7 @@ export type Database = {
           scheduled_time?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           updated_at?: string
+          vehicle_type?: string | null
         }
         Relationships: []
       }
