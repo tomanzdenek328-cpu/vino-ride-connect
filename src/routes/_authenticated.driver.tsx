@@ -130,7 +130,7 @@ function DriverPage() {
     const load = async () => {
       const { data } = await supabase.from("orders")
         .select("*")
-        .or(`assigned_driver_id.eq.${user.id},status.eq.pending`);
+        .or(`assigned_driver_id.eq.${user.id},status.eq.pending,assigned_driver_ids.cs.{${user.id}}`);
       setOrders((data ?? []) as Order[]);
     };
     load();
