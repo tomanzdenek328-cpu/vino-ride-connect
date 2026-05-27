@@ -205,3 +205,19 @@
   100% { box-shadow: 0 0 0 0 transparent; }
 }
 .ptt-pulse { animation: ptt-pulse 1.2s infinite; }
+
+@keyframes urgent-flash {
+  0%, 100% {
+    border-color: var(--destructive);
+    box-shadow: 0 0 16px 2px color-mix(in oklab, var(--destructive) 70%, transparent);
+  }
+  50% {
+    border-color: color-mix(in oklab, var(--destructive) 40%, transparent);
+    box-shadow: 0 0 4px 0 color-mix(in oklab, var(--destructive) 20%, transparent);
+  }
+}
+.urgent-flash {
+  animation: urgent-flash 0.9s ease-in-out infinite;
+  border-width: 2px;
+  border-style: solid;
+}
