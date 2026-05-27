@@ -47,7 +47,7 @@ export const updateVehicle = createServerFn({ method: "POST" })
   .inputValidator((input) => UpdateSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertDispatcher(context.supabase, context.userId);
-    const patch: Record<string, unknown> = {};
+    const patch: { plate?: string; car_type?: string; notes?: string | null; active?: boolean } = {};
     if (data.plate !== undefined) patch.plate = data.plate.trim();
     if (data.car_type !== undefined) patch.car_type = data.car_type.trim();
     if (data.notes !== undefined) patch.notes = data.notes?.trim() || null;
