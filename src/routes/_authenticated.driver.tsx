@@ -370,7 +370,7 @@ function DriverPage() {
             <MapIcon className="w-4 h-4" /> MAPA
           </button>
         </div>
-        <div className="mt-2 flex justify-center items-center gap-2 flex-wrap">
+        <div className="mt-1 flex justify-center items-center gap-2 flex-wrap">
           <button onClick={() => setShowRides(true)}
             className="border border-primary/60 px-5 py-2 text-sm font-bold flex items-center gap-2 hover:border-primary hover:bg-primary/10">
             <Wallet className="w-4 h-4" /> MOJE JÍZDY · {totals.total.toFixed(0)} Kč
