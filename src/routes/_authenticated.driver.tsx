@@ -489,18 +489,24 @@ function DriverPage() {
         <section>
           <h2 className="font-display text-primary text-sm mb-2">▸ VOLNÉ ZAKÁZKY ({pending.length})</h2>
           {pending.map((o) => (
-            <div key={o.id} className="border border-amber-warn/60 p-3 mb-2">
-              <div className="text-amber-warn font-bold">▸ {o.pickup_address}</div>
+            <div key={o.id} className={`border p-3 mb-2 ${o.released ? "border-amber-warn/60" : "border-muted-foreground/40 opacity-70"}`}>
+              <div className={`font-bold ${o.released ? "text-amber-warn" : "text-muted-foreground"}`}>▸ {o.pickup_address}</div>
               {o.destination && <div className="text-xs text-muted-foreground">→ {o.destination}</div>}
               <div className="text-[10px] text-muted-foreground mt-1">
                 {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                 {" · "}👥 {o.passengers}
               </div>
               {o.notes && <div className="text-xs mt-1">⚠ {o.notes}</div>}
-              <button onClick={() => acceptPending(o.id)} disabled={!online}
-                className="mt-2 w-full border border-amber-warn text-amber-warn py-1.5 text-xs hover:bg-amber-warn hover:text-black disabled:opacity-40">
-                ▸ VZÍT
-              </button>
+              {o.released ? (
+                <button onClick={() => acceptPending(o.id)} disabled={!online}
+                  className="mt-2 w-full border border-amber-warn text-amber-warn py-1.5 text-xs hover:bg-amber-warn hover:text-black disabled:opacity-40">
+                  ▸ VZÍT
+                </button>
+              ) : (
+                <div className="mt-2 w-full border border-muted-foreground/60 text-muted-foreground py-1.5 text-xs text-center">
+                  🔒 ČEKÁ NA UVOLNĚNÍ DISPEČEREM
+                </div>
+              )}
             </div>
           ))}
           {!pending.length && <div className="text-xs text-muted-foreground text-center p-4">Žádné volné zakázky.</div>}
