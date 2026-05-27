@@ -227,7 +227,7 @@ function DispatcherPage() {
                     <option value="">— vyber řidiče —</option>
                     {drivers.map((d) => (
                       <option key={d.id} value={d.id}>
-                        {d.call_sign} · {d.full_name} {d.online ? "●" : "○"}
+                        {d.call_sign} · {d.car_type || d.full_name} {d.online ? "●" : "○"}
                       </option>
                     ))}
                   </select>
