@@ -488,8 +488,8 @@ function DriverPage() {
         />
       )}
 
-      {showRides && (
-        <RidesModal rides={rides} totals={totals} onClose={() => setShowRides(false)} />
+      {showRides && user && (
+        <RidesModal rides={rides} totals={totals} userId={user.id} onAdded={loadRides} onClose={() => setShowRides(false)} />
       )}
 
       {user && <WalkieTalkie userId={user.id} callSign={callSign} />}
@@ -559,19 +559,93 @@ function CompleteRideModal({ order, onClose, onSubmit }: {
   );
 }
 
-function RidesModal({ rides, totals, onClose }: {
+function RidesModal({ rides, totals, userId, onAdded, onClose }: {
   rides: Ride[];
   totals: { cash: number; card: number; total: number; count: number };
+  userId: string;
+  onAdded: () => void | Promise<void>;
   onClose: () => void;
 }) {
+  const [showAdd, setShowAdd] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState<"cash" | "card">("cash");
+  const [pickup, setPickup] = useState("");
+  const [destination, setDestination] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const amt = parseFloat(amount.replace(",", "."));
+    if (!isFinite(amt) || amt <= 0) { toast.error("Zadej částku"); return; }
+    setSaving(true);
+    const { error } = await supabase.from("rides").insert({
+      driver_id: userId,
+      order_id: null,
+      amount: amt,
+      payment_method: method,
+      pickup_address: pickup || null,
+      destination: destination || null,
+    });
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("▸ JÍZDA PŘIDÁNA");
+    setAmount(""); setPickup(""); setDestination(""); setShowAdd(false);
+    await onAdded();
+  };
+
   return (
     <div className="fixed inset-0 bg-black z-[1800] flex flex-col">
-      <div className="border-b border-primary/40 p-3 flex items-center justify-between">
+      <div className="border-b border-primary/40 p-3 flex items-center justify-between gap-2">
         <h2 className="font-display text-primary glow-text">▸ MOJE JÍZDY ({totals.count})</h2>
-        <button onClick={onClose} className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1">
-          <X className="w-3 h-3" /> ZAVŘÍT
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setShowAdd((v) => !v)}
+            className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1">
+            {showAdd ? <X className="w-3 h-3" /> : <Wallet className="w-3 h-3" />}
+            {showAdd ? "ZRUŠIT" : "PŘIDAT JÍZDU"}
+          </button>
+          <button onClick={onClose} className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1">
+            <X className="w-3 h-3" /> ZAVŘÍT
+          </button>
+        </div>
       </div>
+
+      {showAdd && (
+        <form onSubmit={submit} className="border-b border-primary/40 p-3 space-y-2 bg-primary/5">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <div className="text-[10px] text-muted-foreground mb-1">ČÁSTKA (Kč) *</div>
+              <input type="number" inputMode="decimal" step="1" min="1" value={amount}
+                onChange={(e) => setAmount(e.target.value)} required
+                className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
+            </div>
+            <div>
+              <div className="text-[10px] text-muted-foreground mb-1">ZPŮSOB ÚHRADY</div>
+              <div className="grid grid-cols-2 gap-1">
+                <button type="button" onClick={() => setMethod("cash")}
+                  className={`border py-1.5 text-xs flex items-center justify-center gap-1 ${
+                    method === "cash" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
+                  }`}>
+                  <Banknote className="w-3 h-3" /> HOTOVĚ
+                </button>
+                <button type="button" onClick={() => setMethod("card")}
+                  className={`border py-1.5 text-xs flex items-center justify-center gap-1 ${
+                    method === "card" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
+                  }`}>
+                  <CreditCard className="w-3 h-3" /> KARTOU
+                </button>
+              </div>
+            </div>
+          </div>
+          <input placeholder="Odkud (volitelné)" value={pickup} onChange={(e) => setPickup(e.target.value)}
+            className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
+          <input placeholder="Kam (volitelné)" value={destination} onChange={(e) => setDestination(e.target.value)}
+            className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
+          <button disabled={saving} className="w-full border border-primary text-primary py-2 text-sm hover:bg-primary hover:text-primary-foreground disabled:opacity-50">
+            {saving ? "▸ UKLÁDÁM..." : "▸ ULOŽIT JÍZDU"}
+          </button>
+        </form>
+      )}
+
       <div className="p-3 grid grid-cols-3 gap-2 border-b border-primary/40">
         <div className="border border-primary/60 p-2">
           <div className="text-[10px] text-muted-foreground">HOTOVĚ</div>

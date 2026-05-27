@@ -1,0 +1,1 @@
+ALTER TABLE public.rides ALTER COLUMN order_id DROP NOT NULL;
