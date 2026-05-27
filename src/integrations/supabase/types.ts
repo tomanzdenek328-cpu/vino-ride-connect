@@ -150,7 +150,7 @@ export type Database = {
           destination: string | null
           driver_id: string
           id: string
-          order_id: string
+          order_id: string | null
           payment_method: string
           pickup_address: string | null
         }
@@ -161,7 +161,7 @@ export type Database = {
           destination?: string | null
           driver_id: string
           id?: string
-          order_id: string
+          order_id?: string | null
           payment_method: string
           pickup_address?: string | null
         }
@@ -172,7 +172,7 @@ export type Database = {
           destination?: string | null
           driver_id?: string
           id?: string
-          order_id?: string
+          order_id?: string | null
           payment_method?: string
           pickup_address?: string | null
         }
