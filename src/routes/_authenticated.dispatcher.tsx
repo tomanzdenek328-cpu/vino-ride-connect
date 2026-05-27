@@ -392,6 +392,19 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
           </div>
         </div>
 
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">TELEFON ZÁKAZNÍKA *</div>
+          <input
+            type="tel"
+            inputMode="tel"
+            required
+            value={customerPhone}
+            onChange={(e) => setCustomerPhone(e.target.value)}
+            placeholder="+420 ..."
+            className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm"
+          />
+        </div>
+
         <In label="POZNÁMKA (nepovinné)" value={notes} onChange={setNotes} />
 
         <button disabled={submitting} className="w-full border border-primary text-primary py-2 hover:bg-primary hover:text-primary-foreground disabled:opacity-50">
