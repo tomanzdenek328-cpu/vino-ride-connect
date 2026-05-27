@@ -25,6 +25,15 @@ interface Order {
   customer_phone: string | null;
   status: string;
   assigned_driver_id: string | null;
+  released: boolean;
+  created_at: string;
+}
+
+// Sort by scheduled time ascending (earliest first); fall back to created_at.
+function sortByTimeAsc(a: Order, b: Order): number {
+  const ta = a.scheduled_time ? new Date(a.scheduled_time).getTime() : new Date(a.created_at).getTime();
+  const tb = b.scheduled_time ? new Date(b.scheduled_time).getTime() : new Date(b.created_at).getTime();
+  return ta - tb;
 }
 
 interface Ride {
