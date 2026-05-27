@@ -350,11 +350,12 @@ function DriverPage() {
   if (loading) return null;
   if (role && role !== "driver") return <Navigate to="/dispatcher" />;
 
+  const isMine = (o: Order) => o.assigned_driver_id === user?.id || (Array.isArray(o.assigned_driver_ids) && !!user && o.assigned_driver_ids.includes(user.id));
   const myOrders = orders
-    .filter((o) => o.assigned_driver_id === user?.id && o.status !== "completed" && o.status !== "cancelled")
+    .filter((o) => isMine(o) && o.status !== "completed" && o.status !== "cancelled")
     .sort(sortByTimeAsc);
   const pending = orders
-    .filter((o) => o.status === "pending" && !o.assigned_driver_id)
+    .filter((o) => o.status === "pending" && !o.assigned_driver_id && !isMine(o))
     .sort(sortByTimeAsc);
 
   return (
