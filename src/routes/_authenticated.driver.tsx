@@ -129,15 +129,15 @@ function DriverPage() {
     const load = async () => {
       const { data } = await supabase.from("orders")
         .select("*")
-        .or(`assigned_driver_id.eq.${user.id},status.eq.pending`)
-        .order("created_at", { ascending: false });
+        .or(`assigned_driver_id.eq.${user.id},status.eq.pending`);
       setOrders((data ?? []) as Order[]);
     };
     load();
     const ch = supabase.channel("driver_orders_rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
         const row: any = payload.new;
-        if (payload.eventType === "INSERT" && row?.status === "pending") {
+        // Pingni jen u zakázek, které jsou už uvolněné a může je řidič přijmout.
+        if (payload.eventType === "INSERT" && row?.status === "pending" && row?.released !== false) {
           playClink();
           toast.success("▸ NOVÁ ZAKÁZKA", {
             description: row.pickup_address ?? "Nová jízda čeká",
