@@ -29,8 +29,11 @@ interface Order {
   customer_phone: string | null;
   status: string;
   assigned_driver_id: string | null;
+  assigned_driver_ids: string[] | null;
+  vehicle_type: string | null;
   created_at: string;
 }
+
 
 interface Driver {
   id: string;
