@@ -120,12 +120,18 @@ function DispatcherPage() {
   if (loading) return null;
   if (role && role !== "dispatcher") return <Navigate to="/driver" />;
 
-  const assignDriver = async (orderId: string, driverId: string) => {
+  const assignDrivers = async (orderId: string, driverIds: string[]) => {
+    const clean = Array.from(new Set(driverIds.filter(Boolean))).slice(0, 4);
     const { error } = await supabase.from("orders")
-      .update({ assigned_driver_id: driverId, status: "assigned" })
+      .update({
+        assigned_driver_id: clean[0] ?? null,
+        assigned_driver_ids: clean,
+        status: clean.length ? "assigned" : "pending",
+      })
       .eq("id", orderId);
     if (error) toast.error(error.message); else toast.success("▸ PŘIŘAZENO");
   };
+
 
   const cancelOrder = async (orderId: string) => {
     await supabase.from("orders").update({ status: "cancelled" }).eq("id", orderId);
