@@ -213,11 +213,18 @@ function DriverPage() {
     if (!online) {
       stopWatch();
       releaseWakeLock();
+      stopBackgroundGeolocation();
       return;
     }
 
     startWatch();
     requestWakeLock();
+    // Nativní APK (Capacitor): spustit sledování polohy na pozadí.
+    if (isNative()) {
+      startBackgroundGeolocation(user.id);
+      initPushNotifications();
+    }
+
 
     // When the tab/screen returns from background, re-acquire wake lock
     // and restart the geolocation watcher (browsers often pause it when hidden).
