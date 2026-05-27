@@ -125,11 +125,11 @@ function DispatcherPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-primary/40 px-3 pt-3 pb-2">
-        <div className="flex justify-center px-1">
+        <div className="flex justify-center -mx-3">
           <img
             src={logoVinneTaxi}
             alt="VINNÉ TAXI"
-            className="h-32 sm:h-44 w-full object-contain"
+            className="h-36 sm:h-48 w-full object-contain"
           />
         </div>
         <div className="mt-1 flex items-center justify-between gap-2 flex-wrap">
