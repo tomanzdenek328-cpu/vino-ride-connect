@@ -322,6 +322,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
       scheduled_time: when === "later" && scheduledTime ? new Date(scheduledTime).toISOString() : null,
       passengers,
       notes: notes || null,
+      customer_phone: customerPhone || null,
       created_by: userId,
       status: "pending",
     }).select("id").maybeSingle();
