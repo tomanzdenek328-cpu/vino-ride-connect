@@ -361,7 +361,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const [vehicleType, setVehicleType] = useState<"car" | "van">("car");
   const [customerPhone, setCustomerPhone] = useState("");
   const [notes, setNotes] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [priority, setPriority] = useState(false);
   const autoAssignFn = useServerFn(autoAssignOrder);
 
 
