@@ -38,6 +38,7 @@ interface Driver {
   call_sign: string;
   online: boolean;
   busy: boolean;
+  car_type: string;
 }
 
 interface Ride {
