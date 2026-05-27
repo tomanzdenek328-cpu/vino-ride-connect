@@ -1,11 +1,21 @@
 // Native bridge pro Capacitor (Android APK).
 // Na webu je vše no-op, takže se nic nerozbije.
+// Pozn.: Capacitor pluginy načítáme přes runtime require, aby je Vite
+// vůbec nezkoušel resolvnout při buildu webu (jejich main entry je nativní).
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 
 export const isNative = () => Capacitor.isNativePlatform?.() ?? false;
 
 let bgWatcherId: string | null = null;
+
+// Skryjeme specifikátor importu před statickou analýzou Vite/Rollup tím,
+// že ho složíme za běhu. Vite tak modul nezkusí při web buildu resolvnout.
+async function loadNativeModule(name: string): Promise<any> {
+  const spec = name;
+  // @vite-ignore – záměrně dynamický specifikátor, modul existuje jen v APK.
+  return await import(/* @vite-ignore */ spec);
+}
 
 /**
  * Spustí sledování polohy na pozadí (i se zamčeným telefonem).
@@ -14,8 +24,8 @@ let bgWatcherId: string | null = null;
 export async function startBackgroundGeolocation(driverId: string) {
   if (!isNative()) return;
   try {
-    const mod: any = await import(
-      "@capacitor-community/background-geolocation"
+    const mod: any = await loadNativeModule(
+      "@capacitor-community/background-geolocation",
     );
     const BackgroundGeolocation = mod.BackgroundGeolocation ?? mod.default;
     if (bgWatcherId) {
@@ -46,7 +56,6 @@ export async function startBackgroundGeolocation(driverId: string) {
         });
       },
     );
-
   } catch (e) {
     console.warn("Background geolocation start failed", e);
   }
@@ -55,12 +64,11 @@ export async function startBackgroundGeolocation(driverId: string) {
 export async function stopBackgroundGeolocation() {
   if (!isNative() || !bgWatcherId) return;
   try {
-    const mod: any = await import(
-      "@capacitor-community/background-geolocation"
+    const mod: any = await loadNativeModule(
+      "@capacitor-community/background-geolocation",
     );
     const BackgroundGeolocation = mod.BackgroundGeolocation ?? mod.default;
     await BackgroundGeolocation.removeWatcher({ id: bgWatcherId });
-
   } catch (e) {
     console.warn("Background geolocation stop failed", e);
   } finally {
@@ -77,18 +85,19 @@ export async function stopBackgroundGeolocation() {
 export async function initPushNotifications() {
   if (!isNative()) return;
   try {
-    const { PushNotifications } = await import("@capacitor/push-notifications");
+    const mod: any = await loadNativeModule("@capacitor/push-notifications");
+    const PushNotifications = mod.PushNotifications ?? mod.default;
     const perm = await PushNotifications.requestPermissions();
     if (perm.receive !== "granted") return;
     await PushNotifications.register();
 
-    PushNotifications.addListener("registration", (token) => {
+    PushNotifications.addListener("registration", (token: any) => {
       console.log("[push] token:", token.value);
     });
-    PushNotifications.addListener("registrationError", (err) => {
+    PushNotifications.addListener("registrationError", (err: any) => {
       console.warn("[push] registration error", err);
     });
-    PushNotifications.addListener("pushNotificationReceived", (n) => {
+    PushNotifications.addListener("pushNotificationReceived", (n: any) => {
       console.log("[push] received", n);
     });
   } catch (e) {
