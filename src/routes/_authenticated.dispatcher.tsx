@@ -26,6 +26,7 @@ interface Order {
   scheduled_time: string | null;
   passengers: number;
   notes: string | null;
+  customer_phone: string | null;
   status: string;
   assigned_driver_id: string | null;
   created_at: string;
@@ -303,6 +304,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const [when, setWhen] = useState<"now" | "later">("now");
   const [scheduledTime, setScheduledTime] = useState("");
   const [passengers, setPassengers] = useState(1);
+  const [customerPhone, setCustomerPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const autoAssignFn = useServerFn(autoAssignOrder);
@@ -320,6 +322,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
       scheduled_time: when === "later" && scheduledTime ? new Date(scheduledTime).toISOString() : null,
       passengers,
       notes: notes || null,
+      customer_phone: customerPhone || null,
       created_by: userId,
       status: "pending",
     }).select("id").maybeSingle();
@@ -387,6 +390,19 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
               </button>
             ))}
           </div>
+        </div>
+
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">TELEFON ZÁKAZNÍKA *</div>
+          <input
+            type="tel"
+            inputMode="tel"
+            required
+            value={customerPhone}
+            onChange={(e) => setCustomerPhone(e.target.value)}
+            placeholder="+420 ..."
+            className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm"
+          />
         </div>
 
         <In label="POZNÁMKA (nepovinné)" value={notes} onChange={setNotes} />
@@ -689,6 +705,12 @@ function ArchiveOrderDetailModal({ order, onClose }: { order: Order; onClose: ()
               <div className="text-destructive text-xs">Zakázka byla zrušena — bez jízdy.</div>
             ) : (
               <div className="text-muted-foreground text-xs">Jízda nebyla zaznamenána.</div>
+            )}
+            {order.customer_phone && (
+              <div>
+                <div className="text-[10px] text-muted-foreground">TELEFON ZÁKAZNÍKA</div>
+                <a href={`tel:${order.customer_phone}`} className="text-primary underline">{order.customer_phone}</a>
+              </div>
             )}
             {order.notes && (
               <div>
