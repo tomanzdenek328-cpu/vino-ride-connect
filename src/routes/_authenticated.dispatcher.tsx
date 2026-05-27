@@ -132,7 +132,7 @@ function DispatcherPage() {
             className="h-36 sm:h-48 w-full object-contain"
           />
         </div>
-        <div className="mt-1 flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="min-w-0">
             <h1 className="text-xl text-primary glow-text font-display truncate">▸ DISPEČINK · {callSign}</h1>
             <div className="text-[10px] text-muted-foreground">VINNÉ TAXI · {drivers.filter(d => d.online).length}/{drivers.length} ONLINE</div>

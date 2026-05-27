@@ -348,11 +348,11 @@ function DriverPage() {
             className="h-36 sm:h-48 w-full object-contain"
           />
         </div>
-        <div className="mt-0.5 text-center">
+        <div className="text-center">
           <div className="text-xl text-primary glow-text font-display">▸ {callSign}</div>
-          <div className="text-[10px] text-muted-foreground">VINNÉ TAXI · ŘIDIČ</div>
+          <div className="text-[10px] text-muted-foreground">ŘIDIČ</div>
         </div>
-        <div className="mt-1.5 flex items-center justify-center gap-2 flex-wrap">
+        <div className="mt-0.5 flex items-center justify-center gap-2 flex-wrap">
           <button onClick={toggleOnline}
             className={`border px-4 py-2 text-sm font-bold flex items-center gap-2 ${
               online ? "border-primary bg-primary text-primary-foreground glow" : "border-muted-foreground text-muted-foreground"
