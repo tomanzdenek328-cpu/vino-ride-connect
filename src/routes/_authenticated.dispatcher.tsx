@@ -151,6 +151,11 @@ function DispatcherPage() {
     if (error) toast.error(error.message); else toast.success("▸ UVOLNĚNO PRO ŘIDIČE");
   };
 
+  const togglePriority = async (orderId: string, next: boolean) => {
+    const { error } = await supabase.from("orders").update({ priority: next }).eq("id", orderId);
+    if (error) toast.error(error.message); else toast.success(next ? "▸ OZNAČENO JAKO URGENTNÍ" : "▸ PRIORITA ZRUŠENA");
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-primary/40 px-3 pt-3 pb-2">
