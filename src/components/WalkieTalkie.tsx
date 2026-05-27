@@ -75,7 +75,9 @@ export function WalkieTalkie({ userId, callSign }: Props) {
   };
 
   const getAudioContext = async () => {
-    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    const AudioCtx =
+      window.AudioContext ??
+      (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return null;
     if (!audioContextRef.current || audioContextRef.current.state === "closed") {
       audioContextRef.current = new AudioCtx();
@@ -156,11 +158,12 @@ export function WalkieTalkie({ userId, callSign }: Props) {
       stream.getAudioTracks().forEach((track) => (track.enabled = false));
       streamRef.current = stream;
       await getAudioContext();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("[radio] mic error", e);
-      const msg = e?.name === "NotAllowedError"
-        ? "Mikrofon je zakázaný. Povolte přístup v nastavení prohlížeče."
-        : "Mikrofon není k dispozici.";
+      const msg =
+        e instanceof DOMException && e.name === "NotAllowedError"
+          ? "Mikrofon je zakázaný. Povolte přístup v nastavení prohlížeče."
+          : "Mikrofon není k dispozici.";
       setError(msg);
       toast.error(msg);
       stopLocalTracks();
@@ -228,7 +231,7 @@ export function WalkieTalkie({ userId, callSign }: Props) {
   const deactivate = () => {
     if (stopTimerRef.current) window.clearTimeout(stopTimerRef.current);
     stopTimerRef.current = null;
-    recorderRef.current?.state === "recording" && recorderRef.current.stop();
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
     recorderRef.current = null;
     recordedChunksRef.current = [];
 
