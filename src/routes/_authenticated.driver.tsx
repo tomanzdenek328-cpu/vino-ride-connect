@@ -79,6 +79,8 @@ function DriverPage() {
   const [showMap, setShowMap] = useState(false);
   const [showRides, setShowRides] = useState(false);
   const [completing, setCompleting] = useState<Order | null>(null);
+  const [vehicles, setVehicles] = useState<{ id: string; plate: string; car_type: string }[]>([]);
+  const [vehicleId, setVehicleId] = useState<string | null>(null);
   const watchIdRef = useRef<number | null>(null);
   const lastSentRef = useRef<number>(0);
   const wakeLockRef = useRef<any>(null);
