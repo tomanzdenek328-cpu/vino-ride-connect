@@ -221,10 +221,12 @@ function DispatcherPage() {
           </div>
           <div className="flex-1 overflow-y-auto">
             {(() => {
-              const active = orders.filter(o => o.status !== "completed" && o.status !== "cancelled");
+              const active = orders
+                .filter(o => o.status !== "completed" && o.status !== "cancelled")
+                .sort(sortByTimeAsc);
               if (!active.length) return <div className="p-6 text-center text-muted-foreground text-xs">Žádné aktivní zakázky.</div>;
               return active.map((o) => (
-              <div key={o.id} className="border-b border-primary/20 p-3 text-sm">
+              <div key={o.id} className={`border-b p-3 text-sm ${!o.released ? "border-amber-warn/40 bg-amber-warn/5" : "border-primary/20"}`}>
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="text-primary font-bold truncate">▸ {o.pickup_address}</div>
@@ -236,11 +238,24 @@ function DispatcherPage() {
                     </div>
                     {o.notes && <div className="text-xs text-amber-warn truncate">⚠ {o.notes}</div>}
                   </div>
-                  <span className={`text-[10px] px-1.5 py-0.5 border ${
-                    o.status === "pending" ? "border-amber-warn text-amber-warn" :
-                    "border-primary text-primary"
-                  }`}>{STATUS_LABEL[o.status]}</span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`text-[10px] px-1.5 py-0.5 border ${
+                      o.status === "pending" ? "border-amber-warn text-amber-warn" :
+                      "border-primary text-primary"
+                    }`}>{STATUS_LABEL[o.status]}</span>
+                    {!o.released && (
+                      <span className="text-[10px] px-1.5 py-0.5 border border-amber-warn text-amber-warn">🔒 NEUVOLNĚNO</span>
+                    )}
+                  </div>
                 </div>
+                {!o.released && (
+                  <button
+                    onClick={() => releaseOrder(o.id)}
+                    className="mt-2 w-full border border-amber-warn text-amber-warn py-2 text-xs font-bold hover:bg-amber-warn hover:text-black"
+                  >
+                    🔓 UVOLNIT ZAKÁZKU PRO ŘIDIČE
+                  </button>
+                )}
                 <MultiDriverPicker
                   drivers={drivers}
                   value={(o.assigned_driver_ids && o.assigned_driver_ids.length ? o.assigned_driver_ids : (o.assigned_driver_id ? [o.assigned_driver_id] : []))}
