@@ -702,3 +702,111 @@ function ArchiveOrderDetailModal({ order, onClose }: { order: Order; onClose: ()
     </div>
   );
 }
+
+interface Vehicle {
+  id: string;
+  plate: string;
+  car_type: string;
+  notes: string | null;
+  active: boolean;
+}
+
+function VehiclesModal({ onClose }: { onClose: () => void }) {
+  const [list, setList] = useState<Vehicle[]>([]);
+  const [plate, setPlate] = useState("");
+  const [carType, setCarType] = useState("");
+  const [busy, setBusy] = useState(false);
+  const createFn = useServerFn(createVehicle);
+  const updateFn = useServerFn(updateVehicle);
+  const deleteFn = useServerFn(deleteVehicle);
+
+  const load = async () => {
+    const { data } = await supabase.from("vehicles").select("*").order("plate");
+    setList((data ?? []) as Vehicle[]);
+  };
+  useEffect(() => { load(); }, []);
+
+  const add = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!plate.trim()) return;
+    setBusy(true);
+    try {
+      await createFn({ data: { plate, car_type: carType, notes: null } });
+      setPlate(""); setCarType("");
+      await load();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Chyba");
+    } finally { setBusy(false); }
+  };
+
+  const toggleActive = async (v: Vehicle) => {
+    try { await updateFn({ data: { id: v.id, active: !v.active } }); await load(); }
+    catch (err: any) { toast.error(err?.message ?? "Chyba"); }
+  };
+  const remove = async (v: Vehicle) => {
+    if (!confirm(`Smazat auto ${v.plate}?`)) return;
+    try { await deleteFn({ data: { id: v.id } }); await load(); }
+    catch (err: any) { toast.error(err?.message ?? "Chyba"); }
+  };
+  const editType = async (v: Vehicle) => {
+    const newType = prompt("Typ auta:", v.car_type);
+    if (newType == null) return;
+    try { await updateFn({ data: { id: v.id, car_type: newType } }); await load(); }
+    catch (err: any) { toast.error(err?.message ?? "Chyba"); }
+  };
+  const editPlate = async (v: Vehicle) => {
+    const newPlate = prompt("SPZ:", v.plate);
+    if (!newPlate) return;
+    try { await updateFn({ data: { id: v.id, plate: newPlate } }); await load(); }
+    catch (err: any) { toast.error(err?.message ?? "Chyba"); }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/90 z-[2000] flex items-center justify-center p-4">
+      <div className="bg-black border border-primary glow p-5 max-w-lg w-full max-h-[85vh] overflow-y-auto space-y-3">
+        <div className="flex justify-between items-center">
+          <h3 className="text-primary font-display text-lg">▸ SEZNAM AUT ({list.length})</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-primary"><X className="w-5 h-5" /></button>
+        </div>
+        <form onSubmit={add} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end border border-primary/30 p-2">
+          <div>
+            <div className="text-[10px] text-muted-foreground mb-1">SPZ *</div>
+            <input value={plate} onChange={(e) => setPlate(e.target.value)} required
+              className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm uppercase" />
+          </div>
+          <div>
+            <div className="text-[10px] text-muted-foreground mb-1">TYP AUTA</div>
+            <input value={carType} onChange={(e) => setCarType(e.target.value)} placeholder="Octavia, Transit…"
+              className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
+          </div>
+          <button disabled={busy} type="submit"
+            className="border border-primary bg-primary text-primary-foreground px-3 py-1.5 text-xs hover:opacity-90 disabled:opacity-40 flex items-center gap-1">
+            <Plus className="w-3 h-3" /> PŘIDAT
+          </button>
+        </form>
+        <div className="divide-y divide-primary/20">
+          {list.length === 0 && <div className="text-xs text-muted-foreground py-4 text-center">Žádná auta.</div>}
+          {list.map((v) => (
+            <div key={v.id} className="flex items-center gap-2 py-2 text-sm">
+              <div className="flex-1 min-w-0">
+                <button onClick={() => editPlate(v)} className={`font-bold ${v.active ? "text-primary" : "text-muted-foreground line-through"}`}>
+                  {v.plate}
+                </button>
+                <button onClick={() => editType(v)} className="ml-2 text-xs text-muted-foreground hover:text-primary">
+                  {v.car_type || "— typ —"}
+                </button>
+              </div>
+              <button onClick={() => toggleActive(v)}
+                className={`text-[10px] px-2 py-1 border ${v.active ? "border-primary text-primary" : "border-muted-foreground text-muted-foreground"}`}>
+                {v.active ? "AKTIVNÍ" : "VYŘAZENO"}
+              </button>
+              <button onClick={() => remove(v)} className="text-amber-warn hover:text-red-500 p-1" aria-label="Smazat">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
