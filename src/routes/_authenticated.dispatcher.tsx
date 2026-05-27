@@ -185,7 +185,7 @@ function DispatcherPage() {
                       "border-muted-foreground/40 text-muted-foreground"
                     }`}
                   >
-                    {d.online ? (d.busy ? "◐" : "●") : "○"} {d.call_sign} · {d.full_name}
+                    {d.online ? (d.busy ? "◐" : "●") : "○"} {d.call_sign} · {d.car_type || d.full_name}
                   </button>
                 ))}
               </div>
