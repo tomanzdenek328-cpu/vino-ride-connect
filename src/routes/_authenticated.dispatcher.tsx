@@ -124,7 +124,7 @@ function DispatcherPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-primary/40 px-3 pt-3 pb-3">
+      <header className="border-b border-primary/40 px-3 pt-3 pb-2">
         <div className="flex justify-center px-1">
           <img
             src={logoVinneTaxi}
@@ -132,7 +132,7 @@ function DispatcherPage() {
             className="h-32 sm:h-44 w-full object-contain"
           />
         </div>
-        <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
+        <div className="mt-1 flex items-center justify-between gap-2 flex-wrap">
           <div className="min-w-0">
             <h1 className="text-xl text-primary glow-text font-display truncate">▸ DISPEČINK · {callSign}</h1>
             <div className="text-[10px] text-muted-foreground">VINNÉ TAXI · {drivers.filter(d => d.online).length}/{drivers.length} ONLINE</div>

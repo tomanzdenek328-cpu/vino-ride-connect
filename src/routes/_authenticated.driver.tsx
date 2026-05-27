@@ -333,7 +333,7 @@ function DriverPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-primary/40 px-3 pt-3 pb-4 relative">
+      <header className="border-b border-primary/40 px-3 pt-3 pb-2 relative">
         <button
           onClick={() => supabase.auth.signOut()}
           className="absolute top-2 right-2 border border-primary/40 px-2 py-1.5 text-xs hover:border-primary"
@@ -348,11 +348,11 @@ function DriverPage() {
             className="h-32 sm:h-44 w-full object-contain"
           />
         </div>
-        <div className="mt-2 text-center">
+        <div className="mt-0.5 text-center">
           <div className="text-xl text-primary glow-text font-display">▸ {callSign}</div>
           <div className="text-[10px] text-muted-foreground">VINNÉ TAXI · ŘIDIČ</div>
         </div>
-        <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
+        <div className="mt-1.5 flex items-center justify-center gap-2 flex-wrap">
           <button onClick={toggleOnline}
             className={`border px-4 py-2 text-sm font-bold flex items-center gap-2 ${
               online ? "border-primary bg-primary text-primary-foreground glow" : "border-muted-foreground text-muted-foreground"
@@ -370,7 +370,7 @@ function DriverPage() {
             <MapIcon className="w-4 h-4" /> MAPA
           </button>
         </div>
-        <div className="mt-2 flex justify-center items-center gap-2 flex-wrap">
+        <div className="mt-1 flex justify-center items-center gap-2 flex-wrap">
           <button onClick={() => setShowRides(true)}
             className="border border-primary/60 px-5 py-2 text-sm font-bold flex items-center gap-2 hover:border-primary hover:bg-primary/10">
             <Wallet className="w-4 h-4" /> MOJE JÍZDY · {totals.total.toFixed(0)} Kč
