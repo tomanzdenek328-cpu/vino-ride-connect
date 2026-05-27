@@ -89,8 +89,10 @@ function DriverPage() {
     if (!user) return;
     supabase.from("profiles").select("call_sign").eq("id", user.id).maybeSingle()
       .then(({ data }) => { if (data?.call_sign) setCallSign(data.call_sign); });
-    supabase.from("driver_locations").select("online,busy").eq("driver_id", user.id).maybeSingle()
-      .then(({ data }) => { setOnline(!!data?.online); setBusy(!!data?.busy); });
+    supabase.from("driver_locations").select("online,busy,vehicle_id").eq("driver_id", user.id).maybeSingle()
+      .then(({ data }) => { setOnline(!!data?.online); setBusy(!!data?.busy); setVehicleId((data as any)?.vehicle_id ?? null); });
+    supabase.from("vehicles").select("id,plate,car_type").eq("active", true).order("plate")
+      .then(({ data }) => setVehicles((data ?? []) as any));
     // Vyžádej povolení desktop notifikací
     try {
       if ("Notification" in window && Notification.permission === "default") {
@@ -98,6 +100,17 @@ function DriverPage() {
       }
     } catch {}
   }, [user]);
+
+  const selectVehicle = async (id: string | null) => {
+    if (!user) return;
+    setVehicleId(id);
+    const { error } = await supabase.from("driver_locations").update({ vehicle_id: id }).eq("driver_id", user.id);
+    if (error) toast.error(error.message);
+    else {
+      const v = vehicles.find((x) => x.id === id);
+      toast.success(id && v ? `▸ AUTO: ${v.plate}` : "▸ Auto zrušeno");
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
