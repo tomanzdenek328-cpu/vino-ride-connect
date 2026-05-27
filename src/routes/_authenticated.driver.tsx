@@ -419,6 +419,14 @@ function DriverPage() {
                 </div>
                 {o.notes && <div className="text-xs text-amber-warn mt-1">⚠ {o.notes}</div>}
                 <div className="text-[10px] mt-1">STAV: {STATUS_LABEL[o.status]}</div>
+                {o.customer_phone && (
+                  <a
+                    href={`tel:${o.customer_phone}`}
+                    className="mt-2 w-full border border-primary text-primary py-2 text-sm flex items-center justify-center gap-2 hover:bg-primary hover:text-primary-foreground"
+                  >
+                    📞 ZAVOLAT ZÁKAZNÍKOVI · {o.customer_phone}
+                  </a>
+                )}
                 <div className="mt-2 flex gap-2 flex-wrap">
                   {o.status === "assigned" && (
                     <button onClick={() => setOrderStatus(o.id, "accepted")} className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground">▸ PŘIJMOUT</button>
