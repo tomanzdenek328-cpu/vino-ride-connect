@@ -487,7 +487,57 @@ function NewDriverModal({ onClose, onCreated }: { onClose: () => void; onCreated
   );
 }
 
+function MultiDriverPicker({ drivers, value, onChange, onCancel }: {
+  drivers: Driver[];
+  value: string[];
+  onChange: (ids: string[]) => void;
+  onCancel: () => void;
+}) {
+  const slots = [0, 1, 2, 3];
+  const setAt = (idx: number, id: string) => {
+    const next = [...value];
+    if (id) next[idx] = id; else next.splice(idx, 1);
+    onChange(next.filter(Boolean));
+  };
+  return (
+    <div className="mt-2 space-y-1">
+      {slots.map((i) => {
+        const current = value[i] ?? "";
+        if (i > 0 && !value[i - 1]) return null;
+        return (
+          <div key={i} className="flex gap-2 items-center">
+            <span className="text-[10px] text-muted-foreground w-8">#{i + 1}</span>
+            <select
+              value={current}
+              onChange={(e) => setAt(i, e.target.value)}
+              className="flex-1 bg-input border border-primary/40 text-xs px-2 py-1 text-primary"
+            >
+              <option value="">— {i === 0 ? "vyber řidiče" : "další auto (volitelné)"} —</option>
+              {drivers
+                .filter((d) => !value.includes(d.id) || d.id === current)
+                .map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.call_sign} · {d.car_type || d.full_name} {d.online ? "●" : "○"}
+                  </option>
+                ))}
+            </select>
+            {i === 0 && (
+              <button onClick={onCancel} className="text-destructive hover:text-red-400 p-1" title="Zrušit zakázku">
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        );
+      })}
+      {value.length > 0 && (
+        <div className="text-[10px] text-primary/70">▸ Přiřazeno {value.length} / 4 aut</div>
+      )}
+    </div>
+  );
+}
+
 function In({ label, value, onChange, required }: { label: string; value: string; onChange: (v: string) => void; required?: boolean }) {
+
   return (
     <label className="block">
       <div className="text-[10px] text-muted-foreground mb-1">{label}</div>
