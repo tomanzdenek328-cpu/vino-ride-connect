@@ -706,6 +706,12 @@ function ArchiveOrderDetailModal({ order, onClose }: { order: Order; onClose: ()
             ) : (
               <div className="text-muted-foreground text-xs">Jízda nebyla zaznamenána.</div>
             )}
+            {order.customer_phone && (
+              <div>
+                <div className="text-[10px] text-muted-foreground">TELEFON ZÁKAZNÍKA</div>
+                <a href={`tel:${order.customer_phone}`} className="text-primary underline">{order.customer_phone}</a>
+              </div>
+            )}
             {order.notes && (
               <div>
                 <div className="text-[10px] text-muted-foreground">POZNÁMKA</div>
