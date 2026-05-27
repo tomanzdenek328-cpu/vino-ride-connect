@@ -38,6 +38,7 @@ interface Driver {
   call_sign: string;
   online: boolean;
   busy: boolean;
+  car_type: string;
 }
 
 interface Ride {
@@ -82,16 +83,20 @@ function DispatcherPage() {
     const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "driver");
     const ids = (roles ?? []).map((r: any) => r.user_id);
     if (!ids.length) { setDrivers([]); return; }
-    const [{ data: profs }, { data: locs }] = await Promise.all([
+    const [{ data: profs }, { data: locs }, { data: vehs }] = await Promise.all([
       supabase.from("profiles").select("id,full_name,call_sign").in("id", ids),
-      supabase.from("driver_locations").select("driver_id,online,busy").in("driver_id", ids),
+      supabase.from("driver_locations").select("driver_id,online,busy,vehicle_id").in("driver_id", ids),
+      supabase.from("vehicles").select("id,car_type,plate"),
     ]);
-    const locMap: Record<string, { online: boolean; busy: boolean }> = {};
-    (locs ?? []).forEach((l: any) => { locMap[l.driver_id] = { online: l.online, busy: !!l.busy }; });
+    const vehMap: Record<string, string> = {};
+    (vehs ?? []).forEach((v: any) => { vehMap[v.id] = v.car_type || v.plate || ""; });
+    const locMap: Record<string, { online: boolean; busy: boolean; vehicle_id: string | null }> = {};
+    (locs ?? []).forEach((l: any) => { locMap[l.driver_id] = { online: l.online, busy: !!l.busy, vehicle_id: l.vehicle_id }; });
     setDrivers((profs ?? []).map((p: any) => ({
       id: p.id, full_name: p.full_name, call_sign: p.call_sign,
       online: !!locMap[p.id]?.online,
       busy: !!locMap[p.id]?.busy,
+      car_type: (locMap[p.id]?.vehicle_id && vehMap[locMap[p.id]!.vehicle_id!]) || "",
     })));
   };
 
@@ -180,7 +185,7 @@ function DispatcherPage() {
                       "border-muted-foreground/40 text-muted-foreground"
                     }`}
                   >
-                    {d.online ? (d.busy ? "◐" : "●") : "○"} {d.call_sign} · {d.full_name}
+                    {d.online ? (d.busy ? "◐" : "●") : "○"} {d.call_sign} · {d.car_type || d.full_name}
                   </button>
                 ))}
               </div>
@@ -222,7 +227,7 @@ function DispatcherPage() {
                     <option value="">— vyber řidiče —</option>
                     {drivers.map((d) => (
                       <option key={d.id} value={d.id}>
-                        {d.call_sign} · {d.full_name} {d.online ? "●" : "○"}
+                        {d.call_sign} · {d.car_type || d.full_name} {d.online ? "●" : "○"}
                       </option>
                     ))}
                   </select>
