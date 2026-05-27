@@ -232,7 +232,7 @@ function DispatcherPage() {
                 .sort(sortByTimeAsc);
               if (!active.length) return <div className="p-6 text-center text-muted-foreground text-xs">Žádné aktivní zakázky.</div>;
               return active.map((o) => (
-              <div key={o.id} className={`border-b p-3 text-sm ${!o.released ? "border-amber-warn/40 bg-amber-warn/5" : "border-primary/20"}`}>
+              <div key={o.id} className={`border-b p-3 text-sm ${o.priority ? "urgent-flash bg-destructive/5" : !o.released ? "border-amber-warn/40 bg-amber-warn/5" : "border-primary/20"}`}>
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="text-primary font-bold truncate">▸ {o.pickup_address}</div>
@@ -245,6 +245,9 @@ function DispatcherPage() {
                     {o.notes && <div className="text-xs text-amber-warn truncate">⚠ {o.notes}</div>}
                   </div>
                   <div className="flex flex-col items-end gap-1">
+                    {o.priority && (
+                      <span className="text-[10px] px-1.5 py-0.5 border border-destructive text-destructive font-bold blink">🚨 URGENT</span>
+                    )}
                     <span className={`text-[10px] px-1.5 py-0.5 border ${
                       o.status === "pending" ? "border-amber-warn text-amber-warn" :
                       "border-primary text-primary"
@@ -254,14 +257,26 @@ function DispatcherPage() {
                     )}
                   </div>
                 </div>
-                {!o.released && (
+                <div className="mt-2 flex gap-2">
                   <button
-                    onClick={() => releaseOrder(o.id)}
-                    className="mt-2 w-full border border-amber-warn text-amber-warn py-2 text-xs font-bold hover:bg-amber-warn hover:text-black"
+                    onClick={() => togglePriority(o.id, !o.priority)}
+                    className={`flex-1 border py-1.5 text-[11px] font-bold ${
+                      o.priority
+                        ? "border-muted-foreground text-muted-foreground hover:bg-muted/20"
+                        : "border-destructive text-destructive hover:bg-destructive hover:text-white"
+                    }`}
                   >
-                    🔓 UVOLNIT ZAKÁZKU PRO ŘIDIČE
+                    {o.priority ? "▸ ZRUŠIT URGENT" : "🚨 OZNAČIT JAKO URGENT"}
                   </button>
-                )}
+                  {!o.released && (
+                    <button
+                      onClick={() => releaseOrder(o.id)}
+                      className="flex-1 border border-amber-warn text-amber-warn py-1.5 text-[11px] font-bold hover:bg-amber-warn hover:text-black"
+                    >
+                      🔓 UVOLNIT
+                    </button>
+                  )}
+                </div>
                 <MultiDriverPicker
                   drivers={drivers}
                   value={(o.assigned_driver_ids && o.assigned_driver_ids.length ? o.assigned_driver_ids : (o.assigned_driver_id ? [o.assigned_driver_id] : []))}
