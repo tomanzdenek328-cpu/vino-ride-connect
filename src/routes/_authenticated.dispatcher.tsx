@@ -309,10 +309,12 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const [when, setWhen] = useState<"now" | "later">("now");
   const [scheduledTime, setScheduledTime] = useState("");
   const [passengers, setPassengers] = useState(1);
+  const [vehicleType, setVehicleType] = useState<"car" | "van">("car");
   const [customerPhone, setCustomerPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const autoAssignFn = useServerFn(autoAssignOrder);
+
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
