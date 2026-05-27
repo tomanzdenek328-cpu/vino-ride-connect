@@ -370,11 +370,26 @@ function DriverPage() {
             <MapIcon className="w-4 h-4" /> MAPA
           </button>
         </div>
-        <div className="mt-2 flex justify-center">
+        <div className="mt-2 flex justify-center items-center gap-2 flex-wrap">
           <button onClick={() => setShowRides(true)}
             className="border border-primary/60 px-5 py-2 text-sm font-bold flex items-center gap-2 hover:border-primary hover:bg-primary/10">
             <Wallet className="w-4 h-4" /> MOJE JÍZDY · {totals.total.toFixed(0)} Kč
           </button>
+          <label className="border border-primary/60 px-3 py-2 text-sm font-bold flex items-center gap-2 hover:border-primary hover:bg-primary/10 cursor-pointer">
+            <Car className="w-4 h-4" />
+            <select
+              value={vehicleId ?? ""}
+              onChange={(e) => selectVehicle(e.target.value || null)}
+              className="bg-black text-primary text-sm font-bold border-0 outline-none cursor-pointer"
+            >
+              <option value="">— AUTO —</option>
+              {vehicles.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.plate}{v.car_type ? ` · ${v.car_type}` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
       </header>
 
