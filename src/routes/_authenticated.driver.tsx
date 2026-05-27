@@ -26,6 +26,7 @@ interface Order {
   status: string;
   assigned_driver_id: string | null;
   released: boolean;
+  priority: boolean;
   created_at: string;
 }
 
