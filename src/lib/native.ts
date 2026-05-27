@@ -14,9 +14,10 @@ let bgWatcherId: string | null = null;
 export async function startBackgroundGeolocation(driverId: string) {
   if (!isNative()) return;
   try {
-    const { BackgroundGeolocation } = await import(
+    const mod: any = await import(
       "@capacitor-community/background-geolocation"
     );
+    const BackgroundGeolocation = mod.BackgroundGeolocation ?? mod.default;
     if (bgWatcherId) {
       await BackgroundGeolocation.removeWatcher({ id: bgWatcherId });
       bgWatcherId = null;
@@ -29,7 +30,7 @@ export async function startBackgroundGeolocation(driverId: string) {
         stale: false,
         distanceFilter: 10,
       },
-      async (location, error) => {
+      async (location: any, error: any) => {
         if (error) {
           console.warn("[bg-geo]", error);
           return;
@@ -45,6 +46,7 @@ export async function startBackgroundGeolocation(driverId: string) {
         });
       },
     );
+
   } catch (e) {
     console.warn("Background geolocation start failed", e);
   }
