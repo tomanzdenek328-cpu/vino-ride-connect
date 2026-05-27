@@ -29,8 +29,11 @@ interface Order {
   customer_phone: string | null;
   status: string;
   assigned_driver_id: string | null;
+  assigned_driver_ids: string[] | null;
+  vehicle_type: string | null;
   created_at: string;
 }
+
 
 interface Driver {
   id: string;
@@ -117,12 +120,18 @@ function DispatcherPage() {
   if (loading) return null;
   if (role && role !== "dispatcher") return <Navigate to="/driver" />;
 
-  const assignDriver = async (orderId: string, driverId: string) => {
+  const assignDrivers = async (orderId: string, driverIds: string[]) => {
+    const clean = Array.from(new Set(driverIds.filter(Boolean))).slice(0, 4);
     const { error } = await supabase.from("orders")
-      .update({ assigned_driver_id: driverId, status: "assigned" })
+      .update({
+        assigned_driver_id: clean[0] ?? null,
+        assigned_driver_ids: clean,
+        status: clean.length ? "assigned" : "pending",
+      })
       .eq("id", orderId);
     if (error) toast.error(error.message); else toast.success("▸ PŘIŘAZENO");
   };
+
 
   const cancelOrder = async (orderId: string) => {
     await supabase.from("orders").update({ status: "cancelled" }).eq("id", orderId);
@@ -210,6 +219,7 @@ function DispatcherPage() {
                     <div className="text-sm text-primary mt-1 font-medium">
                       {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                       {" · "}👥 {o.passengers}
+                      {o.vehicle_type ? ` · ${o.vehicle_type === "van" ? "🚐 DODÁVKA" : "🚗 OSOBNÍ"}` : ""}
                     </div>
                     {o.notes && <div className="text-xs text-amber-warn truncate">⚠ {o.notes}</div>}
                   </div>
@@ -218,26 +228,16 @@ function DispatcherPage() {
                     "border-primary text-primary"
                   }`}>{STATUS_LABEL[o.status]}</span>
                 </div>
-                <div className="mt-2 flex gap-2 items-center">
-                  <select
-                    value={o.assigned_driver_id ?? ""}
-                    onChange={(e) => e.target.value && assignDriver(o.id, e.target.value)}
-                    className="flex-1 bg-input border border-primary/40 text-xs px-2 py-1 text-primary"
-                  >
-                    <option value="">— vyber řidiče —</option>
-                    {drivers.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.call_sign} · {d.car_type || d.full_name} {d.online ? "●" : "○"}
-                      </option>
-                    ))}
-                  </select>
-                  <button onClick={() => cancelOrder(o.id)} className="text-destructive hover:text-red-400 p-1" title="Zrušit">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
+                <MultiDriverPicker
+                  drivers={drivers}
+                  value={(o.assigned_driver_ids && o.assigned_driver_ids.length ? o.assigned_driver_ids : (o.assigned_driver_id ? [o.assigned_driver_id] : []))}
+                  onChange={(ids) => assignDrivers(o.id, ids)}
+                  onCancel={() => cancelOrder(o.id)}
+                />
               </div>
               ));
             })()}
+
           </div>
         </div>
       </div>
@@ -309,10 +309,12 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const [when, setWhen] = useState<"now" | "later">("now");
   const [scheduledTime, setScheduledTime] = useState("");
   const [passengers, setPassengers] = useState(1);
+  const [vehicleType, setVehicleType] = useState<"car" | "van">("car");
   const [customerPhone, setCustomerPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const autoAssignFn = useServerFn(autoAssignOrder);
+
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -326,7 +328,9 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
       destination_lng: destCoords.lng ?? null,
       scheduled_time: when === "later" && scheduledTime ? new Date(scheduledTime).toISOString() : null,
       passengers,
+      vehicle_type: vehicleType,
       notes: notes || null,
+
       customer_phone: customerPhone || null,
       created_by: userId,
       status: "pending",
@@ -386,16 +390,34 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
         </div>
 
         <div>
-          <div className="text-[10px] text-muted-foreground mb-1">POČET OSOB</div>
-          <div className="flex gap-2">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-              <button key={n} type="button" onClick={() => setPassengers(n)}
-                className={`flex-1 border py-1.5 text-xs ${passengers === n ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
-                {n}
+          <div className="text-[10px] text-muted-foreground mb-1">TYP AUTA</div>
+          <div className="grid grid-cols-2 gap-2">
+            {([["car", "🚗 OSOBNÍ"], ["van", "🚐 DODÁVKA"]] as const).map(([v, label]) => (
+              <button key={v} type="button" onClick={() => setVehicleType(v)}
+                className={`border py-1.5 text-xs ${vehicleType === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
+                {label}
               </button>
             ))}
           </div>
         </div>
+
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">POČET OSOB ({passengers})</div>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => setPassengers(Math.max(1, passengers - 1))}
+              className="border border-primary/40 text-primary w-10 h-10 text-lg">−</button>
+            <input
+              type="number" min={1} max={30} value={passengers}
+              onChange={(e) => setPassengers(Math.min(30, Math.max(1, parseInt(e.target.value) || 1)))}
+              className="flex-1 bg-input border border-primary/40 px-2 py-2 text-primary text-center text-lg"
+            />
+            <button type="button" onClick={() => setPassengers(Math.min(30, passengers + 1))}
+              className="border border-primary/40 text-primary w-10 h-10 text-lg">+</button>
+          </div>
+          <div className="text-[10px] text-muted-foreground mt-1">Max. 30 osob</div>
+        </div>
+
+
 
         <div>
           <div className="text-[10px] text-muted-foreground mb-1">TELEFON ZÁKAZNÍKA *</div>
@@ -465,7 +487,57 @@ function NewDriverModal({ onClose, onCreated }: { onClose: () => void; onCreated
   );
 }
 
+function MultiDriverPicker({ drivers, value, onChange, onCancel }: {
+  drivers: Driver[];
+  value: string[];
+  onChange: (ids: string[]) => void;
+  onCancel: () => void;
+}) {
+  const slots = [0, 1, 2, 3];
+  const setAt = (idx: number, id: string) => {
+    const next = [...value];
+    if (id) next[idx] = id; else next.splice(idx, 1);
+    onChange(next.filter(Boolean));
+  };
+  return (
+    <div className="mt-2 space-y-1">
+      {slots.map((i) => {
+        const current = value[i] ?? "";
+        if (i > 0 && !value[i - 1]) return null;
+        return (
+          <div key={i} className="flex gap-2 items-center">
+            <span className="text-[10px] text-muted-foreground w-8">#{i + 1}</span>
+            <select
+              value={current}
+              onChange={(e) => setAt(i, e.target.value)}
+              className="flex-1 bg-input border border-primary/40 text-xs px-2 py-1 text-primary"
+            >
+              <option value="">— {i === 0 ? "vyber řidiče" : "další auto (volitelné)"} —</option>
+              {drivers
+                .filter((d) => !value.includes(d.id) || d.id === current)
+                .map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.call_sign} · {d.car_type || d.full_name} {d.online ? "●" : "○"}
+                  </option>
+                ))}
+            </select>
+            {i === 0 && (
+              <button onClick={onCancel} className="text-destructive hover:text-red-400 p-1" title="Zrušit zakázku">
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        );
+      })}
+      {value.length > 0 && (
+        <div className="text-[10px] text-primary/70">▸ Přiřazeno {value.length} / 4 aut</div>
+      )}
+    </div>
+  );
+}
+
 function In({ label, value, onChange, required }: { label: string; value: string; onChange: (v: string) => void; required?: boolean }) {
+
   return (
     <label className="block">
       <div className="text-[10px] text-muted-foreground mb-1">{label}</div>
