@@ -8,8 +8,9 @@ import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { createDriver, updateDriver, deleteDriver, resetDriverRides } from "@/lib/drivers.functions";
 import { autoAssignOrder } from "@/lib/auto-assign.functions";
 import { toast } from "sonner";
-import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive } from "lucide-react";
+import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2 } from "lucide-react";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
+import { createVehicle, updateVehicle, deleteVehicle } from "@/lib/vehicles.functions";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
 
 export const Route = createFileRoute("/_authenticated/dispatcher")({
