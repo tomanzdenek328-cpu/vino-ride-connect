@@ -347,8 +347,12 @@ function DriverPage() {
   if (loading) return null;
   if (role && role !== "driver") return <Navigate to="/dispatcher" />;
 
-  const myOrders = orders.filter((o) => o.assigned_driver_id === user?.id && o.status !== "completed" && o.status !== "cancelled");
-  const pending = orders.filter((o) => o.status === "pending" && !o.assigned_driver_id);
+  const myOrders = orders
+    .filter((o) => o.assigned_driver_id === user?.id && o.status !== "completed" && o.status !== "cancelled")
+    .sort(sortByTimeAsc);
+  const pending = orders
+    .filter((o) => o.status === "pending" && !o.assigned_driver_id)
+    .sort(sortByTimeAsc);
 
   return (
     <div className="min-h-screen flex flex-col">
