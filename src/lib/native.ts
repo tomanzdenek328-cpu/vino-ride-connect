@@ -55,10 +55,12 @@ export async function startBackgroundGeolocation(driverId: string) {
 export async function stopBackgroundGeolocation() {
   if (!isNative() || !bgWatcherId) return;
   try {
-    const { BackgroundGeolocation } = await import(
+    const mod: any = await import(
       "@capacitor-community/background-geolocation"
     );
+    const BackgroundGeolocation = mod.BackgroundGeolocation ?? mod.default;
     await BackgroundGeolocation.removeWatcher({ id: bgWatcherId });
+
   } catch (e) {
     console.warn("Background geolocation stop failed", e);
   } finally {
