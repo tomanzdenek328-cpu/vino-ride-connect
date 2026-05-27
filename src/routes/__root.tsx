@@ -85,7 +85,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body className="crt">
+      <body className="vine-bg">
         {children}
         <Scripts />
       </body>
@@ -100,10 +100,12 @@ function RootComponent() {
       <Outlet />
       <Toaster theme="dark" position="top-center" toastOptions={{
         style: {
-          background: "#000",
-          border: "1px solid var(--color-phosphor)",
-          color: "var(--color-phosphor)",
-          fontFamily: "var(--font-mono)",
+          background: "rgba(10,13,10,0.95)",
+          border: "1px solid color-mix(in oklab, var(--color-primary) 35%, transparent)",
+          color: "var(--color-foreground)",
+          fontFamily: "var(--font-sans)",
+          borderRadius: "14px",
+          backdropFilter: "blur(12px)",
         },
       }} />
     </QueryClientProvider>
