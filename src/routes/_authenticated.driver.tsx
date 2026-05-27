@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { toast } from "sonner";
-import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote } from "lucide-react";
+import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car } from "lucide-react";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
 
 
@@ -79,6 +79,8 @@ function DriverPage() {
   const [showMap, setShowMap] = useState(false);
   const [showRides, setShowRides] = useState(false);
   const [completing, setCompleting] = useState<Order | null>(null);
+  const [vehicles, setVehicles] = useState<{ id: string; plate: string; car_type: string }[]>([]);
+  const [vehicleId, setVehicleId] = useState<string | null>(null);
   const watchIdRef = useRef<number | null>(null);
   const lastSentRef = useRef<number>(0);
   const wakeLockRef = useRef<any>(null);
@@ -87,8 +89,10 @@ function DriverPage() {
     if (!user) return;
     supabase.from("profiles").select("call_sign").eq("id", user.id).maybeSingle()
       .then(({ data }) => { if (data?.call_sign) setCallSign(data.call_sign); });
-    supabase.from("driver_locations").select("online,busy").eq("driver_id", user.id).maybeSingle()
-      .then(({ data }) => { setOnline(!!data?.online); setBusy(!!data?.busy); });
+    supabase.from("driver_locations").select("online,busy,vehicle_id").eq("driver_id", user.id).maybeSingle()
+      .then(({ data }) => { setOnline(!!data?.online); setBusy(!!data?.busy); setVehicleId((data as any)?.vehicle_id ?? null); });
+    supabase.from("vehicles").select("id,plate,car_type").eq("active", true).order("plate")
+      .then(({ data }) => setVehicles((data ?? []) as any));
     // Vyžádej povolení desktop notifikací
     try {
       if ("Notification" in window && Notification.permission === "default") {
@@ -96,6 +100,17 @@ function DriverPage() {
       }
     } catch {}
   }, [user]);
+
+  const selectVehicle = async (id: string | null) => {
+    if (!user) return;
+    setVehicleId(id);
+    const { error } = await supabase.from("driver_locations").update({ vehicle_id: id }).eq("driver_id", user.id);
+    if (error) toast.error(error.message);
+    else {
+      const v = vehicles.find((x) => x.id === id);
+      toast.success(id && v ? `▸ AUTO: ${v.plate}` : "▸ Auto zrušeno");
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -355,11 +370,26 @@ function DriverPage() {
             <MapIcon className="w-4 h-4" /> MAPA
           </button>
         </div>
-        <div className="mt-2 flex justify-center">
+        <div className="mt-2 flex justify-center items-center gap-2 flex-wrap">
           <button onClick={() => setShowRides(true)}
             className="border border-primary/60 px-5 py-2 text-sm font-bold flex items-center gap-2 hover:border-primary hover:bg-primary/10">
             <Wallet className="w-4 h-4" /> MOJE JÍZDY · {totals.total.toFixed(0)} Kč
           </button>
+          <label className="border border-primary/60 px-3 py-2 text-sm font-bold flex items-center gap-2 hover:border-primary hover:bg-primary/10 cursor-pointer">
+            <Car className="w-4 h-4" />
+            <select
+              value={vehicleId ?? ""}
+              onChange={(e) => selectVehicle(e.target.value || null)}
+              className="bg-black text-primary text-sm font-bold border-0 outline-none cursor-pointer"
+            >
+              <option value="">— AUTO —</option>
+              {vehicles.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.plate}{v.car_type ? ` · ${v.car_type}` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
       </header>
 

@@ -24,6 +24,7 @@ export type Database = {
           online: boolean
           speed: number | null
           updated_at: string
+          vehicle_id: string | null
         }
         Insert: {
           busy?: boolean
@@ -34,6 +35,7 @@ export type Database = {
           online?: boolean
           speed?: number | null
           updated_at?: string
+          vehicle_id?: string | null
         }
         Update: {
           busy?: boolean
@@ -44,8 +46,17 @@ export type Database = {
           online?: boolean
           speed?: number | null
           updated_at?: string
+          vehicle_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "driver_locations_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orders: {
         Row: {
@@ -185,6 +196,36 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      vehicles: {
+        Row: {
+          active: boolean
+          car_type: string
+          created_at: string
+          id: string
+          notes: string | null
+          plate: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          car_type?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          plate: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          car_type?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          plate?: string
+          updated_at?: string
         }
         Relationships: []
       }
