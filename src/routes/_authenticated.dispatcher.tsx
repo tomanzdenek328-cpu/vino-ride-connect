@@ -362,6 +362,8 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
       customer_phone: customerPhone || null,
       created_by: userId,
       status: "pending",
+      // Plánované zakázky se vytvářejí jako neuvolněné – dispečer je uvolní tlačítkem.
+      released: when === "later" ? false : true,
     }).select("id").maybeSingle();
     setSubmitting(false);
     if (error) { toast.error(error.message); return; }
