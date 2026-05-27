@@ -487,6 +487,18 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
 
         <In label="POZNÁMKA (nepovinné)" value={notes} onChange={setNotes} />
 
+        <button
+          type="button"
+          onClick={() => setPriority((v) => !v)}
+          className={`w-full border py-2 text-xs font-bold ${
+            priority
+              ? "border-destructive bg-destructive text-white blink"
+              : "border-destructive/60 text-destructive hover:bg-destructive/10"
+          }`}
+        >
+          {priority ? "🚨 URGENTNÍ – KLIKNI PRO ZRUŠENÍ" : "🚨 OZNAČIT JAKO URGENTNÍ / PRIORITNÍ"}
+        </button>
+
         <button disabled={submitting} className="w-full border border-primary text-primary py-2 hover:bg-primary hover:text-primary-foreground disabled:opacity-50">
           {submitting ? "▸ ODESÍLÁM..." : "▸ ODESLAT"}
         </button>
