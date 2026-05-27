@@ -60,8 +60,8 @@
   /* Vinařský prestige — hluboká tmavá s emerald akcentem */
   --background: oklch(0.16 0.005 150);          /* near-black, jemně teplá zelená */
   --foreground: oklch(0.97 0.005 150);
-  --phosphor: oklch(0.78 0.16 155);             /* emerald 400 */
-  --phosphor-dim: oklch(0.55 0.12 155);
+  --phosphor: oklch(0.92 0.27 132);             /* emerald 400 */
+  --phosphor-dim: oklch(0.68 0.22 132);
   --amber-warn: oklch(0.82 0.16 75);
   --red-alarm: oklch(0.68 0.22 25);
 
@@ -69,7 +69,7 @@
   --card-foreground: oklch(0.97 0.005 150);
   --popover: oklch(0.18 0.008 150);
   --popover-foreground: oklch(0.97 0.005 150);
-  --primary: oklch(0.78 0.16 155);              /* emerald 400 — hlavní akcent */
+  --primary: oklch(0.92 0.27 132);              /* emerald 400 — hlavní akcent */
   --primary-foreground: oklch(0.16 0.02 150);
   --secondary: oklch(0.24 0.01 150);
   --secondary-foreground: oklch(0.97 0.005 150);
@@ -81,20 +81,20 @@
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(1 0 0 / 0.10);
   --input: oklch(1 0 0 / 0.04);
-  --ring: oklch(0.78 0.16 155);
-  --chart-1: oklch(0.78 0.16 155);
+  --ring: oklch(0.92 0.27 132);
+  --chart-1: oklch(0.92 0.27 132);
   --chart-2: oklch(0.82 0.16 75);
   --chart-3: oklch(0.68 0.22 25);
-  --chart-4: oklch(0.55 0.12 155);
+  --chart-4: oklch(0.68 0.22 132);
   --chart-5: oklch(0.70 0.14 200);
   --sidebar: oklch(0.14 0.005 150);
   --sidebar-foreground: oklch(0.97 0.005 150);
-  --sidebar-primary: oklch(0.78 0.16 155);
+  --sidebar-primary: oklch(0.92 0.27 132);
   --sidebar-primary-foreground: oklch(0.16 0.02 150);
   --sidebar-accent: oklch(0.24 0.01 150);
   --sidebar-accent-foreground: oklch(0.97 0.005 150);
   --sidebar-border: oklch(1 0 0 / 0.10);
-  --sidebar-ring: oklch(0.78 0.16 155);
+  --sidebar-ring: oklch(0.92 0.27 132);
 }
 
 .dark {
