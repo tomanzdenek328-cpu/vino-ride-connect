@@ -113,7 +113,7 @@ function DispatcherPage() {
 
   useEffect(() => {
     const loadOrders = async () => {
-      const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+      const { data } = await supabase.from("orders").select("*");
       setOrders((data ?? []) as Order[]);
     };
     loadOrders(); loadDrivers();
