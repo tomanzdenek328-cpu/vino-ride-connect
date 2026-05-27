@@ -33,6 +33,7 @@ interface Order {
   vehicle_type: string | null;
   created_at: string;
   released: boolean;
+  priority: boolean;
 }
 
 // Sort by scheduled time ascending (earliest first); fall back to created_at.
