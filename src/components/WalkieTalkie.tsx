@@ -22,12 +22,7 @@ const BROADCAST_CHUNK_SIZE = 45_000;
 
 function pickMimeType() {
   if (typeof MediaRecorder === "undefined") return "";
-  const options = [
-    "audio/webm;codecs=opus",
-    "audio/webm",
-    "audio/mp4",
-    "audio/ogg;codecs=opus",
-  ];
+  const options = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"];
   return options.find((type) => MediaRecorder.isTypeSupported(type)) ?? "";
 }
 
@@ -77,7 +72,8 @@ export function WalkieTalkie({ userId, callSign }: Props) {
   const getAudioContext = async () => {
     const AudioCtx =
       window.AudioContext ??
-      (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
     if (!AudioCtx) return null;
     if (!audioContextRef.current || audioContextRef.current.state === "closed") {
       audioContextRef.current = new AudioCtx();
@@ -116,7 +112,10 @@ export function WalkieTalkie({ userId, callSign }: Props) {
       const messageId = `${userId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
       for (let index = 0; index < total; index += 1) {
-        const chunk = base64.slice(index * BROADCAST_CHUNK_SIZE, (index + 1) * BROADCAST_CHUNK_SIZE);
+        const chunk = base64.slice(
+          index * BROADCAST_CHUNK_SIZE,
+          (index + 1) * BROADCAST_CHUNK_SIZE,
+        );
         await ch.send({
           type: "broadcast",
           event: "voice-chunk",
@@ -180,7 +179,16 @@ export function WalkieTalkie({ userId, callSign }: Props) {
       const index = Number(payload.index);
       const total = Number(payload.total);
       const chunk = String(payload.chunk ?? "");
-      if (!id || !Number.isInteger(index) || !Number.isInteger(total) || total < 1 || index < 0 || index >= total || !chunk) return;
+      if (
+        !id ||
+        !Number.isInteger(index) ||
+        !Number.isInteger(total) ||
+        total < 1 ||
+        index < 0 ||
+        index >= total ||
+        !chunk
+      )
+        return;
 
       let incoming = inboxRef.current.get(id);
       if (!incoming) {
@@ -278,7 +286,9 @@ export function WalkieTalkie({ userId, callSign }: Props) {
       };
       recorder.onstop = () => {
         track.enabled = false;
-        const blob = new Blob(recordedChunksRef.current, { type: recorder.mimeType || mimeType || "audio/webm" });
+        const blob = new Blob(recordedChunksRef.current, {
+          type: recorder.mimeType || mimeType || "audio/webm",
+        });
         recordedChunksRef.current = [];
         void sendVoice(blob);
       };
@@ -317,7 +327,11 @@ export function WalkieTalkie({ userId, callSign }: Props) {
       {active && (
         <div className="flex items-center gap-2 bg-background border border-primary/40 px-2 py-1 text-[10px] text-muted-foreground">
           <span>{sending ? "ODESÍLÁM" : `NET: ${peerCount}`}</span>
-          <button onClick={deactivate} className="text-destructive hover:underline" aria-label="Vypnout vysílačku">
+          <button
+            onClick={deactivate}
+            className="text-destructive hover:underline"
+            aria-label="Vypnout vysílačku"
+          >
             <Power className="w-3 h-3" />
           </button>
         </div>
@@ -333,7 +347,10 @@ export function WalkieTalkie({ userId, callSign }: Props) {
         </button>
       ) : (
         <button
-          onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); void startTransmit(); }}
+          onPointerDown={(event) => {
+            event.currentTarget.setPointerCapture(event.pointerId);
+            void startTransmit();
+          }}
           onPointerUp={stopTransmit}
           onPointerCancel={stopTransmit}
           onLostPointerCapture={stopTransmit}
