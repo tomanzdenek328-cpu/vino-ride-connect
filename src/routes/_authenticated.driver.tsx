@@ -7,6 +7,8 @@ import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { toast } from "sonner";
 import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car } from "lucide-react";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
+import { startBackgroundGeolocation, stopBackgroundGeolocation, initPushNotifications, isNative } from "@/lib/native";
+
 
 
 export const Route = createFileRoute("/_authenticated/driver")({
