@@ -33,6 +33,7 @@ interface Order {
   vehicle_type: string | null;
   created_at: string;
   released: boolean;
+  priority: boolean;
 }
 
 // Sort by scheduled time ascending (earliest first); fall back to created_at.
@@ -150,6 +151,11 @@ function DispatcherPage() {
     if (error) toast.error(error.message); else toast.success("▸ UVOLNĚNO PRO ŘIDIČE");
   };
 
+  const togglePriority = async (orderId: string, next: boolean) => {
+    const { error } = await supabase.from("orders").update({ priority: next }).eq("id", orderId);
+    if (error) toast.error(error.message); else toast.success(next ? "▸ OZNAČENO JAKO URGENTNÍ" : "▸ PRIORITA ZRUŠENA");
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-primary/40 px-3 pt-3 pb-2">
@@ -226,7 +232,7 @@ function DispatcherPage() {
                 .sort(sortByTimeAsc);
               if (!active.length) return <div className="p-6 text-center text-muted-foreground text-xs">Žádné aktivní zakázky.</div>;
               return active.map((o) => (
-              <div key={o.id} className={`border-b p-3 text-sm ${!o.released ? "border-amber-warn/40 bg-amber-warn/5" : "border-primary/20"}`}>
+              <div key={o.id} className={`border-b p-3 text-sm ${o.priority ? "urgent-flash bg-destructive/5" : !o.released ? "border-amber-warn/40 bg-amber-warn/5" : "border-primary/20"}`}>
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="text-primary font-bold truncate">▸ {o.pickup_address}</div>
@@ -239,6 +245,9 @@ function DispatcherPage() {
                     {o.notes && <div className="text-xs text-amber-warn truncate">⚠ {o.notes}</div>}
                   </div>
                   <div className="flex flex-col items-end gap-1">
+                    {o.priority && (
+                      <span className="text-[10px] px-1.5 py-0.5 border border-destructive text-destructive font-bold blink">🚨 URGENT</span>
+                    )}
                     <span className={`text-[10px] px-1.5 py-0.5 border ${
                       o.status === "pending" ? "border-amber-warn text-amber-warn" :
                       "border-primary text-primary"
@@ -248,14 +257,26 @@ function DispatcherPage() {
                     )}
                   </div>
                 </div>
-                {!o.released && (
+                <div className="mt-2 flex gap-2">
                   <button
-                    onClick={() => releaseOrder(o.id)}
-                    className="mt-2 w-full border border-amber-warn text-amber-warn py-2 text-xs font-bold hover:bg-amber-warn hover:text-black"
+                    onClick={() => togglePriority(o.id, !o.priority)}
+                    className={`flex-1 border py-1.5 text-[11px] font-bold ${
+                      o.priority
+                        ? "border-muted-foreground text-muted-foreground hover:bg-muted/20"
+                        : "border-destructive text-destructive hover:bg-destructive hover:text-white"
+                    }`}
                   >
-                    🔓 UVOLNIT ZAKÁZKU PRO ŘIDIČE
+                    {o.priority ? "▸ ZRUŠIT URGENT" : "🚨 OZNAČIT JAKO URGENT"}
                   </button>
-                )}
+                  {!o.released && (
+                    <button
+                      onClick={() => releaseOrder(o.id)}
+                      className="flex-1 border border-amber-warn text-amber-warn py-1.5 text-[11px] font-bold hover:bg-amber-warn hover:text-black"
+                    >
+                      🔓 UVOLNIT
+                    </button>
+                  )}
+                </div>
                 <MultiDriverPicker
                   drivers={drivers}
                   value={(o.assigned_driver_ids && o.assigned_driver_ids.length ? o.assigned_driver_ids : (o.assigned_driver_id ? [o.assigned_driver_id] : []))}
@@ -340,6 +361,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const [vehicleType, setVehicleType] = useState<"car" | "van">("car");
   const [customerPhone, setCustomerPhone] = useState("");
   const [notes, setNotes] = useState("");
+  const [priority, setPriority] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const autoAssignFn = useServerFn(autoAssignOrder);
 
@@ -364,6 +386,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
       status: "pending",
       // Plánované zakázky se vytvářejí jako neuvolněné – dispečer je uvolní tlačítkem.
       released: when === "later" ? false : true,
+      priority,
     }).select("id").maybeSingle();
     setSubmitting(false);
     if (error) { toast.error(error.message); return; }
@@ -463,6 +486,18 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
         </div>
 
         <In label="POZNÁMKA (nepovinné)" value={notes} onChange={setNotes} />
+
+        <button
+          type="button"
+          onClick={() => setPriority((v) => !v)}
+          className={`w-full border py-2 text-xs font-bold ${
+            priority
+              ? "border-destructive bg-destructive text-white blink"
+              : "border-destructive/60 text-destructive hover:bg-destructive/10"
+          }`}
+        >
+          {priority ? "🚨 URGENTNÍ – KLIKNI PRO ZRUŠENÍ" : "🚨 OZNAČIT JAKO URGENTNÍ / PRIORITNÍ"}
+        </button>
 
         <button disabled={submitting} className="w-full border border-primary text-primary py-2 hover:bg-primary hover:text-primary-foreground disabled:opacity-50">
           {submitting ? "▸ ODESÍLÁM..." : "▸ ODESLAT"}
