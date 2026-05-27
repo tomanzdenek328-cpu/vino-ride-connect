@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { toast } from "sonner";
-import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote } from "lucide-react";
+import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car } from "lucide-react";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
 
 
