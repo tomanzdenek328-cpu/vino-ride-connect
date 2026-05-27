@@ -333,14 +333,7 @@ function DriverPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-primary/40 px-3 pt-3 pb-2 relative">
-        <button
-          onClick={() => supabase.auth.signOut()}
-          className="absolute top-2 right-2 border border-primary/40 px-2 py-1.5 text-xs hover:border-primary"
-          aria-label="Odhlásit"
-        >
-          <LogOut className="w-3 h-3" />
-        </button>
+      <header className="border-b border-primary/40 px-3 pt-3 pb-2">
         <div className="flex justify-center -mx-3">
           <img
             src={logoVinneTaxi}
@@ -351,6 +344,9 @@ function DriverPage() {
         <div className="text-center">
           <div className="text-xl text-primary glow-text font-display">▸ {callSign}</div>
           <div className="text-[10px] text-muted-foreground">ŘIDIČ</div>
+          <button onClick={() => supabase.auth.signOut()} className="mt-1 border border-primary/40 px-5 py-2.5 text-sm hover:border-primary inline-flex items-center gap-2">
+            <LogOut className="w-5 h-5" /> ODHLÁSIT
+          </button>
         </div>
         <div className="mt-0.5 flex items-center justify-center gap-2 flex-wrap">
           <button onClick={toggleOnline}

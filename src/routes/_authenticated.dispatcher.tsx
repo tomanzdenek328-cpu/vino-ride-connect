@@ -136,6 +136,9 @@ function DispatcherPage() {
           <div className="min-w-0">
             <h1 className="text-xl text-primary glow-text font-display truncate">▸ DISPEČINK · {callSign}</h1>
             <div className="text-[10px] text-muted-foreground">VINNÉ TAXI · {drivers.filter(d => d.online).length}/{drivers.length} ONLINE</div>
+            <button onClick={() => supabase.auth.signOut()} className="mt-1 border border-primary/40 px-4 py-2 text-sm hover:border-primary flex items-center gap-1">
+              <LogOut className="w-4 h-4" /> ODHLÁSIT
+            </button>
           </div>
           <div className="flex gap-2 flex-wrap">
             <button onClick={() => setShowMap(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
@@ -149,9 +152,6 @@ function DispatcherPage() {
             </button>
             <button onClick={() => setShowDriverForm(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
               <UserPlus className="w-4 h-4" /> ŘIDIČ
-            </button>
-            <button onClick={() => supabase.auth.signOut()} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
-              <LogOut className="w-4 h-4" /> ODHL.
             </button>
           </div>
         </div>
