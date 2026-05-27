@@ -219,6 +219,7 @@ function DispatcherPage() {
                     <div className="text-sm text-primary mt-1 font-medium">
                       {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                       {" · "}👥 {o.passengers}
+                      {o.vehicle_type ? ` · ${o.vehicle_type === "van" ? "🚐 DODÁVKA" : "🚗 OSOBNÍ"}` : ""}
                     </div>
                     {o.notes && <div className="text-xs text-amber-warn truncate">⚠ {o.notes}</div>}
                   </div>
@@ -227,26 +228,16 @@ function DispatcherPage() {
                     "border-primary text-primary"
                   }`}>{STATUS_LABEL[o.status]}</span>
                 </div>
-                <div className="mt-2 flex gap-2 items-center">
-                  <select
-                    value={o.assigned_driver_id ?? ""}
-                    onChange={(e) => e.target.value && assignDriver(o.id, e.target.value)}
-                    className="flex-1 bg-input border border-primary/40 text-xs px-2 py-1 text-primary"
-                  >
-                    <option value="">— vyber řidiče —</option>
-                    {drivers.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.call_sign} · {d.car_type || d.full_name} {d.online ? "●" : "○"}
-                      </option>
-                    ))}
-                  </select>
-                  <button onClick={() => cancelOrder(o.id)} className="text-destructive hover:text-red-400 p-1" title="Zrušit">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
+                <MultiDriverPicker
+                  drivers={drivers}
+                  value={(o.assigned_driver_ids && o.assigned_driver_ids.length ? o.assigned_driver_ids : (o.assigned_driver_id ? [o.assigned_driver_id] : []))}
+                  onChange={(ids) => assignDrivers(o.id, ids)}
+                  onCancel={() => cancelOrder(o.id)}
+                />
               </div>
               ));
             })()}
+
           </div>
         </div>
       </div>
