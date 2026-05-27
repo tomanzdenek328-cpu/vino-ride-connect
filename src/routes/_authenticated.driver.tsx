@@ -25,6 +25,7 @@ interface Order {
   customer_phone: string | null;
   status: string;
   assigned_driver_id: string | null;
+  assigned_driver_ids: string[] | null;
   released: boolean;
   priority: boolean;
   created_at: string;
