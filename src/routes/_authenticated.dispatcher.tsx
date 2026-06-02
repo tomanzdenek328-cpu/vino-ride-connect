@@ -752,11 +752,25 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
                 {new Date(r.completed_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
               </div>
             </div>
-            <div className="text-right shrink-0">
+            <div className="text-right shrink-0 flex flex-col items-end gap-1">
               <div className="text-primary font-display">{Number(r.amount).toFixed(0)} Kč</div>
               <div className={`text-[10px] ${r.payment_method === "cash" ? "text-amber-warn" : "text-primary"}`}>
                 {r.payment_method === "cash" ? "HOTOVĚ" : "KARTOU"}
               </div>
+              <button
+                onClick={async () => {
+                  if (!confirm(`Smazat tuto jízdu (${Number(r.amount).toFixed(0)} Kč)?`)) return;
+                  try {
+                    await deleteRideFn({ data: { ride_id: r.id } });
+                    toast.success("▸ JÍZDA SMAZÁNA");
+                    setRefreshKey(k => k + 1);
+                  } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
+                }}
+                disabled={busy}
+                className="border border-destructive text-destructive px-2 py-0.5 text-[10px] hover:bg-destructive/10 disabled:opacity-50"
+              >
+                ▸ SMAZAT
+              </button>
             </div>
           </div>
         ))}
