@@ -616,6 +616,7 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
   const updateDriverFn = useServerFn(updateDriver);
   const deleteDriverFn = useServerFn(deleteDriver);
   const resetDriverRidesFn = useServerFn(resetDriverRides);
+  const deleteRideFn = useServerFn(deleteRide);
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
