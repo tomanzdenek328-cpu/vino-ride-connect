@@ -115,3 +115,18 @@ export const resetDriverRides = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+const RideIdSchema = z.object({ ride_id: z.string().uuid() });
+
+export const deleteRide = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => RideIdSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertDispatcher(context.supabase, context.userId);
+
+    const { error } = await supabaseAdmin.from("rides").delete().eq("id", data.ride_id);
+    if (error) throw new Error(error.message);
+
+    return { ok: true };
+  });
+
