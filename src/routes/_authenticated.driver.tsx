@@ -158,6 +158,8 @@ function DriverPage() {
   const lastSentRef = useRef<number>(0);
   const wakeLockRef = useRef<any>(null);
 
+  const savePushSubFn = useServerFn(saveDriverPushSubscription);
+
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("call_sign").eq("id", user.id).maybeSingle()
@@ -172,7 +174,37 @@ function DriverPage() {
         Notification.requestPermission().catch(() => {});
       }
     } catch {}
-  }, [user]);
+
+    // Web Push: zaregistruj service worker a přihlas k odběru notifikací.
+    (async () => {
+      try {
+        if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+        let perm = Notification.permission;
+        if (perm === "default") perm = await Notification.requestPermission();
+        if (perm !== "granted") return;
+        const reg = await navigator.serviceWorker.register("/sw-push.js");
+        await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+          });
+        }
+        const json: any = sub.toJSON();
+        await savePushSubFn({
+          data: {
+            endpoint: json.endpoint,
+            p256dh: json.keys?.p256dh,
+            auth: json.keys?.auth,
+            user_agent: navigator.userAgent.slice(0, 500),
+          },
+        });
+      } catch (e) {
+        console.warn("Push subscribe failed", e);
+      }
+    })();
+  }, [user, savePushSubFn]);
 
   const selectVehicle = async (id: string | null) => {
     if (!user) return;
