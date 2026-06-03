@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
-import { createDriver, updateDriver, deleteDriver, resetDriverRides, deleteRide } from "@/lib/drivers.functions";
+import { createDriver, updateDriver, deleteDriver, resetDriverRides, deleteRide, getDriverEmail } from "@/lib/drivers.functions";
 import { autoAssignOrder } from "@/lib/auto-assign.functions";
 import { toast } from "sonner";
 import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2 } from "lucide-react";
@@ -621,6 +621,7 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
   const deleteDriverFn = useServerFn(deleteDriver);
   const resetDriverRidesFn = useServerFn(resetDriverRides);
   const deleteRideFn = useServerFn(deleteRide);
+  const getDriverEmailFn = useServerFn(getDriverEmail);
   const [rides, setRides] = useState<Ride[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
@@ -628,11 +629,14 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
   const [fullName, setFullName] = useState(driver.full_name);
   const [callSign, setCallSign] = useState(driver.call_sign);
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState<string | null>(null);
+  const [emailLoading, setEmailLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [payoutOpen, setPayoutOpen] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState("");
   const [payoutReason, setPayoutReason] = useState("");
+
 
   useEffect(() => {
     setLoading(true);
@@ -794,10 +798,21 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
       <div className="p-3 border-b border-primary/40 space-y-2">
         {!editing ? (
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => setEditing(true)} disabled={busy}
+            <button onClick={async () => {
+                setEditing(true);
+                if (!email) {
+                  setEmailLoading(true);
+                  try {
+                    const res = await getDriverEmailFn({ data: { driver_id: driver.id } });
+                    setEmail(res.email);
+                  } catch (e: any) { toast.error(e?.message ?? "Nelze načíst email"); }
+                  finally { setEmailLoading(false); }
+                }
+              }} disabled={busy}
               className="border border-primary/60 text-primary px-3 py-1.5 text-xs hover:bg-primary/10 disabled:opacity-50">
               ▸ UPRAVIT / ZMĚNIT HESLO
             </button>
+
             <button onClick={doReset} disabled={busy}
               className="border border-amber-warn text-amber-warn px-3 py-1.5 text-xs hover:bg-amber-warn/10 disabled:opacity-50">
               ▸ VYNULOVAT TRŽBY
@@ -809,9 +824,19 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
           </div>
         ) : (
           <div className="space-y-2">
+            <div className="border border-primary/40 bg-primary/5 p-2">
+              <div className="text-[10px] text-muted-foreground">PŘIHLAŠOVACÍ EMAIL</div>
+              <div className="text-sm text-primary font-mono break-all">
+                {emailLoading ? "Načítám..." : (email ?? "—")}
+              </div>
+            </div>
+            <div className="border border-amber-warn/40 bg-amber-warn/5 p-2 text-[10px] text-amber-warn">
+              ⚠ Stávající heslo nelze zobrazit (je zašifrované). Pokud ho řidič zapomněl, nastav nové níže a předej mu ho.
+            </div>
             <In label="CELÉ JMÉNO" value={fullName} onChange={setFullName} />
             <In label="VOLACÍ ZNAK" value={callSign} onChange={setCallSign} />
             <In label="NOVÉ HESLO (nech prázdné = neměnit, min. 6)" value={password} onChange={setPassword} />
+
             <div className="flex gap-2">
               <button onClick={saveEdit} disabled={busy}
                 className="flex-1 border border-primary text-primary py-1.5 text-xs hover:bg-primary hover:text-primary-foreground disabled:opacity-50">

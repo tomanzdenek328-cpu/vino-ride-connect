@@ -130,3 +130,14 @@ export const deleteRide = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const getDriverEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => DriverIdSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertDispatcher(context.supabase, context.userId);
+    const { data: u, error } = await supabaseAdmin.auth.admin.getUserById(data.driver_id);
+    if (error) throw new Error(error.message);
+    return { email: u.user?.email ?? null };
+  });
+
+
