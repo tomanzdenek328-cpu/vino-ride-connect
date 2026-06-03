@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { toast } from "sonner";
-import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car } from "lucide-react";
+import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car, Minus, Trash2 } from "lucide-react";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
 import { startBackgroundGeolocation, stopBackgroundGeolocation, initPushNotifications, isNative } from "@/lib/native";
 
@@ -45,6 +45,13 @@ interface Ride {
   pickup_address: string | null;
   destination: string | null;
   completed_at: string;
+}
+
+interface Payout {
+  id: string;
+  amount: number;
+  reason: string;
+  created_at: string;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -90,6 +97,7 @@ function DriverPage() {
   const [callSign, setCallSign] = useState("—");
   const [orders, setOrders] = useState<Order[]>([]);
   const [rides, setRides] = useState<Ride[]>([]);
+  const [payouts, setPayouts] = useState<Payout[]>([]);
   const [showMap, setShowMap] = useState(false);
   const [showRides, setShowRides] = useState(false);
   const [completing, setCompleting] = useState<Order | null>(null);
@@ -167,7 +175,16 @@ function DriverPage() {
     setRides((data ?? []) as Ride[]);
   };
 
-  useEffect(() => { loadRides(); }, [user]);
+  const loadPayouts = async () => {
+    if (!user) return;
+    const { data } = await supabase.from("cash_payouts")
+      .select("id,amount,reason,created_at")
+      .eq("driver_id", user.id)
+      .order("created_at", { ascending: false });
+    setPayouts((data ?? []) as Payout[]);
+  };
+
+  useEffect(() => { loadRides(); loadPayouts(); }, [user]);
 
   // Geolocation streaming + Wake Lock to keep tracking when screen would otherwise sleep
   useEffect(() => {
@@ -342,10 +359,11 @@ function DriverPage() {
   };
 
   const totals = useMemo(() => {
-    const cash = rides.filter(r => r.payment_method === "cash").reduce((s, r) => s + Number(r.amount), 0);
+    const cashRaw = rides.filter(r => r.payment_method === "cash").reduce((s, r) => s + Number(r.amount), 0);
     const card = rides.filter(r => r.payment_method === "card").reduce((s, r) => s + Number(r.amount), 0);
-    return { cash, card, total: cash + card, count: rides.length };
-  }, [rides]);
+    const payoutsTotal = payouts.reduce((s, p) => s + Number(p.amount), 0);
+    return { cash: cashRaw - payoutsTotal, card, total: cashRaw + card - payoutsTotal, count: rides.length, payoutsTotal };
+  }, [rides, payouts]);
 
   if (loading) return null;
   if (role && role !== "driver") return <Navigate to="/dispatcher" />;
@@ -544,7 +562,7 @@ function DriverPage() {
       )}
 
       {showRides && user && (
-        <RidesModal rides={rides} totals={totals} userId={user.id} onAdded={loadRides} onClose={() => setShowRides(false)} />
+        <RidesModal rides={rides} payouts={payouts} totals={totals} userId={user.id} onAdded={loadRides} onPayoutsChanged={loadPayouts} onClose={() => setShowRides(false)} />
       )}
 
       {user && <WalkieTalkie userId={user.id} callSign={callSign} />}
@@ -614,11 +632,13 @@ function CompleteRideModal({ order, onClose, onSubmit }: {
   );
 }
 
-function RidesModal({ rides, totals, userId, onAdded, onClose }: {
+function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged, onClose }: {
   rides: Ride[];
-  totals: { cash: number; card: number; total: number; count: number };
+  payouts: Payout[];
+  totals: { cash: number; card: number; total: number; count: number; payoutsTotal: number };
   userId: string;
   onAdded: () => void | Promise<void>;
+  onPayoutsChanged: () => void | Promise<void>;
   onClose: () => void;
 }) {
   const [showAdd, setShowAdd] = useState(false);
@@ -627,6 +647,36 @@ function RidesModal({ rides, totals, userId, onAdded, onClose }: {
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showPayout, setShowPayout] = useState(false);
+  const [payoutAmount, setPayoutAmount] = useState("");
+  const [payoutReason, setPayoutReason] = useState("");
+  const [savingPayout, setSavingPayout] = useState(false);
+
+  const addPayout = async (e: FormEvent) => {
+    e.preventDefault();
+    const amt = parseFloat(payoutAmount.replace(",", "."));
+    if (!isFinite(amt) || amt <= 0) { toast.error("Zadej částku"); return; }
+    setSavingPayout(true);
+    const { error } = await supabase.from("cash_payouts").insert({
+      driver_id: userId,
+      created_by: userId,
+      amount: amt,
+      reason: payoutReason || "",
+    });
+    setSavingPayout(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("▸ VÝDEJ HOTOVOSTI PŘIDÁN");
+    setPayoutAmount(""); setPayoutReason(""); setShowPayout(false);
+    await onPayoutsChanged();
+  };
+
+  const deletePayout = async (id: string) => {
+    if (!confirm("Smazat tento výdej?")) return;
+    const { error } = await supabase.from("cash_payouts").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("▸ VÝDEJ SMAZÁN");
+    await onPayoutsChanged();
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -715,6 +765,59 @@ function RidesModal({ rides, totals, userId, onAdded, onClose }: {
           <div className="text-lg text-primary font-display">{totals.total.toFixed(0)} Kč</div>
         </div>
       </div>
+
+      <div className="border-b border-primary/40">
+        <button
+          onClick={() => setShowPayout((v) => !v)}
+          className="w-full px-3 py-2 text-left text-xs font-display text-amber-warn hover:bg-amber-warn/10 flex items-center justify-between"
+        >
+          <span className="flex items-center gap-2">
+            <Minus className="w-3 h-3" /> VÝDEJ HOTOVOSTI · {totals.payoutsTotal.toFixed(0)} Kč ({payouts.length})
+          </span>
+          <span>{showPayout ? "▾" : "▸"}</span>
+        </button>
+        {showPayout && (
+          <div className="p-3 space-y-2 bg-amber-warn/5">
+            <form onSubmit={addPayout} className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number" inputMode="decimal" step="1" min="1" placeholder="Částka *"
+                  value={payoutAmount} onChange={(e) => setPayoutAmount(e.target.value)} required
+                  className="bg-input border border-amber-warn/40 px-2 py-1.5 text-amber-warn text-sm"
+                />
+                <input
+                  placeholder="Důvod" value={payoutReason} onChange={(e) => setPayoutReason(e.target.value)}
+                  className="bg-input border border-amber-warn/40 px-2 py-1.5 text-amber-warn text-sm"
+                />
+              </div>
+              <button disabled={savingPayout} className="w-full border border-amber-warn text-amber-warn py-1.5 text-xs hover:bg-amber-warn hover:text-black disabled:opacity-50">
+                {savingPayout ? "▸ UKLÁDÁM..." : "▸ PŘIDAT VÝDEJ"}
+              </button>
+            </form>
+            {payouts.length === 0 ? (
+              <div className="text-[10px] text-muted-foreground text-center py-2">Žádné výdeje.</div>
+            ) : (
+              <div className="space-y-1">
+                {payouts.map((p) => (
+                  <div key={p.id} className="flex justify-between items-center gap-2 border border-amber-warn/30 p-2 text-xs">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-amber-warn font-bold">−{Number(p.amount).toFixed(0)} Kč</div>
+                      {p.reason && <div className="text-[10px] text-muted-foreground truncate">{p.reason}</div>}
+                      <div className="text-[10px] text-muted-foreground">
+                        {new Date(p.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
+                      </div>
+                    </div>
+                    <button onClick={() => deletePayout(p.id)} className="border border-destructive text-destructive px-2 py-1 hover:bg-destructive hover:text-destructive-foreground">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="flex-1 overflow-y-auto">
         {rides.length === 0 && <div className="p-6 text-center text-muted-foreground text-xs">Žádné jízdy.</div>}
         {rides.map((r) => (
