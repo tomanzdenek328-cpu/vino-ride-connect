@@ -562,7 +562,7 @@ function DriverPage() {
       )}
 
       {showRides && user && (
-        <RidesModal rides={rides} totals={totals} userId={user.id} onAdded={loadRides} onClose={() => setShowRides(false)} />
+        <RidesModal rides={rides} payouts={payouts} totals={totals} userId={user.id} onAdded={loadRides} onPayoutsChanged={loadPayouts} onClose={() => setShowRides(false)} />
       )}
 
       {user && <WalkieTalkie userId={user.id} callSign={callSign} />}
