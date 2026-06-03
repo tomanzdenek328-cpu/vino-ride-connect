@@ -175,7 +175,16 @@ function DriverPage() {
     setRides((data ?? []) as Ride[]);
   };
 
-  useEffect(() => { loadRides(); }, [user]);
+  const loadPayouts = async () => {
+    if (!user) return;
+    const { data } = await supabase.from("cash_payouts")
+      .select("id,amount,reason,created_at")
+      .eq("driver_id", user.id)
+      .order("created_at", { ascending: false });
+    setPayouts((data ?? []) as Payout[]);
+  };
+
+  useEffect(() => { loadRides(); loadPayouts(); }, [user]);
 
   // Geolocation streaming + Wake Lock to keep tracking when screen would otherwise sleep
   useEffect(() => {
