@@ -612,12 +612,15 @@ function In({ label, value, onChange, required }: { label: string; value: string
   );
 }
 
+type Payout = { id: string; amount: number; reason: string; created_at: string };
+
 function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onClose: () => void; onChanged: () => void }) {
   const updateDriverFn = useServerFn(updateDriver);
   const deleteDriverFn = useServerFn(deleteDriver);
   const resetDriverRidesFn = useServerFn(resetDriverRides);
   const deleteRideFn = useServerFn(deleteRide);
   const [rides, setRides] = useState<Ride[]>([]);
+  const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState(driver.full_name);
@@ -625,18 +628,33 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [payoutOpen, setPayoutOpen] = useState(false);
+  const [payoutAmount, setPayoutAmount] = useState("");
+  const [payoutReason, setPayoutReason] = useState("");
 
   useEffect(() => {
     setLoading(true);
-    supabase.from("rides")
-      .select("id,driver_id,amount,payment_method,pickup_address,destination,completed_at")
-      .eq("driver_id", driver.id)
-      .order("completed_at", { ascending: false })
-      .then(({ data }) => { setRides((data ?? []) as Ride[]); setLoading(false); });
+    Promise.all([
+      supabase.from("rides")
+        .select("id,driver_id,amount,payment_method,pickup_address,destination,completed_at")
+        .eq("driver_id", driver.id)
+        .order("completed_at", { ascending: false }),
+      supabase.from("cash_payouts")
+        .select("id,amount,reason,created_at")
+        .eq("driver_id", driver.id)
+        .order("created_at", { ascending: false }),
+    ]).then(([r, p]) => {
+      setRides((r.data ?? []) as Ride[]);
+      setPayouts((p.data ?? []) as Payout[]);
+      setLoading(false);
+    });
   }, [driver.id, refreshKey]);
 
-  const cash = rides.filter(r => r.payment_method === "cash").reduce((s, r) => s + Number(r.amount), 0);
+  const cashRaw = rides.filter(r => r.payment_method === "cash").reduce((s, r) => s + Number(r.amount), 0);
   const card = rides.filter(r => r.payment_method === "card").reduce((s, r) => s + Number(r.amount), 0);
+  const payoutsTotal = payouts.reduce((s, p) => s + Number(p.amount), 0);
+  const cash = cashRaw - payoutsTotal;
+  const total = cashRaw + card;
 
   const saveEdit = async () => {
     setBusy(true);
@@ -660,6 +678,7 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
     setBusy(true);
     try {
       await resetDriverRidesFn({ data: { driver_id: driver.id } });
+      await supabase.from("cash_payouts").delete().eq("driver_id", driver.id);
       toast.success("▸ TRŽBY VYNULOVÁNY");
       setRefreshKey(k => k + 1);
     } catch (e: any) { toast.error(e?.message ?? "Chyba"); }
@@ -675,6 +694,31 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
       onChanged();
       onClose();
     } catch (e: any) { toast.error(e?.message ?? "Chyba"); setBusy(false); }
+  };
+
+  const addPayout = async () => {
+    const amt = Number(payoutAmount);
+    if (!amt || amt <= 0) { toast.error("Zadej částku"); return; }
+    const reason = payoutReason.trim();
+    if (!reason) { toast.error("Zadej důvod"); return; }
+    setBusy(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from("cash_payouts").insert({
+      driver_id: driver.id, amount: amt, reason, created_by: user?.id as string,
+    });
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("▸ VÝDEJ ZAPSÁN");
+    setPayoutAmount(""); setPayoutReason(""); setPayoutOpen(false);
+    setRefreshKey(k => k + 1);
+  };
+
+  const deletePayout = async (id: string) => {
+    if (!confirm("Smazat výdej hotovosti?")) return;
+    const { error } = await supabase.from("cash_payouts").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("▸ VÝDEJ SMAZÁN");
+    setRefreshKey(k => k + 1);
   };
 
   return (
@@ -694,6 +738,9 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
         <div className="border border-primary/60 p-2">
           <div className="text-[10px] text-muted-foreground">HOTOVĚ</div>
           <div className="text-lg text-primary font-display">{cash.toFixed(0)} Kč</div>
+          {payoutsTotal > 0 && (
+            <div className="text-[9px] text-amber-warn">−{payoutsTotal.toFixed(0)} výdej</div>
+          )}
         </div>
         <div className="border border-primary/60 p-2">
           <div className="text-[10px] text-muted-foreground">KARTOU</div>
@@ -701,8 +748,45 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
         </div>
         <div className="border border-primary p-2 glow">
           <div className="text-[10px] text-muted-foreground">CELKEM ({rides.length})</div>
-          <div className="text-lg text-primary font-display">{(cash + card).toFixed(0)} Kč</div>
+          <div className="text-lg text-primary font-display">{total.toFixed(0)} Kč</div>
         </div>
+      </div>
+
+      <div className="px-3 pt-3 border-b border-primary/40 pb-3">
+        <button onClick={() => setPayoutOpen(o => !o)}
+          className="w-full border border-amber-warn text-amber-warn p-2 text-xs hover:bg-amber-warn/10 flex items-center justify-between">
+          <span>▸ VÝDEJ HOTOVOSTI {payoutsTotal > 0 && `(−${payoutsTotal.toFixed(0)} Kč)`}</span>
+          <span>{payoutOpen ? "▲" : "▼"}</span>
+        </button>
+        {payoutOpen && (
+          <div className="mt-2 space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <In label="ČÁSTKA (Kč)" value={payoutAmount} onChange={setPayoutAmount} />
+              <In label="DŮVOD" value={payoutReason} onChange={setPayoutReason} />
+            </div>
+            <button onClick={addPayout} disabled={busy}
+              className="w-full border border-amber-warn bg-amber-warn/10 text-amber-warn px-3 py-1.5 text-xs hover:bg-amber-warn/20 disabled:opacity-50">
+              ▸ PŘIDAT VÝDEJ
+            </button>
+            {payouts.length > 0 && (
+              <div className="space-y-1 max-h-40 overflow-auto">
+                {payouts.map(p => (
+                  <div key={p.id} className="flex items-center justify-between gap-2 border border-amber-warn/40 p-2 text-xs">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-amber-warn font-display">−{Number(p.amount).toFixed(0)} Kč</div>
+                      <div className="text-[10px] text-muted-foreground truncate">{p.reason}</div>
+                      <div className="text-[9px] text-muted-foreground">{new Date(p.created_at).toLocaleString("cs-CZ")}</div>
+                    </div>
+                    <button onClick={() => deletePayout(p.id)}
+                      className="text-destructive border border-destructive/60 px-2 py-1 hover:bg-destructive/10">
+                      SMAZAT
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="p-3 border-b border-primary/40 space-y-2">
