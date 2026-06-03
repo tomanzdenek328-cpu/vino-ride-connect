@@ -1,0 +1,2 @@
+CREATE POLICY "drivers insert own payouts" ON public.cash_payouts FOR INSERT TO authenticated WITH CHECK (auth.uid() = driver_id AND auth.uid() = created_by);
+CREATE POLICY "drivers delete own payouts" ON public.cash_payouts FOR DELETE TO authenticated USING (auth.uid() = driver_id AND auth.uid() = created_by);
