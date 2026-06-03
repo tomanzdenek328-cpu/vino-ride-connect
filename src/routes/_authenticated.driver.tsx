@@ -409,7 +409,16 @@ function DriverPage() {
           <button onClick={() => supabase.auth.signOut()} className="mt-1 border border-primary/40 px-5 py-2.5 text-sm hover:border-primary inline-flex items-center gap-2">
             <LogOut className="w-5 h-5" /> ODHLÁSIT
           </button>
+          <button
+            onClick={() => user && triggerSOS(user.id, vehicleId)}
+            className="ml-2 mt-1 border-2 border-primary px-4 py-2 text-sm font-bold inline-flex items-center gap-2 bg-black hover:bg-primary/10"
+            title="Spustit nouzový signál"
+          >
+            <Siren className="w-5 h-5" style={{ color: "#ff1a1a", filter: "drop-shadow(0 0 4px #ff1a1a)" }} />
+            <span className="text-red-500">SOS</span>
+          </button>
         </div>
+
         <div className="mt-0.5 flex items-center justify-center gap-2 flex-wrap">
           <button onClick={toggleOnline}
             className={`border px-4 py-2 text-sm font-bold flex items-center gap-2 ${
