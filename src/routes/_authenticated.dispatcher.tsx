@@ -12,6 +12,7 @@ import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2 } from 
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { createVehicle, updateVehicle, deleteVehicle } from "@/lib/vehicles.functions";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
+import { SOSAlerts } from "@/components/SOSAlerts";
 
 export const Route = createFileRoute("/_authenticated/dispatcher")({
   component: DispatcherPage,
@@ -158,6 +159,7 @@ function DispatcherPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SOSAlerts currentUserId={user?.id} isDispatcher={true} />
       <header className="border-b border-primary/40 px-3 pt-3 pb-2">
         <div className="flex justify-center -mx-3">
           <img
