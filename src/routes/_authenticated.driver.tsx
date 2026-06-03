@@ -76,35 +76,66 @@ const STATUS_LABEL: Record<string, string> = {
   in_progress: "JEDE", completed: "HOTOVO", cancelled: "ZRUŠENO",
 };
 
-// Cinkot sklenicek – syntetizováno přes Web Audio API
-function playClink() {
-  try {
-    const Ctx = (window.AudioContext || (window as any).webkitAudioContext);
-    if (!Ctx) return;
-    const ctx = new Ctx();
-    const now = ctx.currentTime;
-    // Dva krátké jasné tóny imitující ťuknutí skla
-    const tones = [
-      { f: 2400, t: 0 },
-      { f: 1800, t: 0.06 },
-      { f: 3200, t: 0.12 },
-    ];
-    tones.forEach(({ f, t }) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "triangle";
-      osc.frequency.setValueAtTime(f, now + t);
-      gain.gain.setValueAtTime(0.0001, now + t);
-      gain.gain.exponentialRampToValueAtTime(0.35, now + t + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.5);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(now + t);
-      osc.stop(now + t + 0.55);
-    });
-    setTimeout(() => ctx.close().catch(() => {}), 900);
-  } catch (e) {
-    console.warn("playClink failed", e);
-  }
+// Cinkot sklenicek – Web Audio API
+function playClinkOnce(delayMs = 0): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      try {
+        const Ctx = (window.AudioContext || (window as any).webkitAudioContext);
+        if (!Ctx) return resolve();
+        const ctx = new Ctx();
+        const now = ctx.currentTime;
+        const tones = [
+          { f: 2400, t: 0 },
+          { f: 1800, t: 0.06 },
+          { f: 3200, t: 0.12 },
+        ];
+        tones.forEach(({ f, t }) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(f, now + t);
+          gain.gain.setValueAtTime(0.0001, now + t);
+          gain.gain.exponentialRampToValueAtTime(0.35, now + t + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.5);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(now + t);
+          osc.stop(now + t + 0.55);
+        });
+        setTimeout(() => { ctx.close().catch(() => {}); resolve(); }, 800);
+      } catch (e) {
+        console.warn("playClink failed", e);
+        resolve();
+      }
+    }, delayMs);
+  });
+}
+
+function speakNewRide(): Promise<void> {
+  return new Promise((resolve) => {
+    try {
+      const synth = window.speechSynthesis;
+      if (!synth) return resolve();
+      synth.cancel();
+      const u = new SpeechSynthesisUtterance("Nová jízda");
+      u.lang = "cs-CZ";
+      u.rate = 1; u.pitch = 1; u.volume = 1;
+      const voices = synth.getVoices();
+      const cz = voices.find(v => v.lang?.toLowerCase().startsWith("cs"));
+      if (cz) u.voice = cz;
+      u.onend = () => resolve();
+      u.onerror = () => resolve();
+      synth.speak(u);
+      setTimeout(() => resolve(), 2500);
+    } catch { resolve(); }
+  });
+}
+
+// Sekvence: cinkání → "Nová jízda" → cinkání
+async function playNewOrderAlert() {
+  await playClinkOnce(0);
+  await speakNewRide();
+  await playClinkOnce(150);
 }
 
 function DriverPage() {
