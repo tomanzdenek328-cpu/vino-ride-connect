@@ -217,6 +217,36 @@ export type Database = {
         }
         Relationships: []
       }
+      sos_alerts: {
+        Row: {
+          created_at: string
+          driver_id: string
+          id: string
+          lat: number | null
+          lng: number | null
+          resolved_at: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          driver_id: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          resolved_at?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          resolved_at?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
