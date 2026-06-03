@@ -632,11 +632,13 @@ function CompleteRideModal({ order, onClose, onSubmit }: {
   );
 }
 
-function RidesModal({ rides, totals, userId, onAdded, onClose }: {
+function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged, onClose }: {
   rides: Ride[];
-  totals: { cash: number; card: number; total: number; count: number };
+  payouts: Payout[];
+  totals: { cash: number; card: number; total: number; count: number; payoutsTotal: number };
   userId: string;
   onAdded: () => void | Promise<void>;
+  onPayoutsChanged: () => void | Promise<void>;
   onClose: () => void;
 }) {
   const [showAdd, setShowAdd] = useState(false);
@@ -645,6 +647,36 @@ function RidesModal({ rides, totals, userId, onAdded, onClose }: {
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showPayout, setShowPayout] = useState(false);
+  const [payoutAmount, setPayoutAmount] = useState("");
+  const [payoutReason, setPayoutReason] = useState("");
+  const [savingPayout, setSavingPayout] = useState(false);
+
+  const addPayout = async (e: FormEvent) => {
+    e.preventDefault();
+    const amt = parseFloat(payoutAmount.replace(",", "."));
+    if (!isFinite(amt) || amt <= 0) { toast.error("Zadej částku"); return; }
+    setSavingPayout(true);
+    const { error } = await supabase.from("cash_payouts").insert({
+      driver_id: userId,
+      created_by: userId,
+      amount: amt,
+      reason: payoutReason || "",
+    });
+    setSavingPayout(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("▸ VÝDEJ HOTOVOSTI PŘIDÁN");
+    setPayoutAmount(""); setPayoutReason(""); setShowPayout(false);
+    await onPayoutsChanged();
+  };
+
+  const deletePayout = async (id: string) => {
+    if (!confirm("Smazat tento výdej?")) return;
+    const { error } = await supabase.from("cash_payouts").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("▸ VÝDEJ SMAZÁN");
+    await onPayoutsChanged();
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
