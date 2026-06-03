@@ -47,6 +47,13 @@ interface Ride {
   completed_at: string;
 }
 
+interface Payout {
+  id: string;
+  amount: number;
+  reason: string;
+  created_at: string;
+}
+
 const STATUS_LABEL: Record<string, string> = {
   pending: "ČEKÁ", assigned: "PŘIŘAZENO", accepted: "PŘIJATO",
   in_progress: "JEDE", completed: "HOTOVO", cancelled: "ZRUŠENO",
