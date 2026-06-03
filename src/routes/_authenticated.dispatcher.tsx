@@ -12,6 +12,7 @@ import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2 } from 
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { createVehicle, updateVehicle, deleteVehicle } from "@/lib/vehicles.functions";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
+import { SOSAlerts } from "@/components/SOSAlerts";
 
 export const Route = createFileRoute("/_authenticated/dispatcher")({
   component: DispatcherPage,
