@@ -621,6 +621,7 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
   const deleteDriverFn = useServerFn(deleteDriver);
   const resetDriverRidesFn = useServerFn(resetDriverRides);
   const deleteRideFn = useServerFn(deleteRide);
+  const getDriverEmailFn = useServerFn(getDriverEmail);
   const [rides, setRides] = useState<Ride[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
@@ -628,11 +629,14 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
   const [fullName, setFullName] = useState(driver.full_name);
   const [callSign, setCallSign] = useState(driver.call_sign);
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState<string | null>(null);
+  const [emailLoading, setEmailLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [payoutOpen, setPayoutOpen] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState("");
   const [payoutReason, setPayoutReason] = useState("");
+
 
   useEffect(() => {
     setLoading(true);
