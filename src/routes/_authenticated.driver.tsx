@@ -5,9 +5,26 @@ import { useAuth } from "@/hooks/use-auth";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { toast } from "sonner";
-import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car, Minus, Trash2 } from "lucide-react";
+import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car, Minus, Trash2, Siren } from "lucide-react";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
 import { startBackgroundGeolocation, stopBackgroundGeolocation, initPushNotifications, isNative } from "@/lib/native";
+import { SOSAlerts } from "@/components/SOSAlerts";
+
+async function triggerSOS(driverId: string, vehicleId: string | null) {
+  if (!window.confirm("Spustit nouzový SOS signál? Upozorní všechny řidiče i dispečera.")) return;
+  let lat: number | null = null;
+  let lng: number | null = null;
+  try {
+    const pos = await new Promise<GeolocationPosition>((res, rej) => {
+      navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true, timeout: 4000 });
+    });
+    lat = pos.coords.latitude; lng = pos.coords.longitude;
+  } catch {}
+  const { error } = await supabase.from("sos_alerts").insert({
+    driver_id: driverId, vehicle_id: vehicleId, lat, lng,
+  });
+  if (error) toast.error(error.message); else toast.success("🚨 SOS odesláno");
+}
 
 
 
