@@ -798,10 +798,21 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
       <div className="p-3 border-b border-primary/40 space-y-2">
         {!editing ? (
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => setEditing(true)} disabled={busy}
+            <button onClick={async () => {
+                setEditing(true);
+                if (!email) {
+                  setEmailLoading(true);
+                  try {
+                    const res = await getDriverEmailFn({ data: { driver_id: driver.id } });
+                    setEmail(res.email);
+                  } catch (e: any) { toast.error(e?.message ?? "Nelze načíst email"); }
+                  finally { setEmailLoading(false); }
+                }
+              }} disabled={busy}
               className="border border-primary/60 text-primary px-3 py-1.5 text-xs hover:bg-primary/10 disabled:opacity-50">
               ▸ UPRAVIT / ZMĚNIT HESLO
             </button>
+
             <button onClick={doReset} disabled={busy}
               className="border border-amber-warn text-amber-warn px-3 py-1.5 text-xs hover:bg-amber-warn/10 disabled:opacity-50">
               ▸ VYNULOVAT TRŽBY
