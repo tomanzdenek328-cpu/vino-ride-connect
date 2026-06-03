@@ -359,10 +359,11 @@ function DriverPage() {
   };
 
   const totals = useMemo(() => {
-    const cash = rides.filter(r => r.payment_method === "cash").reduce((s, r) => s + Number(r.amount), 0);
+    const cashRaw = rides.filter(r => r.payment_method === "cash").reduce((s, r) => s + Number(r.amount), 0);
     const card = rides.filter(r => r.payment_method === "card").reduce((s, r) => s + Number(r.amount), 0);
-    return { cash, card, total: cash + card, count: rides.length };
-  }, [rides]);
+    const payoutsTotal = payouts.reduce((s, p) => s + Number(p.amount), 0);
+    return { cash: cashRaw - payoutsTotal, card, total: cashRaw + card - payoutsTotal, count: rides.length, payoutsTotal };
+  }, [rides, payouts]);
 
   if (loading) return null;
   if (role && role !== "driver") return <Navigate to="/dispatcher" />;
