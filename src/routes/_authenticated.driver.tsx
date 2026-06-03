@@ -765,6 +765,59 @@ function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged,
           <div className="text-lg text-primary font-display">{totals.total.toFixed(0)} Kč</div>
         </div>
       </div>
+
+      <div className="border-b border-primary/40">
+        <button
+          onClick={() => setShowPayout((v) => !v)}
+          className="w-full px-3 py-2 text-left text-xs font-display text-amber-warn hover:bg-amber-warn/10 flex items-center justify-between"
+        >
+          <span className="flex items-center gap-2">
+            <Minus className="w-3 h-3" /> VÝDEJ HOTOVOSTI · {totals.payoutsTotal.toFixed(0)} Kč ({payouts.length})
+          </span>
+          <span>{showPayout ? "▾" : "▸"}</span>
+        </button>
+        {showPayout && (
+          <div className="p-3 space-y-2 bg-amber-warn/5">
+            <form onSubmit={addPayout} className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number" inputMode="decimal" step="1" min="1" placeholder="Částka *"
+                  value={payoutAmount} onChange={(e) => setPayoutAmount(e.target.value)} required
+                  className="bg-input border border-amber-warn/40 px-2 py-1.5 text-amber-warn text-sm"
+                />
+                <input
+                  placeholder="Důvod" value={payoutReason} onChange={(e) => setPayoutReason(e.target.value)}
+                  className="bg-input border border-amber-warn/40 px-2 py-1.5 text-amber-warn text-sm"
+                />
+              </div>
+              <button disabled={savingPayout} className="w-full border border-amber-warn text-amber-warn py-1.5 text-xs hover:bg-amber-warn hover:text-black disabled:opacity-50">
+                {savingPayout ? "▸ UKLÁDÁM..." : "▸ PŘIDAT VÝDEJ"}
+              </button>
+            </form>
+            {payouts.length === 0 ? (
+              <div className="text-[10px] text-muted-foreground text-center py-2">Žádné výdeje.</div>
+            ) : (
+              <div className="space-y-1">
+                {payouts.map((p) => (
+                  <div key={p.id} className="flex justify-between items-center gap-2 border border-amber-warn/30 p-2 text-xs">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-amber-warn font-bold">−{Number(p.amount).toFixed(0)} Kč</div>
+                      {p.reason && <div className="text-[10px] text-muted-foreground truncate">{p.reason}</div>}
+                      <div className="text-[10px] text-muted-foreground">
+                        {new Date(p.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
+                      </div>
+                    </div>
+                    <button onClick={() => deletePayout(p.id)} className="border border-destructive text-destructive px-2 py-1 hover:bg-destructive hover:text-destructive-foreground">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="flex-1 overflow-y-auto">
         {rides.length === 0 && <div className="p-6 text-center text-muted-foreground text-xs">Žádné jízdy.</div>}
         {rides.map((r) => (
