@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      cash_payouts: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          driver_id: string
+          id: string
+          reason: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by: string
+          driver_id: string
+          id?: string
+          reason?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          driver_id?: string
+          id?: string
+          reason?: string
+        }
+        Relationships: []
+      }
       driver_locations: {
         Row: {
           busy: boolean
