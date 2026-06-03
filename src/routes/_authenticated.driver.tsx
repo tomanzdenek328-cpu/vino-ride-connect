@@ -9,6 +9,9 @@ import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Bankn
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
 import { startBackgroundGeolocation, stopBackgroundGeolocation, initPushNotifications, isNative } from "@/lib/native";
 import { SOSAlerts } from "@/components/SOSAlerts";
+import { useServerFn } from "@tanstack/react-start";
+import { saveDriverPushSubscription } from "@/lib/push.functions";
+import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array } from "@/lib/vapid";
 
 async function triggerSOS(driverId: string, vehicleId: string | null) {
   if (!window.confirm("Spustit nouzový SOS signál? Upozorní všechny řidiče i dispečera.")) return;
