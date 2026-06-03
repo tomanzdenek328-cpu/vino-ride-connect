@@ -824,9 +824,19 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
           </div>
         ) : (
           <div className="space-y-2">
+            <div className="border border-primary/40 bg-primary/5 p-2">
+              <div className="text-[10px] text-muted-foreground">PŘIHLAŠOVACÍ EMAIL</div>
+              <div className="text-sm text-primary font-mono break-all">
+                {emailLoading ? "Načítám..." : (email ?? "—")}
+              </div>
+            </div>
+            <div className="border border-amber-warn/40 bg-amber-warn/5 p-2 text-[10px] text-amber-warn">
+              ⚠ Stávající heslo nelze zobrazit (je zašifrované). Pokud ho řidič zapomněl, nastav nové níže a předej mu ho.
+            </div>
             <In label="CELÉ JMÉNO" value={fullName} onChange={setFullName} />
             <In label="VOLACÍ ZNAK" value={callSign} onChange={setCallSign} />
             <In label="NOVÉ HESLO (nech prázdné = neměnit, min. 6)" value={password} onChange={setPassword} />
+
             <div className="flex gap-2">
               <button onClick={saveEdit} disabled={busy}
                 className="flex-1 border border-primary text-primary py-1.5 text-xs hover:bg-primary hover:text-primary-foreground disabled:opacity-50">
