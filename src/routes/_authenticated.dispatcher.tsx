@@ -7,6 +7,7 @@ import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { createDriver, updateDriver, deleteDriver, resetDriverRides, deleteRide, getDriverEmail } from "@/lib/drivers.functions";
 import { autoAssignOrder } from "@/lib/auto-assign.functions";
+import { notifyNewOrder } from "@/lib/push.functions";
 import { toast } from "sonner";
 import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2 } from "lucide-react";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
@@ -366,6 +367,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const [priority, setPriority] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const autoAssignFn = useServerFn(autoAssignOrder);
+  const notifyNewOrderFn = useServerFn(notifyNewOrder);
 
 
   const submit = async (e: FormEvent) => {
@@ -403,6 +405,10 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
       } catch (err: any) {
         toast.error(err?.message ?? "Auto-přidělení selhalo");
       }
+    }
+    // Push notifikace řidičům (přiřazený nebo všichni online u pending).
+    if (inserted?.id && when === "now") {
+      notifyNewOrderFn({ data: { order_id: inserted.id } }).catch((e) => console.warn("notify failed", e));
     }
   };
 
