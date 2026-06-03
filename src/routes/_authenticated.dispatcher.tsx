@@ -654,7 +654,7 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
   const card = rides.filter(r => r.payment_method === "card").reduce((s, r) => s + Number(r.amount), 0);
   const payoutsTotal = payouts.reduce((s, p) => s + Number(p.amount), 0);
   const cash = cashRaw - payoutsTotal;
-  const total = cashRaw + card;
+  const total = cashRaw + card - payoutsTotal;
 
   const saveEdit = async () => {
     setBusy(true);
