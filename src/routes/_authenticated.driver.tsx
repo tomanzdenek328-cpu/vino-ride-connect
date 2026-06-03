@@ -196,7 +196,7 @@ function DriverPage() {
         const row: any = payload.new;
         // Pingni jen u zakázek, které jsou už uvolněné a může je řidič přijmout.
         if (payload.eventType === "INSERT" && row?.status === "pending" && row?.released !== false) {
-          playClink();
+          playNewOrderAlert();
           const title = row?.priority ? "🚨 URGENTNÍ ZAKÁZKA" : "▸ NOVÁ ZAKÁZKA";
           toast.success(title, {
             description: row.pickup_address ?? "Nová jízda čeká",
