@@ -97,6 +97,7 @@ function DriverPage() {
   const [callSign, setCallSign] = useState("—");
   const [orders, setOrders] = useState<Order[]>([]);
   const [rides, setRides] = useState<Ride[]>([]);
+  const [payouts, setPayouts] = useState<Payout[]>([]);
   const [showMap, setShowMap] = useState(false);
   const [showRides, setShowRides] = useState(false);
   const [completing, setCompleting] = useState<Order | null>(null);
