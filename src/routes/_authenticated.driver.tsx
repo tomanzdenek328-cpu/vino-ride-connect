@@ -395,6 +395,7 @@ function DriverPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SOSAlerts currentUserId={user?.id} isDispatcher={false} />
       <header className="border-b border-primary/40 px-3 pt-3 pb-2">
         <div className="flex justify-center -mx-3">
           <img
