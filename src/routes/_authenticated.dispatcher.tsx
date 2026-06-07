@@ -263,6 +263,12 @@ function DispatcherPage() {
                 </div>
                 <div className="mt-2 flex gap-2">
                   <button
+                    onClick={() => setEditOrder(o)}
+                    className="flex-1 border border-primary text-primary py-1.5 text-[11px] font-bold hover:bg-primary hover:text-primary-foreground"
+                  >
+                    ▸ DETAIL / UPRAVIT
+                  </button>
+                  <button
                     onClick={() => togglePriority(o.id, !o.priority)}
                     className={`flex-1 border py-1.5 text-[11px] font-bold ${
                       o.priority
@@ -270,7 +276,7 @@ function DispatcherPage() {
                         : "border-destructive text-destructive hover:bg-destructive hover:text-white"
                     }`}
                   >
-                    {o.priority ? "▸ ZRUŠIT URGENT" : "🚨 OZNAČIT JAKO URGENT"}
+                    {o.priority ? "▸ ZRUŠIT URGENT" : "🚨 URGENT"}
                   </button>
                   {!o.released && (
                     <button
