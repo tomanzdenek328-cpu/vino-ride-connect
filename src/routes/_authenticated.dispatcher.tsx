@@ -1,5 +1,5 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -129,6 +129,58 @@ function DispatcherPage() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  // Upozornění: hodinu před plánovaným časem zakázky, která ještě není uvolněná.
+  const notifiedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    try {
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission().catch(() => {});
+      }
+    } catch {}
+    const check = () => {
+      const now = Date.now();
+      orders.forEach((o) => {
+        if (!o.scheduled_time || o.released) return;
+        if (o.status === "completed" || o.status === "cancelled") return;
+        const t = new Date(o.scheduled_time).getTime();
+        const diff = t - now;
+        // 0 < diff <= 60min => připomenout (jednou)
+        if (diff > 0 && diff <= 60 * 60_000 && !notifiedRef.current.has(o.id)) {
+          notifiedRef.current.add(o.id);
+          const mins = Math.max(1, Math.round(diff / 60_000));
+          const title = "⏰ UVOLNI ZAKÁZKU";
+          const body = `Za ${mins} min: ${o.pickup_address}`;
+          toast.warning(title, { description: body, duration: 15000 });
+          try {
+            if ("Notification" in window && Notification.permission === "granted") {
+              new Notification(title, { body });
+            }
+          } catch {}
+          try {
+            const Ctx = (window.AudioContext || (window as any).webkitAudioContext);
+            if (Ctx) {
+              const ctx = new Ctx();
+              const o1 = ctx.createOscillator();
+              const g = ctx.createGain();
+              o1.type = "square"; o1.frequency.value = 880;
+              g.gain.setValueAtTime(0.0001, ctx.currentTime);
+              g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.01);
+              g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+              o1.connect(g).connect(ctx.destination);
+              o1.start(); o1.stop(ctx.currentTime + 0.65);
+              setTimeout(() => ctx.close().catch(() => {}), 1000);
+            }
+          } catch {}
+        }
+      });
+    };
+    check();
+    const id = window.setInterval(check, 30_000);
+    return () => window.clearInterval(id);
+  }, [orders]);
+
+
+
   if (loading) return null;
   if (role && role !== "dispatcher") return <Navigate to="/driver" />;
 
@@ -235,8 +287,23 @@ function DispatcherPage() {
                 .filter(o => o.status !== "completed" && o.status !== "cancelled")
                 .sort(sortByTimeAsc);
               if (!active.length) return <div className="p-6 text-center text-muted-foreground text-xs">Žádné aktivní zakázky.</div>;
-              return active.map((o) => (
-              <div key={o.id} className={`border-b p-3 text-sm ${o.priority ? "urgent-flash bg-destructive/5" : !o.released ? "border-amber-warn/40 bg-amber-warn/5" : "border-primary/20"}`}>
+              return active.map((o) => {
+              const isAssignedUnconfirmed = o.status === "assigned";
+              const isPendingUnassigned = o.status === "pending" && !o.assigned_driver_id;
+              const isAcceptedByDriver = o.status === "accepted" || o.status === "in_progress";
+              const cardClass = o.priority
+                ? "urgent-flash bg-destructive/5"
+                : !o.released
+                ? "border-amber-warn/40 bg-amber-warn/5"
+                : isAssignedUnconfirmed
+                ? "border-2 border-orange-500 bg-orange-500/10 blink"
+                : isPendingUnassigned
+                ? "border-orange-500/70 bg-orange-500/5"
+                : isAcceptedByDriver
+                ? "border-2 border-blue-500 bg-blue-500/10"
+                : "border-primary/20";
+              return (
+              <div key={o.id} className={`border-b p-3 text-sm ${cardClass}`}>
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="text-primary font-bold truncate">▸ {o.pickup_address}</div>
@@ -253,7 +320,9 @@ function DispatcherPage() {
                       <span className="text-[10px] px-1.5 py-0.5 border border-destructive text-destructive font-bold blink">🚨 URGENT</span>
                     )}
                     <span className={`text-[10px] px-1.5 py-0.5 border ${
-                      o.status === "pending" ? "border-amber-warn text-amber-warn" :
+                      isAcceptedByDriver ? "border-blue-500 text-blue-500" :
+                      isAssignedUnconfirmed ? "border-orange-500 text-orange-500 blink" :
+                      o.status === "pending" ? "border-orange-500 text-orange-500" :
                       "border-primary text-primary"
                     }`}>{STATUS_LABEL[o.status]}</span>
                     {!o.released && (
@@ -261,6 +330,7 @@ function DispatcherPage() {
                     )}
                   </div>
                 </div>
+
                 <div className="mt-2 flex gap-2">
                   <button
                     onClick={() => setEditOrder(o)}
@@ -294,7 +364,9 @@ function DispatcherPage() {
                   onCancel={() => cancelOrder(o.id)}
                 />
               </div>
-              ));
+              );
+              });
+
             })()}
 
           </div>
@@ -489,17 +561,17 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
 
 
         <div>
-          <div className="text-[10px] text-muted-foreground mb-1">TELEFON ZÁKAZNÍKA *</div>
+          <div className="text-[10px] text-muted-foreground mb-1">TELEFON ZÁKAZNÍKA (nepovinné)</div>
           <input
             type="tel"
             inputMode="tel"
-            required
             value={customerPhone}
             onChange={(e) => setCustomerPhone(e.target.value)}
-            placeholder="+420 ..."
+            placeholder="+420 ... (volitelné)"
             className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm"
           />
         </div>
+
 
         <In label="POZNÁMKA (nepovinné)" value={notes} onChange={setNotes} />
 
@@ -827,10 +899,44 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
               ▸ UPRAVIT / ZMĚNIT HESLO
             </button>
 
+            <button
+              onClick={() => {
+                const lines: string[] = [];
+                lines.push(`🚖 VINNÉ TAXI – ${driver.call_sign} (${driver.full_name})`);
+                lines.push(`Datum: ${new Date().toLocaleString("cs-CZ")}`);
+                lines.push(`Jízd: ${rides.length}`);
+                lines.push(`Hotově: ${cashRaw.toFixed(0)} Kč · Kartou: ${card.toFixed(0)} Kč`);
+                if (payoutsTotal > 0) lines.push(`Výdej hotovosti: −${payoutsTotal.toFixed(0)} Kč`);
+                lines.push(`CELKEM: ${total.toFixed(0)} Kč`);
+                lines.push("");
+                lines.push("— JÍZDY —");
+                rides.forEach((r, i) => {
+                  const dt = new Date(r.completed_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" });
+                  const route = `${r.pickup_address ?? "—"}${r.destination ? " → " + r.destination : ""}`;
+                  lines.push(`${i + 1}. ${dt} · ${Number(r.amount).toFixed(0)} Kč ${r.payment_method === "cash" ? "HOT" : "KAR"} · ${route}`);
+                });
+                if (payouts.length) {
+                  lines.push("");
+                  lines.push("— VÝDEJE HOTOVOSTI —");
+                  payouts.forEach((p, i) => {
+                    const dt = new Date(p.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" });
+                    lines.push(`${i + 1}. ${dt} · −${Number(p.amount).toFixed(0)} Kč · ${p.reason || ""}`);
+                  });
+                }
+                const text = lines.join("\n");
+                const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                window.open(url, "_blank");
+              }}
+              disabled={busy || rides.length === 0}
+              className="border border-green-500 text-green-500 px-3 py-1.5 text-xs hover:bg-green-500/10 disabled:opacity-50"
+            >
+              ▸ SDÍLET WHATSAPP
+            </button>
             <button onClick={doReset} disabled={busy}
               className="border border-amber-warn text-amber-warn px-3 py-1.5 text-xs hover:bg-amber-warn/10 disabled:opacity-50">
               ▸ VYNULOVAT TRŽBY
             </button>
+
             <button onClick={doDelete} disabled={busy}
               className="border border-destructive text-destructive px-3 py-1.5 text-xs hover:bg-destructive/10 disabled:opacity-50 ml-auto">
               ▸ SMAZAT ŘIDIČE

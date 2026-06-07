@@ -744,6 +744,8 @@ function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged,
   const [payoutAmount, setPayoutAmount] = useState("");
   const [payoutReason, setPayoutReason] = useState("");
   const [savingPayout, setSavingPayout] = useState(false);
+  const [editRide, setEditRide] = useState<Ride | null>(null);
+
 
   const addPayout = async (e: FormEvent) => {
     e.preventDefault();
@@ -914,13 +916,18 @@ function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged,
       <div className="flex-1 overflow-y-auto">
         {rides.length === 0 && <div className="p-6 text-center text-muted-foreground text-xs">Žádné jízdy.</div>}
         {rides.map((r) => (
-          <div key={r.id} className="border-b border-primary/20 p-3 text-sm flex justify-between items-start gap-2">
+          <button
+            key={r.id}
+            onClick={() => setEditRide(r)}
+            className="w-full text-left border-b border-primary/20 p-3 text-sm flex justify-between items-start gap-2 hover:bg-primary/5"
+          >
             <div className="min-w-0 flex-1">
               <div className="text-primary truncate">▸ {r.pickup_address ?? "—"}</div>
               {r.destination && <div className="text-xs text-muted-foreground truncate">→ {r.destination}</div>}
               <div className="text-[10px] text-muted-foreground">
                 {new Date(r.completed_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
               </div>
+              <div className="text-[10px] text-primary/60">Klikni pro úpravu ceny</div>
             </div>
             <div className="text-right shrink-0">
               <div className="text-primary font-display">{Number(r.amount).toFixed(0)} Kč</div>
@@ -928,9 +935,107 @@ function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged,
                 {r.payment_method === "cash" ? "HOTOVĚ" : "KARTOU"}
               </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
+      {editRide && (
+        <RideEditModal
+          ride={editRide}
+          onClose={() => setEditRide(null)}
+          onSaved={async () => { setEditRide(null); await onAdded(); }}
+        />
+      )}
     </div>
   );
 }
+
+function RideEditModal({ ride, onClose, onSaved }: {
+  ride: Ride;
+  onClose: () => void;
+  onSaved: () => void | Promise<void>;
+}) {
+  const [amount, setAmount] = useState(String(ride.amount));
+  const [method, setMethod] = useState<"cash" | "card">(ride.payment_method);
+  const [pickup, setPickup] = useState(ride.pickup_address ?? "");
+  const [destination, setDestination] = useState(ride.destination ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const amt = parseFloat(amount.replace(",", "."));
+    if (!isFinite(amt) || amt < 0) { toast.error("Zadej platnou částku"); return; }
+    setSaving(true);
+    const { error } = await supabase.from("rides").update({
+      amount: amt,
+      payment_method: method,
+      pickup_address: pickup || null,
+      destination: destination || null,
+    }).eq("id", ride.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("▸ JÍZDA UPRAVENA");
+    await onSaved();
+  };
+
+  const remove = async () => {
+    if (!confirm("Smazat tuto jízdu?")) return;
+    setSaving(true);
+    const { error } = await supabase.from("rides").delete().eq("id", ride.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("▸ JÍZDA SMAZÁNA");
+    await onSaved();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/90 z-[2000] flex items-center justify-center p-4">
+      <form onSubmit={submit} className="bg-black border border-primary glow p-5 max-w-sm w-full space-y-3">
+        <div className="flex justify-between items-center">
+          <h3 className="text-primary font-display text-lg">▸ UPRAVIT JÍZDU</h3>
+          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-primary"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="text-[10px] text-muted-foreground">
+          {new Date(ride.completed_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
+        </div>
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">ČÁSTKA (Kč) *</div>
+          <input
+            type="number" inputMode="decimal" step="1" min="0" autoFocus
+            value={amount} onChange={(e) => setAmount(e.target.value)} required
+            className="w-full bg-input border border-primary/40 px-3 py-3 text-primary text-2xl font-display focus:border-primary focus:outline-none"
+          />
+        </div>
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">ZPŮSOB PLATBY</div>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={() => setMethod("cash")}
+              className={`border py-2 text-sm flex items-center justify-center gap-2 ${
+                method === "cash" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
+              }`}>
+              <Banknote className="w-4 h-4" /> HOTOVĚ
+            </button>
+            <button type="button" onClick={() => setMethod("card")}
+              className={`border py-2 text-sm flex items-center justify-center gap-2 ${
+                method === "card" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
+              }`}>
+              <CreditCard className="w-4 h-4" /> KARTOU
+            </button>
+          </div>
+        </div>
+        <input placeholder="Odkud" value={pickup} onChange={(e) => setPickup(e.target.value)}
+          className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
+        <input placeholder="Kam" value={destination} onChange={(e) => setDestination(e.target.value)}
+          className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
+        <div className="flex gap-2 pt-1">
+          <button type="button" onClick={remove} disabled={saving} className="border border-destructive text-destructive px-3 py-2 text-xs hover:bg-destructive hover:text-white flex items-center gap-1 disabled:opacity-50">
+            <Trash2 className="w-4 h-4" /> SMAZAT
+          </button>
+          <button disabled={saving} className="flex-1 border border-primary text-primary py-2 hover:bg-primary hover:text-primary-foreground disabled:opacity-50">
+            {saving ? "▸ UKLÁDÁM..." : "▸ ULOŽIT"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
