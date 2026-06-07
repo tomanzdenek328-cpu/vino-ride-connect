@@ -129,6 +129,58 @@ function DispatcherPage() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  // Upozornění: hodinu před plánovaným časem zakázky, která ještě není uvolněná.
+  const notifiedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    try {
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission().catch(() => {});
+      }
+    } catch {}
+    const check = () => {
+      const now = Date.now();
+      orders.forEach((o) => {
+        if (!o.scheduled_time || o.released) return;
+        if (o.status === "completed" || o.status === "cancelled") return;
+        const t = new Date(o.scheduled_time).getTime();
+        const diff = t - now;
+        // 0 < diff <= 60min => připomenout (jednou)
+        if (diff > 0 && diff <= 60 * 60_000 && !notifiedRef.current.has(o.id)) {
+          notifiedRef.current.add(o.id);
+          const mins = Math.max(1, Math.round(diff / 60_000));
+          const title = "⏰ UVOLNI ZAKÁZKU";
+          const body = `Za ${mins} min: ${o.pickup_address}`;
+          toast.warning(title, { description: body, duration: 15000 });
+          try {
+            if ("Notification" in window && Notification.permission === "granted") {
+              new Notification(title, { body });
+            }
+          } catch {}
+          try {
+            const Ctx = (window.AudioContext || (window as any).webkitAudioContext);
+            if (Ctx) {
+              const ctx = new Ctx();
+              const o1 = ctx.createOscillator();
+              const g = ctx.createGain();
+              o1.type = "square"; o1.frequency.value = 880;
+              g.gain.setValueAtTime(0.0001, ctx.currentTime);
+              g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.01);
+              g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+              o1.connect(g).connect(ctx.destination);
+              o1.start(); o1.stop(ctx.currentTime + 0.65);
+              setTimeout(() => ctx.close().catch(() => {}), 1000);
+            }
+          } catch {}
+        }
+      });
+    };
+    check();
+    const id = window.setInterval(check, 30_000);
+    return () => window.clearInterval(id);
+  }, [orders]);
+
+
+
   if (loading) return null;
   if (role && role !== "dispatcher") return <Navigate to="/driver" />;
 
