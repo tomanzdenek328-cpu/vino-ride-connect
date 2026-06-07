@@ -899,10 +899,44 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
               ▸ UPRAVIT / ZMĚNIT HESLO
             </button>
 
+            <button
+              onClick={() => {
+                const lines: string[] = [];
+                lines.push(`🚖 VINNÉ TAXI – ${driver.call_sign} (${driver.full_name})`);
+                lines.push(`Datum: ${new Date().toLocaleString("cs-CZ")}`);
+                lines.push(`Jízd: ${rides.length}`);
+                lines.push(`Hotově: ${cashRaw.toFixed(0)} Kč · Kartou: ${card.toFixed(0)} Kč`);
+                if (payoutsTotal > 0) lines.push(`Výdej hotovosti: −${payoutsTotal.toFixed(0)} Kč`);
+                lines.push(`CELKEM: ${total.toFixed(0)} Kč`);
+                lines.push("");
+                lines.push("— JÍZDY —");
+                rides.forEach((r, i) => {
+                  const dt = new Date(r.completed_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" });
+                  const route = `${r.pickup_address ?? "—"}${r.destination ? " → " + r.destination : ""}`;
+                  lines.push(`${i + 1}. ${dt} · ${Number(r.amount).toFixed(0)} Kč ${r.payment_method === "cash" ? "HOT" : "KAR"} · ${route}`);
+                });
+                if (payouts.length) {
+                  lines.push("");
+                  lines.push("— VÝDEJE HOTOVOSTI —");
+                  payouts.forEach((p, i) => {
+                    const dt = new Date(p.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" });
+                    lines.push(`${i + 1}. ${dt} · −${Number(p.amount).toFixed(0)} Kč · ${p.reason || ""}`);
+                  });
+                }
+                const text = lines.join("\n");
+                const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                window.open(url, "_blank");
+              }}
+              disabled={busy || rides.length === 0}
+              className="border border-green-500 text-green-500 px-3 py-1.5 text-xs hover:bg-green-500/10 disabled:opacity-50"
+            >
+              ▸ SDÍLET WHATSAPP
+            </button>
             <button onClick={doReset} disabled={busy}
               className="border border-amber-warn text-amber-warn px-3 py-1.5 text-xs hover:bg-amber-warn/10 disabled:opacity-50">
               ▸ VYNULOVAT TRŽBY
             </button>
+
             <button onClick={doDelete} disabled={busy}
               className="border border-destructive text-destructive px-3 py-1.5 text-xs hover:bg-destructive/10 disabled:opacity-50 ml-auto">
               ▸ SMAZAT ŘIDIČE
