@@ -389,12 +389,29 @@ function DispatcherPage() {
 
       {showArchive && (
         <div className="fixed inset-0 z-[1800] bg-black flex flex-col">
-          <div className="border-b border-primary/40 p-3 flex items-center justify-between">
+          <div className="border-b border-primary/40 p-3 flex items-center justify-between gap-2">
             <h2 className="font-display text-primary glow-text">▸ ARCHIV JÍZD ({orders.filter(o => o.status === "completed" || o.status === "cancelled").length})</h2>
-            <button onClick={() => setShowArchive(false)} className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1">
-              <X className="w-3 h-3" /> ZAVŘÍT
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  const archived = orders.filter(o => o.status === "completed" || o.status === "cancelled");
+                  if (archived.length === 0) { toast.message("Archiv je prázdný"); return; }
+                  if (!confirm(`Opravdu vymazat ${archived.length} jízd z archivu? Tuto akci nelze vrátit.`)) return;
+                  const ids = archived.map(o => o.id);
+                  const { error } = await supabase.from("orders").delete().in("id", ids);
+                  if (error) { toast.error(error.message); return; }
+                  toast.success("▸ ARCHIV VYMAZÁN");
+                }}
+                className="bg-blue-600 hover:bg-blue-500 text-white border border-blue-400 px-3 py-1 text-xs flex items-center gap-1"
+              >
+                <Trash2 className="w-3 h-3" /> VYMAZAT ARCHIV
+              </button>
+              <button onClick={() => setShowArchive(false)} className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1">
+                <X className="w-3 h-3" /> ZAVŘÍT
+              </button>
+            </div>
           </div>
+
           <div className="flex-1 overflow-y-auto">
             {orders.filter(o => o.status === "completed" || o.status === "cancelled").length === 0 ? (
               <div className="p-6 text-center text-muted-foreground text-xs">Archiv je prázdný.</div>
