@@ -744,6 +744,8 @@ function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged,
   const [payoutAmount, setPayoutAmount] = useState("");
   const [payoutReason, setPayoutReason] = useState("");
   const [savingPayout, setSavingPayout] = useState(false);
+  const [editRide, setEditRide] = useState<Ride | null>(null);
+
 
   const addPayout = async (e: FormEvent) => {
     e.preventDefault();
