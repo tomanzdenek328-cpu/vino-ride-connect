@@ -1,0 +1,78 @@
+name: Build Android APK
+
+# Spustí se ručně z GitHubu (Actions → Build Android APK → Run workflow)
+# nebo automaticky při push tagu ve formátu v1.0.0
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build web (dist/)
+        run: bun run build
+
+      - name: Add Android platform
+        run: |
+          bunx cap add android || echo "android platform already present"
+          bunx cap sync android
+
+      - name: Inject Android permissions
+        run: |
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          PERMS='<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+          <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+          <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+          <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+          <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+          <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+          <uses-permission android:name="android.permission.WAKE_LOCK" />'
+          # Vloží oprávnění hned za <manifest ...>
+          if ! grep -q "ACCESS_BACKGROUND_LOCATION" "$MANIFEST"; then
+            awk -v perms="$PERMS" '/<manifest /{print; print perms; next}1' "$MANIFEST" > "$MANIFEST.tmp"
+            mv "$MANIFEST.tmp" "$MANIFEST"
+          fi
+          cat "$MANIFEST"
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk vinne-taxi.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vinne-taxi-apk
+          path: vinne-taxi.apk
+          retention-days: 30
+
+      - name: Create GitHub Release (only on tags)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: vinne-taxi.apk
+          generate_release_notes: true
