@@ -1,13 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
-import { Smartphone, Share, Plus, Download } from "lucide-react";
+import { Smartphone, Share, Download, Apple, CheckCircle2 } from "lucide-react";
+
+// Odkaz na nejnovější APK z GitHub Releases.
+// Po vytvoření prvního tagu (git tag v1.0.0 && git push origin v1.0.0)
+// se tady objeví .apk. Do té doby tlačítko zobrazí návod.
+const APK_URL =
+  "https://github.com/lovable-app/vinne-taxi/releases/latest/download/vinne-taxi.apk";
 
 export const Route = createFileRoute("/install")({
   head: () => ({
     meta: [
       { title: "Nainstalovat Vinné Taxi" },
-      { name: "description", content: "Stáhněte si aplikaci Vinné Taxi přímo na plochu telefonu." },
+      {
+        name: "description",
+        content:
+          "Stáhněte si aplikaci Vinné Taxi – nativní APK pro Android, PWA pro iPhone.",
+      },
     ],
   }),
   component: InstallPage,
@@ -29,11 +39,11 @@ function InstallPage() {
         padding: "24px 16px 80px",
         color: "var(--color-foreground)",
         fontFamily: "var(--font-sans)",
-        maxWidth: 520,
+        maxWidth: 560,
         margin: "0 auto",
       }}
     >
-      <div style={{ textAlign: "center", marginBottom: 24 }}>
+      <div style={{ textAlign: "center", marginBottom: 28 }}>
         <Smartphone
           size={48}
           style={{ color: "var(--color-primary)", marginBottom: 12 }}
@@ -46,20 +56,21 @@ function InstallPage() {
             letterSpacing: "0.02em",
           }}
         >
-          NAINSTALOVAT APLIKACI
+          STÁHNOUT APLIKACI
         </h1>
         <p style={{ opacity: 0.7, fontSize: 14, marginTop: 8 }}>
-          Vinné Taxi jako aplikace na ploše – bez Google Play / App Store
+          Vyberte podle telefonu – Android i iPhone fungují
         </p>
       </div>
 
-      {/* QR code card */}
+      {/* QR kód – sdílet odkaz */}
       <div
         style={{
           background: "rgba(255,255,255,0.04)",
-          border: "1px solid color-mix(in oklab, var(--color-primary) 30%, transparent)",
+          border:
+            "1px solid color-mix(in oklab, var(--color-primary) 25%, transparent)",
           borderRadius: 16,
-          padding: 20,
+          padding: 18,
           textAlign: "center",
           marginBottom: 24,
         }}
@@ -67,114 +78,223 @@ function InstallPage() {
         <div
           style={{
             background: "#fff",
-            padding: 16,
+            padding: 14,
             borderRadius: 12,
             display: "inline-block",
-            marginBottom: 12,
+            marginBottom: 10,
           }}
         >
-          <QRCodeSVG value={url} size={200} level="M" />
+          <QRCodeSVG value={url} size={170} level="M" />
         </div>
-        <div style={{ fontSize: 13, opacity: 0.8 }}>
+        <div style={{ fontSize: 13, opacity: 0.85 }}>
           Naskenujte QR kód telefonem řidiče
         </div>
         <div
           style={{
             fontSize: 11,
             opacity: 0.55,
-            marginTop: 6,
+            marginTop: 4,
             wordBreak: "break-all",
           }}
         >
-          {url}
+          {url}/install
         </div>
       </div>
 
-      {/* Android instructions */}
-      <Section
-        icon={<Download size={20} />}
-        title="Android (Chrome)"
-        steps={[
-          "Otevřete odkaz v Chrome",
-          "Klepněte na menu ⋮ vpravo nahoře",
-          'Vyberte "Přidat na plochu" nebo "Instalovat aplikaci"',
-          "Potvrďte – ikona se objeví na ploše",
-        ]}
-      />
+      {/* ANDROID – nativní APK */}
+      <Card accent>
+        <CardHeader
+          icon={<Download size={22} />}
+          title="Android – plná aplikace"
+          badge="DOPORUČENO"
+        />
+        <Feature text="GPS funguje i se zhasnutým displejem" />
+        <Feature text="Push notifikace o nových objednávkách" />
+        <Feature text="Bez prohlížeče – ikona na ploše jako Bolt/Uber" />
 
-      {/* iOS instructions */}
-      <Section
-        icon={<Share size={20} />}
-        title="iPhone / iPad (Safari)"
-        steps={[
-          "Otevřete odkaz v Safari (NE v Chrome!)",
-          "Klepněte na ikonu Sdílet (čtvereček se šipkou ↑)",
-          'Sjeďte dolů a vyberte "Přidat na plochu"',
-          'Potvrďte tlačítkem "Přidat"',
-        ]}
-      />
+        <a
+          href={APK_URL}
+          style={{
+            display: "block",
+            marginTop: 14,
+            padding: "14px 18px",
+            background: "var(--color-primary)",
+            color: "#000",
+            borderRadius: 12,
+            textAlign: "center",
+            fontWeight: 700,
+            textDecoration: "none",
+            fontSize: 15,
+          }}
+        >
+          ⬇ Stáhnout APK pro Android
+        </a>
+
+        <details style={{ marginTop: 12, fontSize: 13, opacity: 0.85 }}>
+          <summary style={{ cursor: "pointer", fontWeight: 600 }}>
+            Návod k instalaci (3 kroky)
+          </summary>
+          <ol style={{ paddingLeft: 22, marginTop: 8, lineHeight: 1.6 }}>
+            <li>Otevřít stažený soubor `vinne-taxi.apk`</li>
+            <li>
+              Povolit <em>„Instalace z neznámých zdrojů"</em> (Android se sám
+              zeptá)
+            </li>
+            <li>
+              Po instalaci povolit polohu <strong>„Vždy"</strong> a notifikace
+            </li>
+          </ol>
+        </details>
+      </Card>
+
+      {/* iPhone – PWA */}
+      <Card>
+        <CardHeader
+          icon={<Apple size={22} />}
+          title="iPhone – PWA verze"
+          badge="WEB"
+        />
+        <Feature text="Ikona na ploše, fullscreen bez Safari" muted />
+        <Feature
+          text="GPS jen když je aplikace otevřená (omezení iOS)"
+          muted
+        />
+        <Feature text="Nepotřebuje App Store ani instalaci" muted />
+
+        <div
+          style={{
+            marginTop: 12,
+            padding: 14,
+            background: "rgba(255,255,255,0.04)",
+            borderRadius: 10,
+            fontSize: 13,
+            lineHeight: 1.7,
+          }}
+        >
+          <strong style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Share size={16} /> Návod (Safari, ne Chrome!)
+          </strong>
+          <ol style={{ paddingLeft: 22, marginTop: 6, marginBottom: 0 }}>
+            <li>
+              Otevřít <code>{url}</code> v <strong>Safari</strong>
+            </li>
+            <li>
+              Ikona <strong>Sdílet</strong> (čtvereček se šipkou ↑)
+            </li>
+            <li>
+              Sjet dolů → <strong>„Přidat na plochu"</strong> → Přidat
+            </li>
+          </ol>
+        </div>
+      </Card>
 
       <div
         style={{
-          marginTop: 24,
+          marginTop: 20,
           padding: 14,
-          background: "color-mix(in oklab, var(--color-primary) 10%, transparent)",
-          border: "1px dashed color-mix(in oklab, var(--color-primary) 40%, transparent)",
+          background:
+            "color-mix(in oklab, var(--color-primary) 10%, transparent)",
+          border:
+            "1px dashed color-mix(in oklab, var(--color-primary) 35%, transparent)",
           borderRadius: 12,
-          fontSize: 13,
+          fontSize: 12,
+          opacity: 0.85,
           lineHeight: 1.5,
         }}
       >
-        <strong>Tip:</strong> Po instalaci aplikace funguje jako nativní – ikona
-        na ploše, fullscreen, vlastní splash. Aktualizuje se automaticky.
+        <strong>Pozn. pro správce:</strong> APK se generuje automaticky přes
+        GitHub Actions (workflow <code>Build Android APK</code>). Detaily
+        v souboru <code>MOBILE.md</code>.
       </div>
     </div>
   );
 }
 
-function Section({
-  icon,
-  title,
-  steps,
+function Card({
+  children,
+  accent,
 }: {
-  icon: React.ReactNode;
-  title: string;
-  steps: string[];
+  children: React.ReactNode;
+  accent?: boolean;
 }) {
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.03)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 14,
+        background: accent
+          ? "color-mix(in oklab, var(--color-primary) 8%, transparent)"
+          : "rgba(255,255,255,0.03)",
+        border: accent
+          ? "1px solid color-mix(in oklab, var(--color-primary) 45%, transparent)"
+          : "1px solid rgba(255,255,255,0.08)",
+        borderRadius: 16,
         padding: 18,
-        marginBottom: 14,
+        marginBottom: 16,
       }}
     >
-      <div
+      {children}
+    </div>
+  );
+}
+
+function CardHeader({
+  icon,
+  title,
+  badge,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  badge?: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        marginBottom: 12,
+      }}
+    >
+      <span style={{ color: "var(--color-primary)" }}>{icon}</span>
+      <strong style={{ fontSize: 16, flex: 1 }}>{title}</strong>
+      {badge && (
+        <span
+          style={{
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: "0.08em",
+            padding: "3px 8px",
+            borderRadius: 999,
+            background: "var(--color-primary)",
+            color: "#000",
+          }}
+        >
+          {badge}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function Feature({ text, muted }: { text: string; muted?: boolean }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        fontSize: 14,
+        marginBottom: 6,
+        opacity: muted ? 0.7 : 1,
+      }}
+    >
+      <CheckCircle2
+        size={16}
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          marginBottom: 12,
-          color: "var(--color-primary)",
-          fontWeight: 700,
-          fontSize: 15,
+          color: muted ? "rgba(255,255,255,0.5)" : "var(--color-primary)",
+          flexShrink: 0,
         }}
-      >
-        {icon} {title}
-      </div>
-      <ol style={{ margin: 0, paddingLeft: 22, fontSize: 14, lineHeight: 1.6 }}>
-        {steps.map((s, i) => (
-          <li key={i} style={{ marginBottom: 4 }}>
-            <Plus
-              size={0}
-              style={{ display: "none" }}
-            />
-            {s}
-          </li>
-        ))}
-      </ol>
+      />
+      <span>{text}</span>
     </div>
   );
 }
