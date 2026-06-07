@@ -102,6 +102,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <InstallBanner />
       <Toaster theme="dark" position="top-center" toastOptions={{
         style: {
           background: "rgba(10,13,10,0.95)",
