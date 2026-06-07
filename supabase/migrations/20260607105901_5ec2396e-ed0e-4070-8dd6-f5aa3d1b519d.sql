@@ -1,0 +1,1 @@
+CREATE POLICY "driver updates own ride" ON public.rides FOR UPDATE TO authenticated USING (auth.uid() = driver_id) WITH CHECK (auth.uid() = driver_id);
