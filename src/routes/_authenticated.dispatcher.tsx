@@ -86,6 +86,7 @@ function DispatcherPage() {
   const [callSign, setCallSign] = useState("DISP");
   const [driverDetail, setDriverDetail] = useState<Driver | null>(null);
   const [archiveOrderDetail, setArchiveOrderDetail] = useState<Order | null>(null);
+  const [editOrder, setEditOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -262,6 +263,12 @@ function DispatcherPage() {
                 </div>
                 <div className="mt-2 flex gap-2">
                   <button
+                    onClick={() => setEditOrder(o)}
+                    className="flex-1 border border-primary text-primary py-1.5 text-[11px] font-bold hover:bg-primary hover:text-primary-foreground"
+                  >
+                    ▸ DETAIL / UPRAVIT
+                  </button>
+                  <button
                     onClick={() => togglePriority(o.id, !o.priority)}
                     className={`flex-1 border py-1.5 text-[11px] font-bold ${
                       o.priority
@@ -269,7 +276,7 @@ function DispatcherPage() {
                         : "border-destructive text-destructive hover:bg-destructive hover:text-white"
                     }`}
                   >
-                    {o.priority ? "▸ ZRUŠIT URGENT" : "🚨 OZNAČIT JAKO URGENT"}
+                    {o.priority ? "▸ ZRUŠIT URGENT" : "🚨 URGENT"}
                   </button>
                   {!o.released && (
                     <button
@@ -346,6 +353,7 @@ function DispatcherPage() {
       {showDriverForm && <NewDriverModal onClose={() => setShowDriverForm(false)} onCreated={loadDrivers} />}
       {driverDetail && <DriverDetailModal driver={driverDetail} onClose={() => setDriverDetail(null)} onChanged={loadDrivers} />}
       {archiveOrderDetail && <ArchiveOrderDetailModal order={archiveOrderDetail} onClose={() => setArchiveOrderDetail(null)} />}
+      {editOrder && <OrderEditModal order={editOrder} onClose={() => setEditOrder(null)} />}
       {showVehicles && <VehiclesModal onClose={() => setShowVehicles(false)} />}
 
       {user && <WalkieTalkie userId={user.id} callSign={callSign} />}
@@ -998,6 +1006,149 @@ function ArchiveOrderDetailModal({ order, onClose }: { order: Order; onClose: ()
     </div>
   );
 }
+
+function OrderEditModal({ order, onClose }: { order: Order; onClose: () => void }) {
+  const [pickup, setPickup] = useState(order.pickup_address);
+  const [pickupCoords, setPickupCoords] = useState<{ lat?: number | null; lng?: number | null }>({ lat: order.pickup_lat, lng: order.pickup_lng });
+  const [destination, setDestination] = useState(order.destination ?? "");
+  const [destCoords, setDestCoords] = useState<{ lat?: number | null; lng?: number | null }>({});
+  const toLocal = (iso: string | null) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+  const [scheduledTime, setScheduledTime] = useState(toLocal(order.scheduled_time));
+  const [passengers, setPassengers] = useState(order.passengers);
+  const [vehicleType, setVehicleType] = useState<"car" | "van">((order.vehicle_type as any) || "car");
+  const [customerPhone, setCustomerPhone] = useState(order.customer_phone ?? "");
+  const [notes, setNotes] = useState(order.notes ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const save = async (e: FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    const { error } = await supabase.from("orders").update({
+      pickup_address: pickup,
+      pickup_lat: pickupCoords.lat ?? null,
+      pickup_lng: pickupCoords.lng ?? null,
+      destination: destination || null,
+      destination_lat: destCoords.lat ?? null,
+      destination_lng: destCoords.lng ?? null,
+      scheduled_time: scheduledTime ? new Date(scheduledTime).toISOString() : null,
+      passengers,
+      vehicle_type: vehicleType,
+      customer_phone: customerPhone || null,
+      notes: notes || null,
+    }).eq("id", order.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("▸ ZAKÁZKA UPRAVENA");
+    onClose();
+  };
+
+  const removeOrder = async () => {
+    if (!confirm("Smazat zakázku?")) return;
+    const { error } = await supabase.from("orders").delete().eq("id", order.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("▸ ZAKÁZKA SMAZÁNA");
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/90 z-[2000] flex items-center justify-center p-4">
+      <form onSubmit={save} className="bg-black border border-primary glow p-5 max-w-md w-full max-h-[90vh] overflow-y-auto space-y-3">
+        <div className="flex justify-between items-center">
+          <h3 className="text-primary font-display text-lg">▸ DETAIL / UPRAVIT</h3>
+          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-primary"><X className="w-5 h-5" /></button>
+        </div>
+
+        <div className="text-[10px] text-muted-foreground">
+          STATUS: <span className="text-primary">{STATUS_LABEL[order.status]}</span>
+          {" · "}VYTVOŘENO: <span className="text-primary">{new Date(order.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}</span>
+        </div>
+
+        <AddressAutocomplete
+          label="ODKUD (adresa vyzvednutí) *"
+          value={pickup}
+          onChange={(v) => { setPickup(v); setPickupCoords({}); }}
+          onSelect={(p) => { setPickup(p.address); setPickupCoords({ lat: p.lat, lng: p.lng }); }}
+          required
+        />
+        <AddressAutocomplete
+          label="KAM (cíl)"
+          value={destination}
+          onChange={(v) => { setDestination(v); setDestCoords({}); }}
+          onSelect={(p) => { setDestination(p.address); setDestCoords({ lat: p.lat, lng: p.lng }); }}
+        />
+
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">DATUM A ČAS (prázdné = HNED)</div>
+          <input
+            type="datetime-local"
+            value={scheduledTime}
+            onChange={(e) => setScheduledTime(e.target.value)}
+            className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm"
+          />
+        </div>
+
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">TYP AUTA</div>
+          <div className="grid grid-cols-2 gap-2">
+            {([["car", "🚗 OSOBNÍ"], ["van", "🚐 DODÁVKA"]] as const).map(([v, label]) => (
+              <button key={v} type="button" onClick={() => setVehicleType(v)}
+                className={`border py-1.5 text-xs ${vehicleType === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">POČET OSOB ({passengers})</div>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => setPassengers(Math.max(1, passengers - 1))}
+              className="border border-primary/40 text-primary w-10 h-10 text-lg">−</button>
+            <input
+              type="number" min={1} max={30} value={passengers}
+              onChange={(e) => setPassengers(Math.min(30, Math.max(1, parseInt(e.target.value) || 1)))}
+              className="flex-1 bg-input border border-primary/40 px-2 py-2 text-primary text-center text-lg"
+            />
+            <button type="button" onClick={() => setPassengers(Math.min(30, passengers + 1))}
+              className="border border-primary/40 text-primary w-10 h-10 text-lg">+</button>
+          </div>
+        </div>
+
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">TELEFON ZÁKAZNÍKA</div>
+          <input
+            type="tel"
+            inputMode="tel"
+            value={customerPhone}
+            onChange={(e) => setCustomerPhone(e.target.value)}
+            placeholder="+420 ..."
+            className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm"
+          />
+          {order.customer_phone && (
+            <a href={`tel:${order.customer_phone}`} className="text-[11px] text-primary underline mt-1 inline-block">📞 Zavolat {order.customer_phone}</a>
+          )}
+        </div>
+
+        <In label="POZNÁMKA" value={notes} onChange={setNotes} />
+
+        <div className="flex gap-2 pt-2">
+          <button type="button" onClick={removeOrder} className="flex-1 border border-destructive text-destructive py-2 text-xs hover:bg-destructive hover:text-white flex items-center justify-center gap-1">
+            <Trash2 className="w-4 h-4" /> SMAZAT
+          </button>
+          <button disabled={saving} className="flex-[2] border border-primary text-primary py-2 hover:bg-primary hover:text-primary-foreground disabled:opacity-50">
+            {saving ? "▸ UKLÁDÁM..." : "▸ ULOŽIT ZMĚNY"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 
 interface Vehicle {
   id: string;
