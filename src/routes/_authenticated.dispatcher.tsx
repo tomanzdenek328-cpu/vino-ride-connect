@@ -489,17 +489,17 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
 
 
         <div>
-          <div className="text-[10px] text-muted-foreground mb-1">TELEFON ZÁKAZNÍKA *</div>
+          <div className="text-[10px] text-muted-foreground mb-1">TELEFON ZÁKAZNÍKA (nepovinné)</div>
           <input
             type="tel"
             inputMode="tel"
-            required
             value={customerPhone}
             onChange={(e) => setCustomerPhone(e.target.value)}
-            placeholder="+420 ..."
+            placeholder="+420 ... (volitelné)"
             className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm"
           />
         </div>
+
 
         <In label="POZNÁMKA (nepovinné)" value={notes} onChange={setNotes} />
 
