@@ -312,7 +312,9 @@ function DispatcherPage() {
                   onCancel={() => cancelOrder(o.id)}
                 />
               </div>
-              ));
+              );
+              });
+
             })()}
 
           </div>
