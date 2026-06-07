@@ -235,8 +235,23 @@ function DispatcherPage() {
                 .filter(o => o.status !== "completed" && o.status !== "cancelled")
                 .sort(sortByTimeAsc);
               if (!active.length) return <div className="p-6 text-center text-muted-foreground text-xs">Žádné aktivní zakázky.</div>;
-              return active.map((o) => (
-              <div key={o.id} className={`border-b p-3 text-sm ${o.priority ? "urgent-flash bg-destructive/5" : !o.released ? "border-amber-warn/40 bg-amber-warn/5" : "border-primary/20"}`}>
+              return active.map((o) => {
+              const isAssignedUnconfirmed = o.status === "assigned";
+              const isPendingUnassigned = o.status === "pending" && !o.assigned_driver_id;
+              const isAcceptedByDriver = o.status === "accepted" || o.status === "in_progress";
+              const cardClass = o.priority
+                ? "urgent-flash bg-destructive/5"
+                : !o.released
+                ? "border-amber-warn/40 bg-amber-warn/5"
+                : isAssignedUnconfirmed
+                ? "border-2 border-orange-500 bg-orange-500/10 blink"
+                : isPendingUnassigned
+                ? "border-orange-500/70 bg-orange-500/5"
+                : isAcceptedByDriver
+                ? "border-2 border-blue-500 bg-blue-500/10"
+                : "border-primary/20";
+              return (
+              <div key={o.id} className={`border-b p-3 text-sm ${cardClass}`}>
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="text-primary font-bold truncate">▸ {o.pickup_address}</div>
@@ -253,7 +268,9 @@ function DispatcherPage() {
                       <span className="text-[10px] px-1.5 py-0.5 border border-destructive text-destructive font-bold blink">🚨 URGENT</span>
                     )}
                     <span className={`text-[10px] px-1.5 py-0.5 border ${
-                      o.status === "pending" ? "border-amber-warn text-amber-warn" :
+                      isAcceptedByDriver ? "border-blue-500 text-blue-500" :
+                      isAssignedUnconfirmed ? "border-orange-500 text-orange-500 blink" :
+                      o.status === "pending" ? "border-orange-500 text-orange-500" :
                       "border-primary text-primary"
                     }`}>{STATUS_LABEL[o.status]}</span>
                     {!o.released && (
@@ -261,6 +278,7 @@ function DispatcherPage() {
                     )}
                   </div>
                 </div>
+
                 <div className="mt-2 flex gap-2">
                   <button
                     onClick={() => setEditOrder(o)}
