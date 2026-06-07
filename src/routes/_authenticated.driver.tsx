@@ -568,12 +568,22 @@ function DriverPage() {
                 ) : (
                   <>
                     {o.customer_phone && (
-                      <a
-                        href={`tel:${o.customer_phone}`}
-                        className="mt-2 w-full border border-primary text-primary py-2 text-sm flex items-center justify-center gap-2 hover:bg-primary hover:text-primary-foreground"
-                      >
-                        📞 ZAVOLAT ZÁKAZNÍKOVI · {o.customer_phone}
-                      </a>
+                      <>
+                        <a
+                          href={`tel:${o.customer_phone}`}
+                          className="mt-2 w-full border border-primary text-primary py-2 text-sm flex items-center justify-center gap-2 hover:bg-primary hover:text-primary-foreground"
+                        >
+                          📞 ZAVOLAT ZÁKAZNÍKOVI · {o.customer_phone}
+                        </a>
+                        <a
+                          href={`sms:${o.customer_phone}?body=${encodeURIComponent(
+                            "Dobrý den, Váš řidič z Vinného Taxi je na cestě k vám.\n\nHello, your Vinné Taxi driver is on the way to you."
+                          )}`}
+                          className="mt-2 w-full border border-primary text-primary py-2 text-sm flex items-center justify-center gap-2 hover:bg-primary hover:text-primary-foreground"
+                        >
+                          <MessageSquare className="w-4 h-4" /> POSLAT SMS ZÁKAZNÍKOVI
+                        </a>
+                      </>
                     )}
                     <div className="mt-2 flex gap-2 flex-wrap">
                       {o.status === "assigned" && (
