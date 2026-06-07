@@ -2,6 +2,7 @@ name: Build Android APK
 
 # Spustí se ručně z GitHubu (Actions → Build Android APK → Run workflow)
 # nebo automaticky při push tagu ve formátu v1.0.0
+# Aktualizováno v Lovable kvůli opětovné synchronizaci workflow do GitHubu.
 on:
   workflow_dispatch:
   push:
