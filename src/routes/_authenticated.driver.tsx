@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { toast } from "sonner";
-import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car, Minus, Trash2, Siren } from "lucide-react";
+import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car, Minus, Trash2, Siren, MessageSquare } from "lucide-react";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
 import { startBackgroundGeolocation, stopBackgroundGeolocation, initPushNotifications, isNative } from "@/lib/native";
 import { SOSAlerts } from "@/components/SOSAlerts";
