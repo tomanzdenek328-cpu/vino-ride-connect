@@ -337,6 +337,7 @@ function DriverPage() {
     if (isNative()) {
       startBackgroundGeolocation(user.id);
       initPushNotifications();
+      initLocalNotifications();
     }
 
 
