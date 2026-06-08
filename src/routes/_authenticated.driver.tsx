@@ -242,6 +242,8 @@ function DriverPage() {
               new Notification(title, { body: row.pickup_address ?? "Nová jízda čeká" });
             }
           } catch {}
+          // Nativní APK: systémová notifikace (i když je app na pozadí).
+          showLocalNotification(title, row.pickup_address ?? "Nová jízda čeká");
         }
         load();
       })
