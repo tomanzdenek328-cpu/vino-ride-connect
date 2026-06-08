@@ -104,3 +104,42 @@ export async function initPushNotifications() {
     console.warn("Push notifications init failed", e);
   }
 }
+
+/**
+ * Vyžádá povolení pro lokální notifikace (jen v APK).
+ */
+export async function initLocalNotifications() {
+  if (!isNative()) return;
+  try {
+    const mod: any = await loadNativeModule("@capacitor/local-notifications");
+    const LocalNotifications = mod.LocalNotifications ?? mod.default;
+    await LocalNotifications.requestPermissions();
+  } catch (e) {
+    console.warn("Local notifications init failed", e);
+  }
+}
+
+/**
+ * Zobrazí systémovou notifikaci v APK (zvuk + vibrace).
+ * Na webu je no-op.
+ */
+export async function showLocalNotification(title: string, body: string) {
+  if (!isNative()) return;
+  try {
+    const mod: any = await loadNativeModule("@capacitor/local-notifications");
+    const LocalNotifications = mod.LocalNotifications ?? mod.default;
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: Math.floor(Math.random() * 2_000_000_000),
+          title,
+          body,
+          smallIcon: "ic_stat_icon_config_sample",
+          sound: undefined,
+        },
+      ],
+    });
+  } catch (e) {
+    console.warn("Local notification show failed", e);
+  }
+}

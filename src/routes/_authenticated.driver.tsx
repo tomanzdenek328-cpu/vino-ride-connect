@@ -7,7 +7,7 @@ import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { toast } from "sonner";
 import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car, Minus, Trash2, Siren, MessageSquare } from "lucide-react";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
-import { startBackgroundGeolocation, stopBackgroundGeolocation, initPushNotifications, isNative } from "@/lib/native";
+import { startBackgroundGeolocation, stopBackgroundGeolocation, initPushNotifications, isNative, initLocalNotifications, showLocalNotification } from "@/lib/native";
 import { SOSAlerts } from "@/components/SOSAlerts";
 import { useServerFn } from "@tanstack/react-start";
 import { saveDriverPushSubscription } from "@/lib/push.functions";
@@ -242,6 +242,8 @@ function DriverPage() {
               new Notification(title, { body: row.pickup_address ?? "Nová jízda čeká" });
             }
           } catch {}
+          // Nativní APK: systémová notifikace (i když je app na pozadí).
+          showLocalNotification(title, row.pickup_address ?? "Nová jízda čeká");
         }
         load();
       })
@@ -335,6 +337,7 @@ function DriverPage() {
     if (isNative()) {
       startBackgroundGeolocation(user.id);
       initPushNotifications();
+      initLocalNotifications();
     }
 
 
