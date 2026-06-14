@@ -7,10 +7,12 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
 import { InstallBanner } from "@/components/InstallBanner";
+import { isNative } from "@/lib/native";
 
 function NotFoundComponent() {
   return (
@@ -100,6 +102,28 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  // Nativní APK: tichá auto-aktualizace každých 30 s, když uživatel zrovna nepíše.
+  useEffect(() => {
+    if (!isNative()) return;
+    let lastInput = Date.now();
+    const bump = () => { lastInput = Date.now(); };
+    window.addEventListener("pointerdown", bump);
+    window.addEventListener("keydown", bump);
+    const id = window.setInterval(() => {
+      // Reload jen když uživatel posledních 25 s nic nedělá – ať mu to neutne formulář.
+      if (Date.now() - lastInput < 25_000) return;
+      const tag = (document.activeElement?.tagName ?? "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select") return;
+      window.location.reload();
+    }, 30_000);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener("pointerdown", bump);
+      window.removeEventListener("keydown", bump);
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
