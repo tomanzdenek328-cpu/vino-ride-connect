@@ -291,9 +291,7 @@ function DispatcherPage() {
               const isAssignedUnconfirmed = o.status === "assigned";
               const isPendingUnassigned = o.status === "pending" && !o.assigned_driver_id;
               const isAcceptedByDriver = o.status === "accepted" || o.status === "in_progress";
-              const cardClass = o.priority
-                ? "urgent-flash bg-destructive/5"
-                : !o.released
+              const cardClass = !o.released
                 ? "border-amber-warn/40 bg-amber-warn/5"
                 : isAssignedUnconfirmed
                 ? "border-2 border-orange-500 bg-orange-500/10 blink"
@@ -342,11 +340,11 @@ function DispatcherPage() {
                     onClick={() => togglePriority(o.id, !o.priority)}
                     className={`flex-1 border py-1.5 text-[11px] font-bold ${
                       o.priority
-                        ? "border-muted-foreground text-muted-foreground hover:bg-muted/20"
+                        ? "border-destructive text-destructive bg-destructive/10 urgent-flash"
                         : "border-destructive text-destructive hover:bg-destructive hover:text-white"
                     }`}
                   >
-                    {o.priority ? "▸ ZRUŠIT URGENT" : "🚨 URGENT"}
+                    {o.priority ? "🚨 URGENT — ZRUŠIT" : "🚨 URGENT"}
                   </button>
                   {!o.released && (
                     <button
