@@ -44,7 +44,7 @@ function base64ToArrayBuffer(base64: string) {
   return bytes.buffer;
 }
 
-export function WalkieTalkie({ userId, callSign }: Props) {
+export function WalkieTalkie({ userId, callSign, open = true, onClose }: Props) {
   const [active, setActive] = useState(false);
   const [recording, setRecording] = useState(false);
   const [sending, setSending] = useState(false);
