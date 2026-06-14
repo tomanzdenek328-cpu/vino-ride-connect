@@ -150,6 +150,7 @@ function DriverPage() {
   const [rides, setRides] = useState<Ride[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [showMap, setShowMap] = useState(false);
+  const [walkieOpen, setWalkieOpen] = useState(false);
   const [showRides, setShowRides] = useState(false);
   const [completing, setCompleting] = useState<Order | null>(null);
   const [vehicles, setVehicles] = useState<{ id: string; plate: string; car_type: string }[]>([]);
@@ -486,6 +487,15 @@ function DriverPage() {
           >
             <Siren className="w-5 h-5" style={{ color: "#ff1a1a", filter: "drop-shadow(0 0 4px #ff1a1a)" }} />
             <span className="text-red-500">SOS</span>
+          </button>
+          <button
+            onClick={() => setWalkieOpen((v) => !v)}
+            className="ml-2 mt-1 border-2 px-4 py-2 text-sm font-bold inline-flex items-center gap-2"
+            style={{ borderColor: "#2563eb", backgroundColor: "#2563eb", color: "#ffffff" }}
+            title="Vysílačka"
+          >
+            <Siren className="w-5 h-5" style={{ color: "#ffffff" }} />
+            <span>VYSÍLAČKA</span>
           </button>
         </div>
 
