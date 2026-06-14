@@ -40,6 +40,11 @@ jobs:
           bunx cap add android || echo "android platform already present"
           bunx cap sync android
 
+      - name: Generate app icon + splash from resources/
+        run: |
+          bun add -d @capacitor/assets || true
+          bunx @capacitor/assets generate --android || echo "icon generation skipped"
+
       - name: Inject Android permissions
         run: |
           MANIFEST=android/app/src/main/AndroidManifest.xml

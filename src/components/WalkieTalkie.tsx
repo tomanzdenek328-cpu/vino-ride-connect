@@ -6,6 +6,8 @@ import { toast } from "sonner";
 interface Props {
   userId: string;
   callSign: string;
+  open?: boolean;
+  onClose?: () => void;
 }
 
 interface IncomingVoice {
