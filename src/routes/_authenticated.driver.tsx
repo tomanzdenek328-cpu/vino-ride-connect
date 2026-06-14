@@ -556,11 +556,42 @@ function DriverPage() {
       )}
 
       <div className="flex-1 overflow-y-auto p-3 space-y-3 pb-28">
+        <section>
+          <h2 className="font-display text-primary text-sm mb-2">▸ VOLNÉ ZAKÁZKY ({pending.length})</h2>
+          {pending.map((o) => (
+            <div key={o.id} className={`p-3 mb-2 border ${o.released ? (o.priority ? "border-destructive" : "border-amber-warn/60") : "border-muted-foreground/40 opacity-70"}`}>
+              <div className="flex items-start justify-between gap-2">
+                <div className={`font-bold flex-1 min-w-0 ${o.released ? (o.priority ? "text-destructive" : "text-amber-warn") : "text-muted-foreground"}`}>▸ {o.pickup_address}</div>
+                {o.priority && (
+                  <span className="text-[10px] px-1.5 py-0.5 border border-destructive text-destructive font-bold blink shrink-0">🚨 URGENT</span>
+                )}
+              </div>
+              {o.destination && <div className="text-xs text-muted-foreground">→ {o.destination}</div>}
+              <div className="text-[10px] text-muted-foreground mt-1">
+                {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
+                {" · "}👥 {o.passengers}
+              </div>
+              {o.notes && <div className="text-xs mt-1">⚠ {o.notes}</div>}
+              {o.released ? (
+                <button onClick={() => acceptPending(o.id)} disabled={!online}
+                  className="mt-2 w-full border border-amber-warn text-amber-warn py-1.5 text-xs hover:bg-amber-warn hover:text-black disabled:opacity-40">
+                  ▸ VZÍT
+                </button>
+              ) : (
+                <div className="mt-2 w-full border border-muted-foreground/60 text-muted-foreground py-1.5 text-xs text-center">
+                  🔒 ČEKÁ NA UVOLNĚNÍ DISPEČEREM
+                </div>
+              )}
+            </div>
+          ))}
+          {!pending.length && <div className="text-xs text-muted-foreground text-center p-4">Žádné volné zakázky.</div>}
+        </section>
+
         {myOrders.length > 0 && (
           <section>
             <h2 className="font-display text-primary text-sm mb-2">▸ MOJE JÍZDA</h2>
             {myOrders.map((o) => (
-              <div key={o.id} className={`p-3 mb-2 ${o.priority ? "urgent-flash bg-destructive/10" : "border border-primary glow"}`}>
+              <div key={o.id} className="p-3 mb-2 border border-primary glow">
                 <div className="flex items-start justify-between gap-2">
                   <div className="text-primary font-bold flex-1 min-w-0">▸ {o.pickup_address}</div>
                   {o.priority && (
@@ -636,37 +667,6 @@ function DriverPage() {
             ))}
           </section>
         )}
-
-        <section>
-          <h2 className="font-display text-primary text-sm mb-2">▸ VOLNÉ ZAKÁZKY ({pending.length})</h2>
-          {pending.map((o) => (
-            <div key={o.id} className={`p-3 mb-2 ${o.priority ? "urgent-flash bg-destructive/10" : `border ${o.released ? "border-amber-warn/60" : "border-muted-foreground/40 opacity-70"}`}`}>
-              <div className="flex items-start justify-between gap-2">
-                <div className={`font-bold flex-1 min-w-0 ${o.released ? (o.priority ? "text-destructive" : "text-amber-warn") : "text-muted-foreground"}`}>▸ {o.pickup_address}</div>
-                {o.priority && (
-                  <span className="text-[10px] px-1.5 py-0.5 border border-destructive text-destructive font-bold blink shrink-0">🚨 URGENT</span>
-                )}
-              </div>
-              {o.destination && <div className="text-xs text-muted-foreground">→ {o.destination}</div>}
-              <div className="text-[10px] text-muted-foreground mt-1">
-                {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
-                {" · "}👥 {o.passengers}
-              </div>
-              {o.notes && <div className="text-xs mt-1">⚠ {o.notes}</div>}
-              {o.released ? (
-                <button onClick={() => acceptPending(o.id)} disabled={!online}
-                  className="mt-2 w-full border border-amber-warn text-amber-warn py-1.5 text-xs hover:bg-amber-warn hover:text-black disabled:opacity-40">
-                  ▸ VZÍT
-                </button>
-              ) : (
-                <div className="mt-2 w-full border border-muted-foreground/60 text-muted-foreground py-1.5 text-xs text-center">
-                  🔒 ČEKÁ NA UVOLNĚNÍ DISPEČEREM
-                </div>
-              )}
-            </div>
-          ))}
-          {!pending.length && <div className="text-xs text-muted-foreground text-center p-4">Žádné volné zakázky.</div>}
-        </section>
       </div>
 
       {completing && (
@@ -681,7 +681,7 @@ function DriverPage() {
         <RidesModal rides={rides} payouts={payouts} totals={totals} userId={user.id} onAdded={loadRides} onPayoutsChanged={loadPayouts} onClose={() => setShowRides(false)} />
       )}
 
-      {user && <WalkieTalkie userId={user.id} callSign={callSign} />}
+      {user && <WalkieTalkie userId={user.id} callSign={callSign} open={walkieOpen} onClose={() => setWalkieOpen(false)} />}
     </div>
   );
 }
