@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
+import { ChatPanel } from "@/components/ChatPanel";
 import { toast } from "sonner";
 import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car, Minus, Trash2, Siren, MessageSquare } from "lucide-react";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
@@ -151,6 +152,7 @@ function DriverPage() {
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [showMap, setShowMap] = useState(false);
   const [walkieOpen, setWalkieOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [showRides, setShowRides] = useState(false);
   const [completing, setCompleting] = useState<Order | null>(null);
   const [vehicles, setVehicles] = useState<{ id: string; plate: string; car_type: string }[]>([]);
