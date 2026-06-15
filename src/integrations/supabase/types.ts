@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          participants: string[] | null
+          sender_id: string
+          thread_key: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          participants?: string[] | null
+          sender_id: string
+          thread_key: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          participants?: string[] | null
+          sender_id?: string
+          thread_key?: string
+        }
+        Relationships: []
+      }
       driver_locations: {
         Row: {
           busy: boolean
