@@ -539,6 +539,14 @@ function DriverPage() {
               ))}
             </select>
           </label>
+          <button
+            onClick={() => setChatOpen(true)}
+            className="border-2 px-4 py-2 text-sm font-bold inline-flex items-center gap-2"
+            style={{ borderColor: "#16a34a", backgroundColor: "#16a34a", color: "#ffffff" }}
+            title="Chat s dispečerem"
+          >
+            <MessageSquare className="w-4 h-4" /> CHAT
+          </button>
         </div>
       </header>
 
@@ -684,6 +692,15 @@ function DriverPage() {
       )}
 
       {user && <WalkieTalkie userId={user.id} callSign={callSign} open={walkieOpen} onClose={() => setWalkieOpen(false)} />}
+      {user && (
+        <ChatPanel
+          open={chatOpen}
+          onClose={() => setChatOpen(false)}
+          currentUserId={user.id}
+          currentUserName={callSign}
+          viewerRole="driver"
+        />
+      )}
     </div>
   );
 }
