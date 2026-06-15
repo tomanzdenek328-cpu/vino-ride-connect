@@ -253,6 +253,13 @@ function DispatcherPage() {
             >
               <MessageSquare className="w-4 h-4" /> CHAT
             </button>
+            <button
+              onClick={() => setWalkieOpen((v) => !v)}
+              className="border-2 px-3 py-2 text-sm font-bold flex items-center gap-1"
+              style={{ borderColor: "#2563eb", backgroundColor: "#2563eb", color: "#ffffff" }}
+            >
+              📻 VYSÍLAČKA
+            </button>
           </div>
         </div>
       </header>
