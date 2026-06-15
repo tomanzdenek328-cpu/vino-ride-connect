@@ -453,7 +453,16 @@ function DispatcherPage() {
       {editOrder && <OrderEditModal order={editOrder} onClose={() => setEditOrder(null)} />}
       {showVehicles && <VehiclesModal onClose={() => setShowVehicles(false)} />}
 
-      {user && <WalkieTalkie userId={user.id} callSign={callSign} />}
+      {user && <WalkieTalkie userId={user.id} callSign={callSign} open={walkieOpen} onClose={() => setWalkieOpen(false)} />}
+      {user && (
+        <ChatPanel
+          open={chatOpen}
+          onClose={() => setChatOpen(false)}
+          currentUserId={user.id}
+          currentUserName={callSign}
+          viewerRole="dispatcher"
+        />
+      )}
     </div>
   );
 }
