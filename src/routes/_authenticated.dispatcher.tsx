@@ -5,11 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
+import { ChatPanel } from "@/components/ChatPanel";
 import { createDriver, updateDriver, deleteDriver, resetDriverRides, deleteRide, getDriverEmail } from "@/lib/drivers.functions";
 import { autoAssignOrder } from "@/lib/auto-assign.functions";
 import { notifyNewOrder } from "@/lib/push.functions";
 import { toast } from "sonner";
-import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2 } from "lucide-react";
+import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, MessageSquare } from "lucide-react";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { createVehicle, updateVehicle, deleteVehicle } from "@/lib/vehicles.functions";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
@@ -87,6 +88,8 @@ function DispatcherPage() {
   const [driverDetail, setDriverDetail] = useState<Driver | null>(null);
   const [archiveOrderDetail, setArchiveOrderDetail] = useState<Order | null>(null);
   const [editOrder, setEditOrder] = useState<Order | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [walkieOpen, setWalkieOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -242,6 +245,13 @@ function DispatcherPage() {
             </button>
             <button onClick={() => setShowDriverForm(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
               <UserPlus className="w-4 h-4" /> ŘIDIČ
+            </button>
+            <button
+              onClick={() => setChatOpen(true)}
+              className="border-2 px-3 py-2 text-sm font-bold flex items-center gap-1"
+              style={{ borderColor: "#16a34a", backgroundColor: "#16a34a", color: "#ffffff" }}
+            >
+              <MessageSquare className="w-4 h-4" /> CHAT
             </button>
           </div>
         </div>
