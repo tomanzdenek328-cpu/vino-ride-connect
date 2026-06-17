@@ -48,19 +48,19 @@ export function ChatPanel({ open, onClose, currentUserId, currentUserName, viewe
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Načti seznam protistran (opačná role)
+  // Načti seznam protistran: řidiči i dispečeři (kromě sebe).
   useEffect(() => {
     if (!open) return;
-    const otherRole = viewerRole === "driver" ? "dispatcher" : "driver";
     (async () => {
-      const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", otherRole);
-      const ids = (roles ?? []).map((r: any) => r.user_id);
+      const { data: roles } = await supabase
+        .from("user_roles").select("user_id,role").in("role", ["driver", "dispatcher"]);
+      const ids = Array.from(new Set((roles ?? []).map((r: any) => r.user_id))).filter((id) => id !== currentUserId);
       if (!ids.length) { setPeers([]); return; }
       const { data: profs } = await supabase
         .from("profiles").select("id,full_name,call_sign").in("id", ids);
       setPeers((profs ?? []) as Peer[]);
     })();
-  }, [open, viewerRole]);
+  }, [open, viewerRole, currentUserId]);
 
   const threads: ThreadDef[] = useMemo(() => {
     const group: ThreadDef = {

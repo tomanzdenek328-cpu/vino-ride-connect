@@ -102,27 +102,21 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
 
-  // Nativní APK: tichá auto-aktualizace každých 30 s, když uživatel zrovna nepíše.
+  // Nativní APK: tichá data-only obnova bez reloadu (žádné blikání).
   useEffect(() => {
     if (!isNative()) return;
-    let lastInput = Date.now();
-    const bump = () => { lastInput = Date.now(); };
-    window.addEventListener("pointerdown", bump);
-    window.addEventListener("keydown", bump);
     const id = window.setInterval(() => {
-      // Reload jen když uživatel posledních 25 s nic nedělá – ať mu to neutne formulář.
-      if (Date.now() - lastInput < 25_000) return;
+      // Neobnovuj, když uživatel zrovna píše
       const tag = (document.activeElement?.tagName ?? "").toLowerCase();
       if (tag === "input" || tag === "textarea" || tag === "select") return;
-      window.location.reload();
-    }, 30_000);
-    return () => {
-      window.clearInterval(id);
-      window.removeEventListener("pointerdown", bump);
-      window.removeEventListener("keydown", bump);
-    };
-  }, []);
+      // Tichá invalidace – jen refetch dat v pozadí, žádný reload stránky
+      void queryClient.invalidateQueries();
+      void router.invalidate();
+    }, 120_000);
+    return () => window.clearInterval(id);
+  }, [queryClient, router]);
 
   return (
     <QueryClientProvider client={queryClient}>
