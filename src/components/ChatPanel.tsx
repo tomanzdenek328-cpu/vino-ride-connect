@@ -148,12 +148,12 @@ export function ChatPanel({ open, onClose, currentUserId, currentUserName, viewe
 
       <div className="flex-1 flex min-h-0">
         {/* Sidebar vláken */}
-        <div className="w-32 sm:w-44 border-r border-primary/40 overflow-y-auto">
+        <div className="w-20 sm:w-28 border-r border-primary/40 overflow-y-auto shrink-0">
           {threads.map((t) => (
             <button
               key={t.key}
               onClick={() => setActiveThread(t.key)}
-              className={`w-full text-left px-2 py-2 text-[11px] border-b border-primary/10 truncate ${
+              className={`w-full text-left px-1.5 py-2 text-[10px] leading-tight border-b border-primary/10 truncate ${
                 activeThread === t.key ? "bg-primary/20 text-primary font-bold" : "text-muted-foreground hover:bg-primary/5"
               }`}
             >
@@ -162,11 +162,12 @@ export function ChatPanel({ open, onClose, currentUserId, currentUserName, viewe
             </button>
           ))}
           {threads.length === 1 && (
-            <div className="text-[10px] text-muted-foreground p-2">
-              Žádné soukromé chaty zatím nejsou.
+            <div className="text-[9px] text-muted-foreground p-1.5">
+              Žádné chaty.
             </div>
           )}
         </div>
+
 
         {/* Bubliny */}
         <div className="flex-1 flex flex-col min-w-0">
@@ -195,23 +196,25 @@ export function ChatPanel({ open, onClose, currentUserId, currentUserName, viewe
 
           <form
             onSubmit={(e) => { e.preventDefault(); void send(); }}
-            className="border-t border-primary/40 p-2 flex gap-2"
+            className="border-t border-primary/40 p-2 flex gap-1.5"
           >
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Napiš zprávu…"
               autoFocus
-              className="flex-1 bg-input border border-primary/40 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
+              className="flex-1 min-w-0 bg-input border border-primary/40 px-2 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             />
             <button
               type="submit"
               disabled={sending || !draft.trim()}
-              className="border border-primary bg-primary text-primary-foreground px-4 py-2 text-sm font-bold flex items-center gap-1 disabled:opacity-50"
+              aria-label="Odeslat"
+              className="border border-primary bg-primary text-primary-foreground px-3 py-2 flex items-center justify-center shrink-0 disabled:opacity-50"
             >
-              <Send className="w-4 h-4" /> POSLAT
+              <Send className="w-5 h-5" />
             </button>
           </form>
+
         </div>
       </div>
     </div>
