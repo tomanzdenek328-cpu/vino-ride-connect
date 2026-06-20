@@ -712,6 +712,9 @@ function DriverPage() {
           currentUserId={user.id}
           currentUserName={callSign}
           viewerRole="driver"
+          unread={chatNotif.unread}
+          onActiveThreadChange={setActiveChatThread}
+          markRead={chatNotif.markRead}
         />
       )}
     </div>
