@@ -90,6 +90,13 @@ function DispatcherPage() {
   const [archiveOrderDetail, setArchiveOrderDetail] = useState<Order | null>(null);
   const [editOrder, setEditOrder] = useState<Order | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [activeChatThread, setActiveChatThread] = useState<string | null>(null);
+  const chatNotif = useChatNotifications({
+    userId: user?.id ?? null,
+    role: "dispatcher",
+    chatOpen,
+    activeThread: activeChatThread,
+  });
   const [walkieOpen, setWalkieOpen] = useState(false);
 
   useEffect(() => {
