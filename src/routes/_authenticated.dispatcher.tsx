@@ -481,6 +481,9 @@ function DispatcherPage() {
           currentUserId={user.id}
           currentUserName={callSign}
           viewerRole="dispatcher"
+          unread={chatNotif.unread}
+          onActiveThreadChange={setActiveChatThread}
+          markRead={chatNotif.markRead}
         />
       )}
     </div>
