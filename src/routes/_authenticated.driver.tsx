@@ -154,6 +154,13 @@ function DriverPage() {
   const [showMap, setShowMap] = useState(false);
   const [walkieOpen, setWalkieOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [activeChatThread, setActiveChatThread] = useState<string | null>(null);
+  const chatNotif = useChatNotifications({
+    userId: user?.id ?? null,
+    role: "driver",
+    chatOpen,
+    activeThread: activeChatThread,
+  });
   const [showRides, setShowRides] = useState(false);
   const [completing, setCompleting] = useState<Order | null>(null);
   const [vehicles, setVehicles] = useState<{ id: string; plate: string; car_type: string }[]>([]);
