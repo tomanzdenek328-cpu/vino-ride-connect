@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { ChatPanel } from "@/components/ChatPanel";
+import { useChatNotifications } from "@/hooks/useChatNotifications";
 import { createDriver, updateDriver, deleteDriver, resetDriverRides, deleteRide, getDriverEmail } from "@/lib/drivers.functions";
 import { autoAssignOrder } from "@/lib/auto-assign.functions";
 import { notifyNewOrder } from "@/lib/push.functions";
@@ -89,6 +90,13 @@ function DispatcherPage() {
   const [archiveOrderDetail, setArchiveOrderDetail] = useState<Order | null>(null);
   const [editOrder, setEditOrder] = useState<Order | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [activeChatThread, setActiveChatThread] = useState<string | null>(null);
+  const chatNotif = useChatNotifications({
+    userId: user?.id ?? null,
+    role: "dispatcher",
+    chatOpen,
+    activeThread: activeChatThread,
+  });
   const [walkieOpen, setWalkieOpen] = useState(false);
 
   useEffect(() => {
@@ -248,10 +256,15 @@ function DispatcherPage() {
             </button>
             <button
               onClick={() => setChatOpen(true)}
-              className="border-2 px-3 py-2 text-sm font-bold flex items-center gap-1"
+              className={`relative border-2 px-3 py-2 text-sm font-bold flex items-center gap-1 ${chatNotif.totalUnread > 0 ? "animate-pulse" : ""}`}
               style={{ borderColor: "#16a34a", backgroundColor: "#16a34a", color: "#ffffff" }}
             >
               <MessageSquare className="w-4 h-4" /> CHAT
+              {chatNotif.totalUnread > 0 && (
+                <span className="absolute -top-2 -right-2 bg-cyan-400 text-black text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center border-2 border-black">
+                  {chatNotif.totalUnread}
+                </span>
+              )}
             </button>
             <button
               onClick={() => setWalkieOpen((v) => !v)}
@@ -468,6 +481,9 @@ function DispatcherPage() {
           currentUserId={user.id}
           currentUserName={callSign}
           viewerRole="dispatcher"
+          unread={chatNotif.unread}
+          onActiveThreadChange={setActiveChatThread}
+          markRead={chatNotif.markRead}
         />
       )}
     </div>

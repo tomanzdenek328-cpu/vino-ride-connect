@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { ChatPanel } from "@/components/ChatPanel";
+import { useChatNotifications } from "@/hooks/useChatNotifications";
 import { toast } from "sonner";
 import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car, Minus, Trash2, Siren, MessageSquare } from "lucide-react";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
@@ -153,6 +154,13 @@ function DriverPage() {
   const [showMap, setShowMap] = useState(false);
   const [walkieOpen, setWalkieOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [activeChatThread, setActiveChatThread] = useState<string | null>(null);
+  const chatNotif = useChatNotifications({
+    userId: user?.id ?? null,
+    role: "driver",
+    chatOpen,
+    activeThread: activeChatThread,
+  });
   const [showRides, setShowRides] = useState(false);
   const [completing, setCompleting] = useState<Order | null>(null);
   const [vehicles, setVehicles] = useState<{ id: string; plate: string; car_type: string }[]>([]);
@@ -541,11 +549,16 @@ function DriverPage() {
           </label>
           <button
             onClick={() => setChatOpen(true)}
-            className="border-2 px-4 py-2 text-sm font-bold inline-flex items-center gap-2"
+            className={`relative border-2 px-4 py-2 text-sm font-bold inline-flex items-center gap-2 ${chatNotif.totalUnread > 0 ? "animate-pulse" : ""}`}
             style={{ borderColor: "#16a34a", backgroundColor: "#16a34a", color: "#ffffff" }}
             title="Chat s dispečerem"
           >
             <MessageSquare className="w-4 h-4" /> CHAT
+            {chatNotif.totalUnread > 0 && (
+              <span className="absolute -top-2 -right-2 bg-cyan-400 text-black text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center border-2 border-black">
+                {chatNotif.totalUnread}
+              </span>
+            )}
           </button>
         </div>
       </header>
@@ -699,6 +712,9 @@ function DriverPage() {
           currentUserId={user.id}
           currentUserName={callSign}
           viewerRole="driver"
+          unread={chatNotif.unread}
+          onActiveThreadChange={setActiveChatThread}
+          markRead={chatNotif.markRead}
         />
       )}
     </div>

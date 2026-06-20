@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { X, Send, Users, MessageSquare } from "lucide-react";
+import { X, Send, Users, MessageSquare, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 interface ChatPanelProps {
@@ -8,14 +8,20 @@ interface ChatPanelProps {
   onClose: () => void;
   currentUserId: string;
   currentUserName: string;
-  /** Pohled: řidič vidí skupinu + každého dispečera; dispečer vidí skupinu + každého řidiče. */
   viewerRole: "driver" | "dispatcher";
+  /** unread counts per thread_key (from useChatNotifications) */
+  unread?: Record<string, number>;
+  /** active thread reporter */
+  onActiveThreadChange?: (key: string | null) => void;
+  /** clears unread when user reads a thread */
+  markRead?: (key: string) => void;
 }
 
 interface Peer {
   id: string;
   call_sign: string;
   full_name: string;
+  role: "driver" | "dispatcher";
 }
 
 interface ChatMessage {
@@ -30,9 +36,7 @@ interface ChatMessage {
 interface ThreadDef {
   key: string;
   label: string;
-  participants: string[] | null; // null = group
-  /** klíč pro filtr příchozích zpráv (skupina) nebo undefined */
-  match: (m: ChatMessage) => boolean;
+  participants: string[] | null;
 }
 
 function directKey(a: string, b: string) {
@@ -40,7 +44,10 @@ function directKey(a: string, b: string) {
   return `direct:${x}:${y}`;
 }
 
-export function ChatPanel({ open, onClose, currentUserId, currentUserName, viewerRole }: ChatPanelProps) {
+export function ChatPanel({
+  open, onClose, currentUserId, currentUserName, viewerRole,
+  unread = {}, onActiveThreadChange, markRead,
+}: ChatPanelProps) {
   const [peers, setPeers] = useState<Peer[]>([]);
   const [activeThread, setActiveThread] = useState<string>("group");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -48,42 +55,64 @@ export function ChatPanel({ open, onClose, currentUserId, currentUserName, viewe
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Načti seznam protistran: řidiči i dispečeři (kromě sebe).
+  // Load peers (both roles, except self)
   useEffect(() => {
     if (!open) return;
     (async () => {
       const { data: roles } = await supabase
         .from("user_roles").select("user_id,role").in("role", ["driver", "dispatcher"]);
-      const ids = Array.from(new Set((roles ?? []).map((r: any) => r.user_id))).filter((id) => id !== currentUserId);
+      const roleMap = new Map<string, "driver" | "dispatcher">();
+      (roles ?? []).forEach((r: any) => roleMap.set(r.user_id, r.role));
+      const ids = Array.from(roleMap.keys()).filter((id) => id !== currentUserId);
       if (!ids.length) { setPeers([]); return; }
       const { data: profs } = await supabase
         .from("profiles").select("id,full_name,call_sign").in("id", ids);
-      setPeers((profs ?? []) as Peer[]);
+      const list: Peer[] = (profs ?? []).map((p: any) => ({
+        ...p, role: roleMap.get(p.id) || "driver",
+      }));
+      setPeers(list);
     })();
-  }, [open, viewerRole, currentUserId]);
+  }, [open, currentUserId]);
 
   const threads: ThreadDef[] = useMemo(() => {
-    const group: ThreadDef = {
-      key: "group",
-      label: "🟢 SPOLEČNÝ CHAT",
-      participants: null,
-      match: (m) => m.thread_key === "group",
-    };
-    const direct: ThreadDef[] = peers.map((p) => {
-      const key = directKey(currentUserId, p.id);
-      return {
-        key,
-        label: `${p.call_sign || p.full_name || "—"}`,
-        participants: [currentUserId, p.id].sort(),
-        match: (m) => m.thread_key === key,
+    const group: ThreadDef = { key: "group", label: "🟢 SPOLEČNÝ", participants: null };
+    if (viewerRole === "driver") {
+      // single shared dispatcher thread + direct chats with other drivers
+      const dispatch: ThreadDef = {
+        key: `dispatch:${currentUserId}`,
+        label: "📞 DISPEČINK",
+        participants: [currentUserId], // dispatchers read via role-based RLS
       };
-    });
-    return [group, ...direct];
-  }, [peers, currentUserId]);
+      const otherDrivers = peers
+        .filter((p) => p.role === "driver")
+        .map((p) => ({
+          key: directKey(currentUserId, p.id),
+          label: p.call_sign || p.full_name || "—",
+          participants: [currentUserId, p.id].sort(),
+        }));
+      return [group, dispatch, ...otherDrivers];
+    } else {
+      // dispatcher: one shared dispatcher-thread per driver
+      const driverThreads = peers
+        .filter((p) => p.role === "driver")
+        .map((p) => ({
+          key: `dispatch:${p.id}`,
+          label: p.call_sign || p.full_name || "—",
+          participants: [p.id],
+        }));
+      return [group, ...driverThreads];
+    }
+  }, [peers, currentUserId, viewerRole]);
 
   const currentDef = threads.find((t) => t.key === activeThread) ?? threads[0];
 
-  // Načti zprávy aktivního vlákna + realtime
+  useEffect(() => {
+    if (!open) { onActiveThreadChange?.(null); return; }
+    onActiveThreadChange?.(currentDef?.key ?? null);
+    if (currentDef?.key) markRead?.(currentDef.key);
+  }, [open, currentDef?.key, onActiveThreadChange, markRead]);
+
+  // Load thread messages + realtime
   useEffect(() => {
     if (!open || !currentDef) return;
     let cancelled = false;
@@ -105,14 +134,14 @@ export function ChatPanel({ open, onClose, currentUserId, currentUserName, viewe
         (payload) => {
           const row = payload.new as ChatMessage;
           setMessages((prev) => (prev.some((m) => m.id === row.id) ? prev : [...prev, row]));
+          markRead?.(currentDef.key);
         }
       )
       .subscribe();
 
     return () => { cancelled = true; supabase.removeChannel(ch); };
-  }, [open, currentDef?.key]);
+  }, [open, currentDef?.key, markRead]);
 
-  // Scroll dolů při nové zprávě
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages.length, activeThread]);
@@ -147,29 +176,31 @@ export function ChatPanel({ open, onClose, currentUserId, currentUserName, viewe
       </div>
 
       <div className="flex-1 flex min-h-0">
-        {/* Sidebar vláken */}
         <div className="w-20 sm:w-28 border-r border-primary/40 overflow-y-auto shrink-0">
-          {threads.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setActiveThread(t.key)}
-              className={`w-full text-left px-1.5 py-2 text-[10px] leading-tight border-b border-primary/10 truncate ${
-                activeThread === t.key ? "bg-primary/20 text-primary font-bold" : "text-muted-foreground hover:bg-primary/5"
-              }`}
-            >
-              {t.key === "group" ? <Users className="w-3 h-3 inline mr-1" /> : "▸ "}
-              {t.label}
-            </button>
-          ))}
-          {threads.length === 1 && (
-            <div className="text-[9px] text-muted-foreground p-1.5">
-              Žádné chaty.
-            </div>
-          )}
+          {threads.map((t) => {
+            const u = unread[t.key] || 0;
+            const isActive = activeThread === t.key;
+            return (
+              <button
+                key={t.key}
+                onClick={() => { setActiveThread(t.key); markRead?.(t.key); }}
+                className={`w-full text-left px-1.5 py-2 text-[10px] leading-tight border-b border-primary/10 truncate flex items-center gap-1 ${
+                  isActive ? "bg-primary/20 text-primary font-bold" : "text-muted-foreground hover:bg-primary/5"
+                }`}
+              >
+                {t.key === "group" ? <Users className="w-3 h-3 shrink-0" /> : <span className="shrink-0">▸</span>}
+                <span className="truncate flex-1">{t.label}</span>
+                {u > 0 && (
+                  <Mail
+                    className="w-3.5 h-3.5 shrink-0 animate-pulse"
+                    style={{ color: "#22d3ee", fill: "#16a34a" }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
 
-
-        {/* Bubliny */}
         <div className="flex-1 flex flex-col min-w-0">
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-2">
             {messages.length === 0 && (
@@ -194,10 +225,8 @@ export function ChatPanel({ open, onClose, currentUserId, currentUserName, viewe
             })}
           </div>
 
-          <form
-            onSubmit={(e) => { e.preventDefault(); void send(); }}
-            className="border-t border-primary/40 p-2 flex gap-1.5"
-          >
+          <form onSubmit={(e) => { e.preventDefault(); void send(); }}
+            className="border-t border-primary/40 p-2 flex gap-1.5">
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
@@ -214,7 +243,6 @@ export function ChatPanel({ open, onClose, currentUserId, currentUserName, viewe
               <Send className="w-5 h-5" />
             </button>
           </form>
-
         </div>
       </div>
     </div>
