@@ -110,5 +110,53 @@ export const notifyNewOrder = createServerFn({ method: "POST" })
       .in("user_id", targetUserIds);
 
     const result = await sendToSubscriptions((subs ?? []) as any, payload);
-    return { ok: true, ...result };
+
+    // Also send FCM (native APK) to those users.
+    let fcmSent = 0;
+    try {
+      const { data: fcmRows } = await supabaseAdmin
+        .from("fcm_tokens").select("id,token").in("user_id", targetUserIds);
+      const tokens = (fcmRows ?? []).map((r: any) => r.token as string);
+      if (tokens.length) {
+        const { sendFcmToTokens } = await import("./fcm.server");
+        const r = await sendFcmToTokens(tokens, {
+          title,
+          body,
+          data: { url: "/driver", orderId: order.id },
+        });
+        fcmSent = r.sent;
+        if (r.invalid.length) {
+          await supabaseAdmin.from("fcm_tokens").delete().in("token", r.invalid);
+        }
+      }
+    } catch (e) {
+      console.error("FCM send failed", e);
+    }
+
+    return { ok: true, ...result, fcmSent };
+  });
+
+export const saveFcmToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      token: z.string().min(10).max(500),
+      platform: z.string().max(20).optional().nullable(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("fcm_tokens")
+      .upsert(
+        {
+          user_id: context.userId,
+          token: data.token,
+          platform: data.platform ?? null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "token" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
