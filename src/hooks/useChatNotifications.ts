@@ -88,13 +88,36 @@ export function useChatNotifications(opts: {
           setUnread((u) => ({ ...u, [m.thread_key]: (u[m.thread_key] || 0) + 1 }));
           setFlash((f) => f + 1);
 
+          // Audible "ding-ding" chime
+          try {
+            const AC = (window.AudioContext || (window as any).webkitAudioContext);
+            if (AC) {
+              const ctx = new AC();
+              const playTone = (freq: number, start: number, dur: number) => {
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
+                o.type = "sine";
+                o.frequency.value = freq;
+                g.gain.setValueAtTime(0.0001, ctx.currentTime + start);
+                g.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + start + 0.02);
+                g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + dur);
+                o.connect(g); g.connect(ctx.destination);
+                o.start(ctx.currentTime + start);
+                o.stop(ctx.currentTime + start + dur + 0.02);
+              };
+              playTone(880, 0, 0.18);
+              playTone(1175, 0.22, 0.22);
+              setTimeout(() => ctx.close().catch(() => {}), 800);
+            }
+          } catch {}
+
           // Look up sender name
           const { data: prof } = await supabase
             .from("profiles").select("call_sign,full_name").eq("id", m.sender_id).maybeSingle();
           const name = prof?.call_sign || prof?.full_name || "Někdo";
           setLastSenderName(name);
 
-          toast(`Nová zpráva od: ${name}`, { description: m.body.slice(0, 80) });
+          toast(`✉ Nová zpráva od: ${name}`, { description: m.body.slice(0, 80) });
           try {
             if (typeof Notification !== "undefined" && Notification.permission === "granted") {
               new Notification(`Nová zpráva od: ${name}`, { body: m.body.slice(0, 120), tag: m.thread_key });
