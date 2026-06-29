@@ -561,13 +561,17 @@ function DriverPage() {
           </label>
           <button
             onClick={() => setChatOpen(true)}
-            className={`relative border-2 px-4 py-2 text-sm font-bold inline-flex items-center gap-2 ${chatNotif.totalUnread > 0 ? "animate-pulse" : ""}`}
-            style={{ borderColor: "#16a34a", backgroundColor: "#16a34a", color: "#ffffff" }}
+            className={`relative border-2 px-4 py-2 text-sm font-bold inline-flex items-center gap-2 ${chatNotif.totalUnread > 0 ? "chat-blink-blue" : ""}`}
+            style={
+              chatNotif.totalUnread > 0
+                ? { borderColor: "#2563eb", backgroundColor: "#2563eb", color: "#ffffff" }
+                : { borderColor: "#16a34a", backgroundColor: "#16a34a", color: "#ffffff" }
+            }
             title="Chat s dispečerem"
           >
-            <MessageSquare className="w-4 h-4" /> CHAT
+            {chatNotif.totalUnread > 0 ? <Mail className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />} CHAT
             {chatNotif.totalUnread > 0 && (
-              <span className="absolute -top-2 -right-2 bg-cyan-400 text-black text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center border-2 border-black">
+              <span className="absolute -top-2 -right-2 bg-cyan-300 text-black text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center border-2 border-black">
                 {chatNotif.totalUnread}
               </span>
             )}
