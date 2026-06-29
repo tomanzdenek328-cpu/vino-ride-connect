@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "754727382789",
-    "project_id": "vinne-taxi-app",
-    "storage_bucket": "vinne-taxi-app.firebasestorage.app"
+    "project_number": "88547346456",
+    "project_id": "vinne-taxi-app-86475",
+    "storage_bucket": "vinne-taxi-app-86475.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:754727382789:android:14b9f031beda4fae4fd16c",
+        "mobilesdk_app_id": "1:88547346456:android:c0176b1237602ebe499b6d",
         "android_client_info": {
-          "package_name": "app.lovable.c365af5eff6f4fb88ed60bd82bd36982"
+          "package_name": "app.lovable.vinnetaxi"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBObcmDXlS-uE_wYM1itIflRGjj0cSSDzE"
+          "current_key": "AIzaSyBPpOqrucyjk3OT3FYQlC7SxKwBbU2VuEk"
         }
       ],
       "services": {
