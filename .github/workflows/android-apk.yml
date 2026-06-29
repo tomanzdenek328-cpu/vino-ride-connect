@@ -32,8 +32,14 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build web (dist/)
-        run: bun run build
+      - name: Prepare webDir (dist/)
+        run: |
+          # Capacitor používá server.url (načítá web z https://vino-ride-connect.lovable.app),
+          # ale i tak potřebuje, aby webDir 'dist' existoval pro `cap sync`.
+          mkdir -p dist
+          if [ ! -f dist/index.html ]; then
+            echo '<!doctype html><html><body>Vinné Taxi</body></html>' > dist/index.html
+          fi
 
       - name: Add Android platform
         run: |
