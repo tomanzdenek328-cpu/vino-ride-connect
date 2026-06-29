@@ -237,11 +237,22 @@ function DriverPage() {
       setOrders((data ?? []) as Order[]);
     };
     load();
+    // Inicializace nativních notifikací HNED (nezávisle na online stavu)
+    if (isNative()) {
+      initPushNotifications();
+      initLocalNotifications();
+    }
     const ch = supabase.channel("driver_orders_rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
         const row: any = payload.new;
-        // Pingni jen u zakázek, které jsou už uvolněné a může je řidič přijmout.
-        if (payload.eventType === "INSERT" && row?.status === "pending" && row?.released !== false) {
+        const isNewPending = payload.eventType === "INSERT" && row?.status === "pending";
+        const assignedToMe =
+          row?.assigned_driver_id === user.id ||
+          (Array.isArray(row?.assigned_driver_ids) && row.assigned_driver_ids.includes(user.id));
+        const isAssignment =
+          payload.eventType === "UPDATE" && assignedToMe &&
+          (payload.old as any)?.assigned_driver_id !== user.id;
+        if (isNewPending || isAssignment) {
           playNewOrderAlert();
           const title = row?.priority ? "🚨 URGENTNÍ ZAKÁZKA" : "▸ NOVÁ ZAKÁZKA";
           toast.success(title, {
@@ -253,7 +264,7 @@ function DriverPage() {
               new Notification(title, { body: row.pickup_address ?? "Nová jízda čeká" });
             }
           } catch {}
-          // Nativní APK: systémová notifikace (i když je app na pozadí).
+          // Nativní APK: systémová notifikace (i když je app na pozadí v paměti).
           showLocalNotification(title, row.pickup_address ?? "Nová jízda čeká");
         }
         load();
@@ -261,6 +272,7 @@ function DriverPage() {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [user]);
+
 
   const loadRides = async () => {
     if (!user) return;
