@@ -91,8 +91,14 @@ export async function initPushNotifications() {
     if (perm.receive !== "granted") return;
     await PushNotifications.register();
 
-    PushNotifications.addListener("registration", (token: any) => {
+    PushNotifications.addListener("registration", async (token: any) => {
       console.log("[push] token:", token.value);
+      try {
+        const { saveFcmToken } = await import("./push.functions");
+        await saveFcmToken({ data: { token: token.value, platform: "android" } });
+      } catch (e) {
+        console.warn("[push] save token failed", e);
+      }
     });
     PushNotifications.addListener("registrationError", (err: any) => {
       console.warn("[push] registration error", err);
