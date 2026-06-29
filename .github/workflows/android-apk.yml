@@ -37,7 +37,16 @@ jobs:
 
       - name: Add Android platform
         run: |
-          bunx cap add android || echo "android platform already present"
+          # Zachovej google-services.json a obnov ho po cap add (cap add vyžaduje, aby android/ neexistovalo)
+          if [ -f android/app/google-services.json ]; then
+            mkdir -p /tmp/gs-backup
+            cp android/app/google-services.json /tmp/gs-backup/google-services.json
+          fi
+          rm -rf android
+          bunx cap add android
+          if [ -f /tmp/gs-backup/google-services.json ]; then
+            cp /tmp/gs-backup/google-services.json android/app/google-services.json
+          fi
           bunx cap sync android
 
       - name: Generate app icon + splash from resources/
