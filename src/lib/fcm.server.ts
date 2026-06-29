@@ -100,7 +100,7 @@ export async function sendFcmToTokens(
           data: payload.data ?? {},
           android: {
             priority: "HIGH" as const,
-            notification: { sound: "default", channel_id: "vinne_taxi_orders" },
+            notification: { sound: "default" },
           },
         },
       };
