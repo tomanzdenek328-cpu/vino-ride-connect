@@ -872,16 +872,33 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
 
   return (
     <div className="fixed inset-0 bg-black z-[1900] flex flex-col">
-      <div className="border-b border-primary/40 p-3 flex items-center justify-between">
-        <div>
-          <h2 className="font-display text-primary glow-text">▸ {driver.call_sign} · {driver.full_name}</h2>
+      <div className="border-b border-primary/40 p-3 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h2 className="font-display text-primary glow-text truncate">▸ {driver.call_sign} · {driver.full_name}</h2>
           <div className="text-[10px] text-muted-foreground">
             {driver.online ? (driver.busy ? "◐ ONLINE · OBSAZENO" : "● ONLINE · VOLNÝ") : "○ OFFLINE"}
           </div>
         </div>
-        <button onClick={onClose} className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1">
-          <X className="w-3 h-3" /> ZAVŘÍT
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={async () => {
+              const next = !driver.online;
+              if (!confirm(next ? "Zapnout řidiči stav ONLINE?" : "Vypnout řidiči stav (OFFLINE)?")) return;
+              const { error } = await supabase
+                .from("driver_locations")
+                .update({ online: next, busy: next ? driver.busy : false })
+                .eq("driver_id", driver.id);
+              if (error) { toast.error(error.message); return; }
+              toast.success(next ? "▸ ŘIDIČ ONLINE" : "▸ ŘIDIČ OFFLINE");
+            }}
+            className={`border px-2 py-1 text-[10px] ${driver.online ? "border-destructive text-destructive hover:bg-destructive/10" : "border-primary text-primary hover:bg-primary/10"}`}
+          >
+            {driver.online ? "VYPNOUT" : "ZAPNOUT"}
+          </button>
+          <button onClick={onClose} className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground flex items-center gap-1">
+            <X className="w-3 h-3" /> ZAVŘÍT
+          </button>
+        </div>
       </div>
       <div className="p-3 grid grid-cols-3 gap-2 border-b border-primary/40">
         <div className="border border-primary/60 p-2">
