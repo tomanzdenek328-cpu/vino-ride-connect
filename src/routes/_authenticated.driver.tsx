@@ -7,7 +7,7 @@ import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useChatNotifications } from "@/hooks/useChatNotifications";
 import { toast } from "sonner";
-import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car, Minus, Trash2, Siren, MessageSquare } from "lucide-react";
+import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car, Minus, Trash2, Siren, MessageSquare, Mail } from "lucide-react";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
 import { startBackgroundGeolocation, stopBackgroundGeolocation, initPushNotifications, isNative, initLocalNotifications, showLocalNotification } from "@/lib/native";
 import { SOSAlerts } from "@/components/SOSAlerts";
