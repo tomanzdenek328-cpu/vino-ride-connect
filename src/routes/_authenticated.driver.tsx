@@ -1029,7 +1029,7 @@ function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged,
             <div className="text-right shrink-0">
               <div className="text-primary font-display">{Number(r.amount).toFixed(0)} Kč</div>
               <div className={`text-[10px] ${r.payment_method === "cash" ? "text-amber-warn" : "text-primary"}`}>
-                {r.payment_method === "cash" ? "HOTOVĚ" : "KARTOU"}
+                {PM_LABEL(r.payment_method)}
               </div>
             </div>
           </button>
