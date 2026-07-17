@@ -1073,7 +1073,7 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
             <div className="text-right shrink-0 flex flex-col items-end gap-1">
               <div className="text-primary font-display">{Number(r.amount).toFixed(0)} Kč</div>
               <div className={`text-[10px] ${r.payment_method === "cash" ? "text-amber-warn" : "text-primary"}`}>
-                {r.payment_method === "cash" ? "HOTOVĚ" : "KARTOU"}
+                {PM_LABEL(r.payment_method)}
               </div>
               <button
                 onClick={async () => {
