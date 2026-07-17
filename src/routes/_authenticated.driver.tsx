@@ -1052,7 +1052,7 @@ function RideEditModal({ ride, onClose, onSaved }: {
   onSaved: () => void | Promise<void>;
 }) {
   const [amount, setAmount] = useState(String(ride.amount));
-  const [method, setMethod] = useState<"cash" | "card">(ride.payment_method);
+  const [method, setMethod] = useState<"cash" | "card" | "invoice">(ride.payment_method);
   const [pickup, setPickup] = useState(ride.pickup_address ?? "");
   const [destination, setDestination] = useState(ride.destination ?? "");
   const [saving, setSaving] = useState(false);
