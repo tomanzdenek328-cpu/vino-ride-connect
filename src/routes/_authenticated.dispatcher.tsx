@@ -11,7 +11,7 @@ import { createDriver, updateDriver, deleteDriver, resetDriverRides, deleteRide,
 import { autoAssignOrder } from "@/lib/auto-assign.functions";
 import { notifyNewOrder } from "@/lib/push.functions";
 import { toast } from "sonner";
-import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, MessageSquare, Mail } from "lucide-react";
+import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, MessageSquare, Mail, FileText } from "lucide-react";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { createVehicle, updateVehicle, deleteVehicle } from "@/lib/vehicles.functions";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
@@ -61,11 +61,15 @@ interface Ride {
   id: string;
   driver_id: string;
   amount: number;
-  payment_method: "cash" | "card";
+  payment_method: "cash" | "card" | "invoice";
   pickup_address: string | null;
   destination: string | null;
   completed_at: string;
 }
+
+const PM_LABEL = (m: string) => m === "cash" ? "HOTOVĚ" : m === "card" ? "KARTOU" : "FAKTURA/QR";
+const PM_SHORT = (m: string) => m === "cash" ? "HOT" : m === "card" ? "KAR" : "FAK";
+
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "ČEKÁ",
@@ -805,9 +809,10 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
 
   const cashRaw = rides.filter(r => r.payment_method === "cash").reduce((s, r) => s + Number(r.amount), 0);
   const card = rides.filter(r => r.payment_method === "card").reduce((s, r) => s + Number(r.amount), 0);
+  const invoice = rides.filter(r => r.payment_method === "invoice").reduce((s, r) => s + Number(r.amount), 0);
   const payoutsTotal = payouts.reduce((s, p) => s + Number(p.amount), 0);
   const cash = cashRaw - payoutsTotal;
-  const total = cashRaw + card - payoutsTotal;
+  const total = cashRaw + card + invoice - payoutsTotal;
 
   const saveEdit = async () => {
     setBusy(true);
@@ -904,21 +909,25 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
           </button>
         </div>
       </div>
-      <div className="p-3 grid grid-cols-3 gap-2 border-b border-primary/40">
+      <div className="p-3 grid grid-cols-2 gap-2 border-b border-primary/40">
         <div className="border border-primary/60 p-2">
           <div className="text-[10px] text-muted-foreground">HOTOVĚ</div>
-          <div className="text-lg text-primary font-display">{cash.toFixed(0)} Kč</div>
+          <div className="text-base text-primary font-display">{cash.toFixed(0)} Kč</div>
           {payoutsTotal > 0 && (
             <div className="text-[9px] text-amber-warn">−{payoutsTotal.toFixed(0)} výdej</div>
           )}
         </div>
         <div className="border border-primary/60 p-2">
           <div className="text-[10px] text-muted-foreground">KARTOU</div>
-          <div className="text-lg text-primary font-display">{card.toFixed(0)} Kč</div>
+          <div className="text-base text-primary font-display">{card.toFixed(0)} Kč</div>
+        </div>
+        <div className="border border-primary/60 p-2">
+          <div className="text-[10px] text-muted-foreground">FAKTURA/QR</div>
+          <div className="text-base text-primary font-display">{invoice.toFixed(0)} Kč</div>
         </div>
         <div className="border border-primary p-2 glow">
           <div className="text-[10px] text-muted-foreground">CELKEM ({rides.length})</div>
-          <div className="text-lg text-primary font-display">{total.toFixed(0)} Kč</div>
+          <div className="text-base text-primary font-display">{total.toFixed(0)} Kč</div>
         </div>
       </div>
 
@@ -983,7 +992,7 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
                 lines.push(`🚖 VINNÉ TAXI – ${driver.call_sign} (${driver.full_name})`);
                 lines.push(`Datum: ${new Date().toLocaleString("cs-CZ")}`);
                 lines.push(`Jízd: ${rides.length}`);
-                lines.push(`Hotově: ${cashRaw.toFixed(0)} Kč · Kartou: ${card.toFixed(0)} Kč`);
+                lines.push(`Hotově: ${cashRaw.toFixed(0)} Kč · Kartou: ${card.toFixed(0)} Kč · Faktura/QR: ${invoice.toFixed(0)} Kč`);
                 if (payoutsTotal > 0) lines.push(`Výdej hotovosti: −${payoutsTotal.toFixed(0)} Kč`);
                 lines.push(`CELKEM: ${total.toFixed(0)} Kč`);
                 lines.push("");
@@ -991,7 +1000,7 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
                 rides.forEach((r, i) => {
                   const dt = new Date(r.completed_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" });
                   const route = `${r.pickup_address ?? "—"}${r.destination ? " → " + r.destination : ""}`;
-                  lines.push(`${i + 1}. ${dt} · ${Number(r.amount).toFixed(0)} Kč ${r.payment_method === "cash" ? "HOT" : "KAR"} · ${route}`);
+                  lines.push(`${i + 1}. ${dt} · ${Number(r.amount).toFixed(0)} Kč ${PM_SHORT(r.payment_method)} · ${route}`);
                 });
                 if (payouts.length) {
                   lines.push("");
@@ -1064,7 +1073,7 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
             <div className="text-right shrink-0 flex flex-col items-end gap-1">
               <div className="text-primary font-display">{Number(r.amount).toFixed(0)} Kč</div>
               <div className={`text-[10px] ${r.payment_method === "cash" ? "text-amber-warn" : "text-primary"}`}>
-                {r.payment_method === "cash" ? "HOTOVĚ" : "KARTOU"}
+                {PM_LABEL(r.payment_method)}
               </div>
               <button
                 onClick={async () => {
@@ -1163,7 +1172,7 @@ function ArchiveOrderDetailModal({ order, onClose }: { order: Order; onClose: ()
                 <div>
                   <div className="text-[10px] text-muted-foreground">PLATBA</div>
                   <div className={ride.payment_method === "cash" ? "text-amber-warn" : "text-primary"}>
-                    {ride.payment_method === "cash" ? "HOTOVĚ" : "KARTOU"}
+                    {PM_LABEL(ride.payment_method)}
                   </div>
                 </div>
               </>

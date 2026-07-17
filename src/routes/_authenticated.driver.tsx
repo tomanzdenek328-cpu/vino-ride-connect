@@ -7,7 +7,7 @@ import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useChatNotifications } from "@/hooks/useChatNotifications";
 import { toast } from "sonner";
-import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car, Minus, Trash2, Siren, MessageSquare, Mail } from "lucide-react";
+import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car, Minus, Trash2, Siren, MessageSquare, Mail, FileText } from "lucide-react";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
 import { startBackgroundGeolocation, stopBackgroundGeolocation, initPushNotifications, isNative, initLocalNotifications, showLocalNotification } from "@/lib/native";
 import { SOSAlerts } from "@/components/SOSAlerts";
@@ -63,11 +63,15 @@ function sortByTimeAsc(a: Order, b: Order): number {
 interface Ride {
   id: string;
   amount: number;
-  payment_method: "cash" | "card";
+  payment_method: "cash" | "card" | "invoice";
   pickup_address: string | null;
   destination: string | null;
   completed_at: string;
 }
+
+const PM_LABEL = (m: string) => m === "cash" ? "HOTOVĚ" : m === "card" ? "KARTOU" : "FAKTURA/QR";
+const PM_SHORT = (m: string) => m === "cash" ? "HOT" : m === "card" ? "KAR" : "FAK";
+
 
 interface Payout {
   id: string;
@@ -445,7 +449,7 @@ function DriverPage() {
     await setBusyAuto(true);
   };
 
-  const submitCompletion = async (amount: number, method: "cash" | "card") => {
+  const submitCompletion = async (amount: number, method: "cash" | "card" | "invoice") => {
     if (!user || !completing) return;
     const o = completing;
     const { error: insErr } = await supabase.from("rides").insert({
@@ -459,7 +463,7 @@ function DriverPage() {
     if (insErr) { toast.error(insErr.message); return; }
     const { error: updErr } = await supabase.from("orders").update({ status: "completed" }).eq("id", o.id);
     if (updErr) { toast.error(updErr.message); return; }
-    toast.success(`▸ DOKONČENO · ${amount} Kč ${method === "cash" ? "HOTOVĚ" : "KARTOU"}`);
+    toast.success(`▸ DOKONČENO · ${amount} Kč ${PM_LABEL(method)}`);
     setCompleting(null);
     await loadRides();
     // Auto-uvolnit, pokud nejsou další aktivní zakázky
@@ -470,9 +474,11 @@ function DriverPage() {
   const totals = useMemo(() => {
     const cashRaw = rides.filter(r => r.payment_method === "cash").reduce((s, r) => s + Number(r.amount), 0);
     const card = rides.filter(r => r.payment_method === "card").reduce((s, r) => s + Number(r.amount), 0);
+    const invoice = rides.filter(r => r.payment_method === "invoice").reduce((s, r) => s + Number(r.amount), 0);
     const payoutsTotal = payouts.reduce((s, p) => s + Number(p.amount), 0);
-    return { cash: cashRaw - payoutsTotal, card, total: cashRaw + card - payoutsTotal, count: rides.length, payoutsTotal };
+    return { cash: cashRaw - payoutsTotal, card, invoice, total: cashRaw + card + invoice - payoutsTotal, count: rides.length, payoutsTotal };
   }, [rides, payouts]);
+
 
   if (loading) return null;
   if (role && role !== "driver") return <Navigate to="/dispatcher" />;
@@ -740,10 +746,10 @@ function DriverPage() {
 function CompleteRideModal({ order, onClose, onSubmit }: {
   order: Order;
   onClose: () => void;
-  onSubmit: (amount: number, method: "cash" | "card") => Promise<void>;
+  onSubmit: (amount: number, method: "cash" | "card" | "invoice") => Promise<void>;
 }) {
   const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState<"cash" | "card">("cash");
+  const [method, setMethod] = useState<"cash" | "card" | "invoice">("cash");
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async (e: FormEvent) => {
@@ -776,18 +782,24 @@ function CompleteRideModal({ order, onClose, onSubmit }: {
         </div>
         <div>
           <div className="text-[10px] text-muted-foreground mb-1">ZPŮSOB PLATBY</div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button type="button" onClick={() => setMethod("cash")}
-              className={`border py-3 text-sm flex items-center justify-center gap-2 ${
+              className={`border py-3 text-xs flex items-center justify-center gap-1 ${
                 method === "cash" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
               }`}>
               <Banknote className="w-4 h-4" /> HOTOVĚ
             </button>
             <button type="button" onClick={() => setMethod("card")}
-              className={`border py-3 text-sm flex items-center justify-center gap-2 ${
+              className={`border py-3 text-xs flex items-center justify-center gap-1 ${
                 method === "card" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
               }`}>
               <CreditCard className="w-4 h-4" /> KARTOU
+            </button>
+            <button type="button" onClick={() => setMethod("invoice")}
+              className={`border py-3 text-xs flex items-center justify-center gap-1 ${
+                method === "invoice" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
+              }`}>
+              <FileText className="w-4 h-4" /> FAKT/QR
             </button>
           </div>
         </div>
@@ -799,10 +811,11 @@ function CompleteRideModal({ order, onClose, onSubmit }: {
   );
 }
 
+
 function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged, onClose }: {
   rides: Ride[];
   payouts: Payout[];
-  totals: { cash: number; card: number; total: number; count: number; payoutsTotal: number };
+  totals: { cash: number; card: number; invoice: number; total: number; count: number; payoutsTotal: number };
   userId: string;
   onAdded: () => void | Promise<void>;
   onPayoutsChanged: () => void | Promise<void>;
@@ -810,7 +823,7 @@ function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged,
 }) {
   const [showAdd, setShowAdd] = useState(false);
   const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState<"cash" | "card">("cash");
+  const [method, setMethod] = useState<"cash" | "card" | "invoice">("cash");
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
   const [saving, setSaving] = useState(false);
@@ -894,18 +907,24 @@ function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged,
             </div>
             <div>
               <div className="text-[10px] text-muted-foreground mb-1">ZPŮSOB ÚHRADY</div>
-              <div className="grid grid-cols-2 gap-1">
+              <div className="grid grid-cols-3 gap-1">
                 <button type="button" onClick={() => setMethod("cash")}
-                  className={`border py-1.5 text-xs flex items-center justify-center gap-1 ${
+                  className={`border py-1.5 text-[10px] flex items-center justify-center gap-1 ${
                     method === "cash" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
                   }`}>
-                  <Banknote className="w-3 h-3" /> HOTOVĚ
+                  <Banknote className="w-3 h-3" /> HOT
                 </button>
                 <button type="button" onClick={() => setMethod("card")}
-                  className={`border py-1.5 text-xs flex items-center justify-center gap-1 ${
+                  className={`border py-1.5 text-[10px] flex items-center justify-center gap-1 ${
                     method === "card" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
                   }`}>
-                  <CreditCard className="w-3 h-3" /> KARTOU
+                  <CreditCard className="w-3 h-3" /> KAR
+                </button>
+                <button type="button" onClick={() => setMethod("invoice")}
+                  className={`border py-1.5 text-[10px] flex items-center justify-center gap-1 ${
+                    method === "invoice" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
+                  }`}>
+                  <FileText className="w-3 h-3" /> FAK
                 </button>
               </div>
             </div>
@@ -920,18 +939,22 @@ function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged,
         </form>
       )}
 
-      <div className="p-3 grid grid-cols-3 gap-2 border-b border-primary/40">
+      <div className="p-3 grid grid-cols-2 gap-2 border-b border-primary/40">
         <div className="border border-primary/60 p-2">
           <div className="text-[10px] text-muted-foreground">HOTOVĚ</div>
-          <div className="text-lg text-primary font-display">{totals.cash.toFixed(0)} Kč</div>
+          <div className="text-base text-primary font-display">{totals.cash.toFixed(0)} Kč</div>
         </div>
         <div className="border border-primary/60 p-2">
           <div className="text-[10px] text-muted-foreground">KARTOU</div>
-          <div className="text-lg text-primary font-display">{totals.card.toFixed(0)} Kč</div>
+          <div className="text-base text-primary font-display">{totals.card.toFixed(0)} Kč</div>
+        </div>
+        <div className="border border-primary/60 p-2">
+          <div className="text-[10px] text-muted-foreground">FAKTURA/QR</div>
+          <div className="text-base text-primary font-display">{totals.invoice.toFixed(0)} Kč</div>
         </div>
         <div className="border border-primary p-2 glow">
           <div className="text-[10px] text-muted-foreground">CELKEM</div>
-          <div className="text-lg text-primary font-display">{totals.total.toFixed(0)} Kč</div>
+          <div className="text-base text-primary font-display">{totals.total.toFixed(0)} Kč</div>
         </div>
       </div>
 
@@ -1006,7 +1029,7 @@ function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged,
             <div className="text-right shrink-0">
               <div className="text-primary font-display">{Number(r.amount).toFixed(0)} Kč</div>
               <div className={`text-[10px] ${r.payment_method === "cash" ? "text-amber-warn" : "text-primary"}`}>
-                {r.payment_method === "cash" ? "HOTOVĚ" : "KARTOU"}
+                {PM_LABEL(r.payment_method)}
               </div>
             </div>
           </button>
@@ -1029,7 +1052,7 @@ function RideEditModal({ ride, onClose, onSaved }: {
   onSaved: () => void | Promise<void>;
 }) {
   const [amount, setAmount] = useState(String(ride.amount));
-  const [method, setMethod] = useState<"cash" | "card">(ride.payment_method);
+  const [method, setMethod] = useState<"cash" | "card" | "invoice">(ride.payment_method);
   const [pickup, setPickup] = useState(ride.pickup_address ?? "");
   const [destination, setDestination] = useState(ride.destination ?? "");
   const [saving, setSaving] = useState(false);
@@ -1081,18 +1104,24 @@ function RideEditModal({ ride, onClose, onSaved }: {
         </div>
         <div>
           <div className="text-[10px] text-muted-foreground mb-1">ZPŮSOB PLATBY</div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button type="button" onClick={() => setMethod("cash")}
-              className={`border py-2 text-sm flex items-center justify-center gap-2 ${
+              className={`border py-2 text-xs flex items-center justify-center gap-1 ${
                 method === "cash" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
               }`}>
               <Banknote className="w-4 h-4" /> HOTOVĚ
             </button>
             <button type="button" onClick={() => setMethod("card")}
-              className={`border py-2 text-sm flex items-center justify-center gap-2 ${
+              className={`border py-2 text-xs flex items-center justify-center gap-1 ${
                 method === "card" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
               }`}>
               <CreditCard className="w-4 h-4" /> KARTOU
+            </button>
+            <button type="button" onClick={() => setMethod("invoice")}
+              className={`border py-2 text-xs flex items-center justify-center gap-1 ${
+                method === "invoice" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
+              }`}>
+              <FileText className="w-4 h-4" /> FAKT/QR
             </button>
           </div>
         </div>
