@@ -1,0 +1,1 @@
+CREATE POLICY "driver deletes own ride" ON public.rides FOR DELETE TO authenticated USING (auth.uid() = driver_id);
