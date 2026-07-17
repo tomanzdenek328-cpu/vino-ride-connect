@@ -1104,18 +1104,24 @@ function RideEditModal({ ride, onClose, onSaved }: {
         </div>
         <div>
           <div className="text-[10px] text-muted-foreground mb-1">ZPŮSOB PLATBY</div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button type="button" onClick={() => setMethod("cash")}
-              className={`border py-2 text-sm flex items-center justify-center gap-2 ${
+              className={`border py-2 text-xs flex items-center justify-center gap-1 ${
                 method === "cash" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
               }`}>
               <Banknote className="w-4 h-4" /> HOTOVĚ
             </button>
             <button type="button" onClick={() => setMethod("card")}
-              className={`border py-2 text-sm flex items-center justify-center gap-2 ${
+              className={`border py-2 text-xs flex items-center justify-center gap-1 ${
                 method === "card" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
               }`}>
               <CreditCard className="w-4 h-4" /> KARTOU
+            </button>
+            <button type="button" onClick={() => setMethod("invoice")}
+              className={`border py-2 text-xs flex items-center justify-center gap-1 ${
+                method === "invoice" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
+              }`}>
+              <FileText className="w-4 h-4" /> FAKT/QR
             </button>
           </div>
         </div>
