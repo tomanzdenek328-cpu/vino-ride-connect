@@ -77,9 +77,35 @@ jobs:
           fi
           cat "$MANIFEST"
 
+      - name: Apply Google Services (Firebase) Gradle plugin
+        run: |
+          # Přidá classpath pro google-services plugin do project-level build.gradle
+          PROJ_GRADLE=android/build.gradle
+          if ! grep -q "com.google.gms:google-services" "$PROJ_GRADLE"; then
+            # Vloží classpath do dependencies bloku buildscriptu
+            awk '
+              /dependencies \{/ && !x {
+                print;
+                print "        classpath '\''com.google.gms:google-services:4.4.2'\''";
+                x=1; next
+              }
+              { print }
+            ' "$PROJ_GRADLE" > "$PROJ_GRADLE.tmp" && mv "$PROJ_GRADLE.tmp" "$PROJ_GRADLE"
+          fi
+          cat "$PROJ_GRADLE"
+
+          # Aplikuje plugin v app-level build.gradle
+          APP_GRADLE=android/app/build.gradle
+          if ! grep -q "com.google.gms.google-services" "$APP_GRADLE"; then
+            echo "" >> "$APP_GRADLE"
+            echo "apply plugin: 'com.google.gms.google-services'" >> "$APP_GRADLE"
+          fi
+          tail -20 "$APP_GRADLE"
+
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
+
 
       - name: Rename APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk vinne-taxi.apk
