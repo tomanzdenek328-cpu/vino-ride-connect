@@ -1172,7 +1172,7 @@ function ArchiveOrderDetailModal({ order, onClose }: { order: Order; onClose: ()
                 <div>
                   <div className="text-[10px] text-muted-foreground">PLATBA</div>
                   <div className={ride.payment_method === "cash" ? "text-amber-warn" : "text-primary"}>
-                    {ride.payment_method === "cash" ? "HOTOVĚ" : "KARTOU"}
+                    {PM_LABEL(ride.payment_method)}
                   </div>
                 </div>
               </>
