@@ -992,7 +992,7 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
                 lines.push(`🚖 VINNÉ TAXI – ${driver.call_sign} (${driver.full_name})`);
                 lines.push(`Datum: ${new Date().toLocaleString("cs-CZ")}`);
                 lines.push(`Jízd: ${rides.length}`);
-                lines.push(`Hotově: ${cashRaw.toFixed(0)} Kč · Kartou: ${card.toFixed(0)} Kč`);
+                lines.push(`Hotově: ${cashRaw.toFixed(0)} Kč · Kartou: ${card.toFixed(0)} Kč · Faktura/QR: ${invoice.toFixed(0)} Kč`);
                 if (payoutsTotal > 0) lines.push(`Výdej hotovosti: −${payoutsTotal.toFixed(0)} Kč`);
                 lines.push(`CELKEM: ${total.toFixed(0)} Kč`);
                 lines.push("");
@@ -1000,7 +1000,7 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
                 rides.forEach((r, i) => {
                   const dt = new Date(r.completed_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" });
                   const route = `${r.pickup_address ?? "—"}${r.destination ? " → " + r.destination : ""}`;
-                  lines.push(`${i + 1}. ${dt} · ${Number(r.amount).toFixed(0)} Kč ${r.payment_method === "cash" ? "HOT" : "KAR"} · ${route}`);
+                  lines.push(`${i + 1}. ${dt} · ${Number(r.amount).toFixed(0)} Kč ${PM_SHORT(r.payment_method)} · ${route}`);
                 });
                 if (payouts.length) {
                   lines.push("");
