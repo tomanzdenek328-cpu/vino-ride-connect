@@ -815,7 +815,7 @@ function CompleteRideModal({ order, onClose, onSubmit }: {
 function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged, onClose }: {
   rides: Ride[];
   payouts: Payout[];
-  totals: { cash: number; card: number; total: number; count: number; payoutsTotal: number };
+  totals: { cash: number; card: number; invoice: number; total: number; count: number; payoutsTotal: number };
   userId: string;
   onAdded: () => void | Promise<void>;
   onPayoutsChanged: () => void | Promise<void>;
@@ -823,7 +823,7 @@ function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged,
 }) {
   const [showAdd, setShowAdd] = useState(false);
   const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState<"cash" | "card">("cash");
+  const [method, setMethod] = useState<"cash" | "card" | "invoice">("cash");
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
   const [saving, setSaving] = useState(false);
