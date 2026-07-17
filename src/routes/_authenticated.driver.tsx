@@ -939,18 +939,22 @@ function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged,
         </form>
       )}
 
-      <div className="p-3 grid grid-cols-3 gap-2 border-b border-primary/40">
+      <div className="p-3 grid grid-cols-2 gap-2 border-b border-primary/40">
         <div className="border border-primary/60 p-2">
           <div className="text-[10px] text-muted-foreground">HOTOVĚ</div>
-          <div className="text-lg text-primary font-display">{totals.cash.toFixed(0)} Kč</div>
+          <div className="text-base text-primary font-display">{totals.cash.toFixed(0)} Kč</div>
         </div>
         <div className="border border-primary/60 p-2">
           <div className="text-[10px] text-muted-foreground">KARTOU</div>
-          <div className="text-lg text-primary font-display">{totals.card.toFixed(0)} Kč</div>
+          <div className="text-base text-primary font-display">{totals.card.toFixed(0)} Kč</div>
+        </div>
+        <div className="border border-primary/60 p-2">
+          <div className="text-[10px] text-muted-foreground">FAKTURA/QR</div>
+          <div className="text-base text-primary font-display">{totals.invoice.toFixed(0)} Kč</div>
         </div>
         <div className="border border-primary p-2 glow">
           <div className="text-[10px] text-muted-foreground">CELKEM</div>
-          <div className="text-lg text-primary font-display">{totals.total.toFixed(0)} Kč</div>
+          <div className="text-base text-primary font-display">{totals.total.toFixed(0)} Kč</div>
         </div>
       </div>
 
