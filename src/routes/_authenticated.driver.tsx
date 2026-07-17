@@ -63,11 +63,15 @@ function sortByTimeAsc(a: Order, b: Order): number {
 interface Ride {
   id: string;
   amount: number;
-  payment_method: "cash" | "card";
+  payment_method: "cash" | "card" | "invoice";
   pickup_address: string | null;
   destination: string | null;
   completed_at: string;
 }
+
+const PM_LABEL = (m: string) => m === "cash" ? "HOTOVĚ" : m === "card" ? "KARTOU" : "FAKTURA/QR";
+const PM_SHORT = (m: string) => m === "cash" ? "HOT" : m === "card" ? "KAR" : "FAK";
+
 
 interface Payout {
   id: string;
