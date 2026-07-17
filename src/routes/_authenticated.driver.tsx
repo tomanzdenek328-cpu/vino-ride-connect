@@ -449,7 +449,7 @@ function DriverPage() {
     await setBusyAuto(true);
   };
 
-  const submitCompletion = async (amount: number, method: "cash" | "card") => {
+  const submitCompletion = async (amount: number, method: "cash" | "card" | "invoice") => {
     if (!user || !completing) return;
     const o = completing;
     const { error: insErr } = await supabase.from("rides").insert({
@@ -463,7 +463,7 @@ function DriverPage() {
     if (insErr) { toast.error(insErr.message); return; }
     const { error: updErr } = await supabase.from("orders").update({ status: "completed" }).eq("id", o.id);
     if (updErr) { toast.error(updErr.message); return; }
-    toast.success(`▸ DOKONČENO · ${amount} Kč ${method === "cash" ? "HOTOVĚ" : "KARTOU"}`);
+    toast.success(`▸ DOKONČENO · ${amount} Kč ${PM_LABEL(method)}`);
     setCompleting(null);
     await loadRides();
     // Auto-uvolnit, pokud nejsou další aktivní zakázky
@@ -474,9 +474,11 @@ function DriverPage() {
   const totals = useMemo(() => {
     const cashRaw = rides.filter(r => r.payment_method === "cash").reduce((s, r) => s + Number(r.amount), 0);
     const card = rides.filter(r => r.payment_method === "card").reduce((s, r) => s + Number(r.amount), 0);
+    const invoice = rides.filter(r => r.payment_method === "invoice").reduce((s, r) => s + Number(r.amount), 0);
     const payoutsTotal = payouts.reduce((s, p) => s + Number(p.amount), 0);
-    return { cash: cashRaw - payoutsTotal, card, total: cashRaw + card - payoutsTotal, count: rides.length, payoutsTotal };
+    return { cash: cashRaw - payoutsTotal, card, invoice, total: cashRaw + card + invoice - payoutsTotal, count: rides.length, payoutsTotal };
   }, [rides, payouts]);
+
 
   if (loading) return null;
   if (role && role !== "driver") return <Navigate to="/dispatcher" />;
