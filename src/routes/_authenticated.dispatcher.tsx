@@ -909,21 +909,25 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
           </button>
         </div>
       </div>
-      <div className="p-3 grid grid-cols-3 gap-2 border-b border-primary/40">
+      <div className="p-3 grid grid-cols-2 gap-2 border-b border-primary/40">
         <div className="border border-primary/60 p-2">
           <div className="text-[10px] text-muted-foreground">HOTOVĚ</div>
-          <div className="text-lg text-primary font-display">{cash.toFixed(0)} Kč</div>
+          <div className="text-base text-primary font-display">{cash.toFixed(0)} Kč</div>
           {payoutsTotal > 0 && (
             <div className="text-[9px] text-amber-warn">−{payoutsTotal.toFixed(0)} výdej</div>
           )}
         </div>
         <div className="border border-primary/60 p-2">
           <div className="text-[10px] text-muted-foreground">KARTOU</div>
-          <div className="text-lg text-primary font-display">{card.toFixed(0)} Kč</div>
+          <div className="text-base text-primary font-display">{card.toFixed(0)} Kč</div>
+        </div>
+        <div className="border border-primary/60 p-2">
+          <div className="text-[10px] text-muted-foreground">FAKTURA/QR</div>
+          <div className="text-base text-primary font-display">{invoice.toFixed(0)} Kč</div>
         </div>
         <div className="border border-primary p-2 glow">
           <div className="text-[10px] text-muted-foreground">CELKEM ({rides.length})</div>
-          <div className="text-lg text-primary font-display">{total.toFixed(0)} Kč</div>
+          <div className="text-base text-primary font-display">{total.toFixed(0)} Kč</div>
         </div>
       </div>
 
