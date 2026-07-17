@@ -907,18 +907,24 @@ function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged,
             </div>
             <div>
               <div className="text-[10px] text-muted-foreground mb-1">ZPŮSOB ÚHRADY</div>
-              <div className="grid grid-cols-2 gap-1">
+              <div className="grid grid-cols-3 gap-1">
                 <button type="button" onClick={() => setMethod("cash")}
-                  className={`border py-1.5 text-xs flex items-center justify-center gap-1 ${
+                  className={`border py-1.5 text-[10px] flex items-center justify-center gap-1 ${
                     method === "cash" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
                   }`}>
-                  <Banknote className="w-3 h-3" /> HOTOVĚ
+                  <Banknote className="w-3 h-3" /> HOT
                 </button>
                 <button type="button" onClick={() => setMethod("card")}
-                  className={`border py-1.5 text-xs flex items-center justify-center gap-1 ${
+                  className={`border py-1.5 text-[10px] flex items-center justify-center gap-1 ${
                     method === "card" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
                   }`}>
-                  <CreditCard className="w-3 h-3" /> KARTOU
+                  <CreditCard className="w-3 h-3" /> KAR
+                </button>
+                <button type="button" onClick={() => setMethod("invoice")}
+                  className={`border py-1.5 text-[10px] flex items-center justify-center gap-1 ${
+                    method === "invoice" ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"
+                  }`}>
+                  <FileText className="w-3 h-3" /> FAK
                 </button>
               </div>
             </div>
