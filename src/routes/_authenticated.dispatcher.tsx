@@ -11,7 +11,7 @@ import { createDriver, updateDriver, deleteDriver, resetDriverRides, deleteRide,
 import { autoAssignOrder } from "@/lib/auto-assign.functions";
 import { notifyNewOrder } from "@/lib/push.functions";
 import { toast } from "sonner";
-import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, MessageSquare, Mail } from "lucide-react";
+import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, MessageSquare, Mail, FileText } from "lucide-react";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { createVehicle, updateVehicle, deleteVehicle } from "@/lib/vehicles.functions";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
