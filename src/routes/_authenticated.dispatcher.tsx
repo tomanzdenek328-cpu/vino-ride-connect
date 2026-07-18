@@ -488,8 +488,9 @@ function DispatcherPage() {
                       </button>
                     )}
                   </div>
-
+                </div>
               </div>
+
             ))}
           </div>
         </div>
