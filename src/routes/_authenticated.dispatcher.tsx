@@ -463,12 +463,34 @@ function DispatcherPage() {
                      </div>
                     <div className="text-[10px] text-primary/60 mt-0.5">Klikni pro detail</div>
                   </div>
-                  <span className={`text-[10px] px-1.5 py-0.5 border ${
-                    o.status === "completed" ? "border-muted-foreground text-muted-foreground" :
-                    "border-destructive text-destructive"
-                  }`}>{STATUS_LABEL[o.status]}</span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`text-[10px] px-1.5 py-0.5 border ${
+                      o.status === "completed" ? "border-muted-foreground text-muted-foreground" :
+                      "border-destructive text-destructive"
+                    }`}>{STATUS_LABEL[o.status]}</span>
+                    {o.status === "cancelled" && (
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (!confirm("Vrátit zakázku zpět do aktivních?")) return;
+                          const { error } = await supabase.from("orders").update({
+                            status: "pending",
+                            assigned_driver_id: null,
+                            assigned_driver_ids: [],
+                            released: false,
+                          }).eq("id", o.id);
+                          if (error) { toast.error("Chyba: " + error.message); return; }
+                          toast.success("▸ ZAKÁZKA VRÁCENA");
+                        }}
+                        className="text-[10px] px-2 py-1 border border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                      >
+                        ↩ VRÁTIT
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
+
             ))}
           </div>
         </div>
