@@ -56,18 +56,27 @@ interface Props {
   showOrders?: boolean;
   onOrderClick?: (id: string) => void;
   followDriverId?: string;
+  showDriverList?: boolean;
 }
 
-function Recenter({ center }: { center: [number, number] }) {
+/** Přesune mapu pouze když se změní klíč (výběr řidiče), ne při každé aktualizaci polohy. */
+function FlyTo({ center, trigger }: { center: [number, number] | null; trigger: string }) {
   const map = useMap();
-  useEffect(() => { map.setView(center, map.getZoom()); }, [center[0], center[1]]); // eslint-disable-line
+  const last = useRef<string>("");
+  useEffect(() => {
+    if (!center) return;
+    if (last.current === trigger) return;
+    last.current = trigger;
+    map.setView(center, map.getZoom());
+  }, [trigger, center?.[0], center?.[1]]); // eslint-disable-line
   return null;
 }
 
-export function LiveMap({ center, showOrders = false, onOrderClick, followDriverId }: Props) {
+export function LiveMap({ center, showOrders = false, onOrderClick, followDriverId, showDriverList = true }: Props) {
   const [drivers, setDrivers] = useState<DriverLoc[]>([]);
   const [orders, setOrders] = useState<OrderMarker[]>([]);
   const [geoCenter, setGeoCenter] = useState<[number, number] | null>(null);
+  const [selected, setSelected] = useState<string>("all");
   const profilesRef = useRef<Record<string, { call_sign: string; full_name: string }>>({});
 
   // Try to center on the viewer's current position once at mount
@@ -142,45 +151,93 @@ export function LiveMap({ center, showOrders = false, onOrderClick, followDriver
     return () => { supabase.removeChannel(ch); };
   }, [showOrders]);
 
-  const focusDriver = followDriverId
-    ? drivers.find((d) => d.driver_id === followDriverId)
-    : null;
-  const mapCenter: [number, number] = focusDriver?.lat && focusDriver?.lng
-    ? [focusDriver.lat, focusDriver.lng]
-    : center ?? geoCenter ?? [50.0755, 14.4378];
+  // Výchozí střed mapy (nastaví se jen jednou při mountu MapContaineru)
+  const initialCenter: [number, number] = center ?? geoCenter ?? [50.0755, 14.4378];
 
+  const activeFollowId = selected !== "all" ? selected : followDriverId;
+  const focusDriver = activeFollowId
+    ? drivers.find((d) => d.driver_id === activeFollowId)
+    : null;
+  const flyCenter: [number, number] | null =
+    focusDriver?.lat != null && focusDriver?.lng != null
+      ? [focusDriver.lat, focusDriver.lng]
+      : center ?? null;
+
+  const sortedDrivers = [...drivers].sort((a, b) => {
+    if (a.online !== b.online) return a.online ? -1 : 1;
+    return a.call_sign.localeCompare(b.call_sign);
+  });
+
+  const visibleDrivers = sortedDrivers.filter(
+    (d) => d.lat != null && d.lng != null && (selected === "all" || d.driver_id === selected),
+  );
 
   return (
-    <MapContainer center={mapCenter} zoom={13} className="w-full h-full" style={{ minHeight: 300 }}>
-      <TileLayer
-        attribution='&copy; OpenStreetMap'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <Recenter center={mapCenter} />
-      {drivers.filter((d) => d.lat && d.lng).map((d) => (
-        <Marker key={d.driver_id} position={[d.lat!, d.lng!]} icon={driverIcon(d.online, d.call_sign)}>
-          <Popup>
-            <div className="font-mono text-xs">
-              <div className="font-bold text-base">▸ {d.call_sign}</div>
-              <div>{d.full_name}</div>
-              <div className={d.online ? "text-primary" : "text-muted-foreground"}>
-                {d.online ? "● ONLINE" : "○ OFFLINE"}
-              </div>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-      {showOrders && orders.map((o) => (
-        <Marker key={o.id} position={[o.pickup_lat, o.pickup_lng]} icon={orderIcon}
-          eventHandlers={onOrderClick ? { click: () => onOrderClick(o.id) } : undefined}>
-          <Popup>
-            <div className="font-mono text-xs">
-              <div className="font-bold">▸ ZAKÁZKA</div>
-              <div>{o.pickup_address}</div>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+    <div className="w-full h-full flex flex-col">
+      {showDriverList && (
+        <div className="flex gap-1 overflow-x-auto pb-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => setSelected("all")}
+            className={`px-2 py-1 rounded border font-mono text-[10px] font-bold whitespace-nowrap ${
+              selected === "all"
+                ? "border-primary text-primary bg-primary/10"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            VŠICHNI ({drivers.length})
+          </button>
+          {sortedDrivers.map((d) => (
+            <button
+              key={d.driver_id}
+              type="button"
+              onClick={() => setSelected(d.driver_id)}
+              className={`px-2 py-1 rounded border font-mono text-[10px] font-bold whitespace-nowrap ${
+                selected === d.driver_id
+                  ? "border-primary text-primary bg-primary/10"
+                  : "border-border text-muted-foreground"
+              }`}
+              title={d.full_name}
+            >
+              {d.online ? "●" : "○"} {d.call_sign}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="flex-1 min-h-0">
+        <MapContainer center={initialCenter} zoom={13} className="w-full h-full" style={{ minHeight: 300 }}>
+          <TileLayer
+            attribution='&copy; OpenStreetMap'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <FlyTo center={flyCenter} trigger={activeFollowId ?? "none"} />
+          {visibleDrivers.map((d) => (
+            <Marker key={d.driver_id} position={[d.lat!, d.lng!]} icon={driverIcon(d.online, d.call_sign)}>
+              <Popup>
+                <div className="font-mono text-xs">
+                  <div className="font-bold text-base">▸ {d.call_sign}</div>
+                  <div>{d.full_name}</div>
+                  <div className={d.online ? "text-primary" : "text-muted-foreground"}>
+                    {d.online ? "● ONLINE" : "○ OFFLINE"}
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+          {showOrders && orders.map((o) => (
+            <Marker key={o.id} position={[o.pickup_lat, o.pickup_lng]} icon={orderIcon}
+              eventHandlers={onOrderClick ? { click: () => onOrderClick(o.id) } : undefined}>
+              <Popup>
+                <div className="font-mono text-xs">
+                  <div className="font-bold">▸ ZAKÁZKA</div>
+                  <div>{o.pickup_address}</div>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+      </div>
+    </div>
   );
 }
+
