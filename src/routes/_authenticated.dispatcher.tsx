@@ -417,8 +417,8 @@ function DispatcherPage() {
               <X className="w-3 h-3" /> ZAVŘÍT
             </button>
           </div>
-          <div className="flex-1">
-            <LiveMap showOrders />
+          <div className="flex-1 min-h-0 p-2">
+            <LiveMap showOrders showDriverList />
           </div>
         </div>
       )}
