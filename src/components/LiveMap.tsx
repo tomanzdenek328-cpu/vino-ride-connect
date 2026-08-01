@@ -40,6 +40,7 @@ interface DriverLoc {
   lat: number | null;
   lng: number | null;
   online: boolean;
+  busy: boolean;
   call_sign: string;
   full_name: string;
 }
@@ -101,7 +102,7 @@ export function LiveMap({ center, showOrders = false, onOrderClick, followDriver
       profilesRef.current = pmap;
       const list: DriverLoc[] = (locs ?? []).map((l: any) => ({
         driver_id: l.driver_id,
-        lat: l.lat, lng: l.lng, online: l.online,
+        lat: l.lat, lng: l.lng, online: l.online, busy: !!l.busy,
         call_sign: pmap[l.driver_id]?.call_sign ?? "—",
         full_name: pmap[l.driver_id]?.full_name ?? "",
       }));
@@ -121,7 +122,7 @@ export function LiveMap({ center, showOrders = false, onOrderClick, followDriver
           }
           const merged: DriverLoc = {
             driver_id: row.driver_id,
-            lat: row.lat, lng: row.lng, online: row.online,
+            lat: row.lat, lng: row.lng, online: row.online, busy: !!row.busy,
             call_sign: profilesRef.current[row.driver_id]?.call_sign ?? "—",
             full_name: profilesRef.current[row.driver_id]?.full_name ?? "",
           };
@@ -163,14 +164,18 @@ export function LiveMap({ center, showOrders = false, onOrderClick, followDriver
       ? [focusDriver.lat, focusDriver.lng]
       : center ?? null;
 
-  const sortedDrivers = [...drivers].sort((a, b) => {
-    if (a.online !== b.online) return a.online ? -1 : 1;
-    return a.call_sign.localeCompare(b.call_sign);
-  });
+  // Zobrazujeme jen online řidiče (i obsazené), offline se nezobrazují
+  const onlineDrivers = drivers.filter((d) => d.online);
+  const sortedDrivers = [...onlineDrivers].sort((a, b) =>
+    a.call_sign.localeCompare(b.call_sign),
+  );
 
   const visibleDrivers = sortedDrivers.filter(
     (d) => d.lat != null && d.lng != null && (selected === "all" || d.driver_id === selected),
   );
+
+  const selectedDriver = selected !== "all" ? drivers.find((d) => d.driver_id === selected) : null;
+  const noPosition = !!selectedDriver && (selectedDriver.lat == null || selectedDriver.lng == null);
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -185,7 +190,7 @@ export function LiveMap({ center, showOrders = false, onOrderClick, followDriver
                 : "border-border text-muted-foreground"
             }`}
           >
-            VŠICHNI ({drivers.length})
+            VŠICHNI ({onlineDrivers.length})
           </button>
           {sortedDrivers.map((d) => (
             <button
@@ -199,9 +204,14 @@ export function LiveMap({ center, showOrders = false, onOrderClick, followDriver
               }`}
               title={d.full_name}
             >
-              {d.online ? "●" : "○"} {d.call_sign}
+              {d.busy ? "◆" : "●"} {d.call_sign}
             </button>
           ))}
+        </div>
+      )}
+      {noPosition && (
+        <div className="shrink-0 px-2 py-1 font-mono text-[10px] font-bold text-orange-400">
+          ⚠ {selectedDriver?.call_sign} zatím neodeslal polohu
         </div>
       )}
       <div className="flex-1 min-h-0">
@@ -217,8 +227,8 @@ export function LiveMap({ center, showOrders = false, onOrderClick, followDriver
                 <div className="font-mono text-xs">
                   <div className="font-bold text-base">▸ {d.call_sign}</div>
                   <div>{d.full_name}</div>
-                  <div className={d.online ? "text-primary" : "text-muted-foreground"}>
-                    {d.online ? "● ONLINE" : "○ OFFLINE"}
+                  <div className={d.busy ? "text-orange-400" : "text-primary"}>
+                    {d.busy ? "◆ OBSAZENO" : "● VOLNÝ"}
                   </div>
                 </div>
               </Popup>
