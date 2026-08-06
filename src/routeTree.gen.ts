@@ -9,17 +9,36 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SledovatRouteImport } from './routes/sledovat'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as QrRouteImport } from './routes/qr'
+import { Route as ObjednatRouteImport } from './routes/objednat'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InstallRouteImport } from './routes/install'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as JizdaCodeRouteImport } from './routes/jizda.$code'
 import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated.driver'
 import { Route as AuthenticatedDispatcherRouteImport } from './routes/_authenticated.dispatcher'
 
+const SledovatRoute = SledovatRouteImport.update({
+  id: '/sledovat',
+  path: '/sledovat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QrRoute = QrRouteImport.update({
+  id: '/qr',
+  path: '/qr',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObjednatRoute = ObjednatRouteImport.update({
+  id: '/objednat',
+  path: '/objednat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -41,6 +60,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JizdaCodeRoute = JizdaCodeRouteImport.update({
+  id: '/jizda/$code',
+  path: '/jizda/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedDriverRoute = AuthenticatedDriverRouteImport.update({
   id: '/driver',
   path: '/driver',
@@ -56,17 +80,25 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
+  '/objednat': typeof ObjednatRoute
+  '/qr': typeof QrRoute
   '/signup': typeof SignupRoute
+  '/sledovat': typeof SledovatRoute
   '/dispatcher': typeof AuthenticatedDispatcherRoute
   '/driver': typeof AuthenticatedDriverRoute
+  '/jizda/$code': typeof JizdaCodeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
+  '/objednat': typeof ObjednatRoute
+  '/qr': typeof QrRoute
   '/signup': typeof SignupRoute
+  '/sledovat': typeof SledovatRoute
   '/dispatcher': typeof AuthenticatedDispatcherRoute
   '/driver': typeof AuthenticatedDriverRoute
+  '/jizda/$code': typeof JizdaCodeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -74,24 +106,52 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
+  '/objednat': typeof ObjednatRoute
+  '/qr': typeof QrRoute
   '/signup': typeof SignupRoute
+  '/sledovat': typeof SledovatRoute
   '/_authenticated/dispatcher': typeof AuthenticatedDispatcherRoute
   '/_authenticated/driver': typeof AuthenticatedDriverRoute
+  '/jizda/$code': typeof JizdaCodeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/install' | '/login' | '/signup' | '/dispatcher' | '/driver'
+  fullPaths:
+    | '/'
+    | '/install'
+    | '/login'
+    | '/objednat'
+    | '/qr'
+    | '/signup'
+    | '/sledovat'
+    | '/dispatcher'
+    | '/driver'
+    | '/jizda/$code'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/install' | '/login' | '/signup' | '/dispatcher' | '/driver'
+  to:
+    | '/'
+    | '/install'
+    | '/login'
+    | '/objednat'
+    | '/qr'
+    | '/signup'
+    | '/sledovat'
+    | '/dispatcher'
+    | '/driver'
+    | '/jizda/$code'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/install'
     | '/login'
+    | '/objednat'
+    | '/qr'
     | '/signup'
+    | '/sledovat'
     | '/_authenticated/dispatcher'
     | '/_authenticated/driver'
+    | '/jizda/$code'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -99,16 +159,41 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   InstallRoute: typeof InstallRoute
   LoginRoute: typeof LoginRoute
+  ObjednatRoute: typeof ObjednatRoute
+  QrRoute: typeof QrRoute
   SignupRoute: typeof SignupRoute
+  SledovatRoute: typeof SledovatRoute
+  JizdaCodeRoute: typeof JizdaCodeRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sledovat': {
+      id: '/sledovat'
+      path: '/sledovat'
+      fullPath: '/sledovat'
+      preLoaderRoute: typeof SledovatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qr': {
+      id: '/qr'
+      path: '/qr'
+      fullPath: '/qr'
+      preLoaderRoute: typeof QrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/objednat': {
+      id: '/objednat'
+      path: '/objednat'
+      fullPath: '/objednat'
+      preLoaderRoute: typeof ObjednatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -137,6 +222,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jizda/$code': {
+      id: '/jizda/$code'
+      path: '/jizda/$code'
+      fullPath: '/jizda/$code'
+      preLoaderRoute: typeof JizdaCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/driver': {
@@ -175,18 +267,12 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   InstallRoute: InstallRoute,
   LoginRoute: LoginRoute,
+  ObjednatRoute: ObjednatRoute,
+  QrRoute: QrRoute,
   SignupRoute: SignupRoute,
+  SledovatRoute: SledovatRoute,
+  JizdaCodeRoute: JizdaCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

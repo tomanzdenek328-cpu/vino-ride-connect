@@ -144,12 +144,14 @@ export type Database = {
           assigned_driver_id: string | null
           assigned_driver_ids: string[]
           created_at: string
-          created_by: string
+          created_by: string | null
           customer_name: string | null
           customer_phone: string | null
           destination: string | null
           destination_lat: number | null
           destination_lng: number | null
+          estimated_distance_km: number | null
+          estimated_price: number | null
           id: string
           notes: string | null
           passengers: number
@@ -159,7 +161,9 @@ export type Database = {
           priority: boolean
           released: boolean
           scheduled_time: string | null
+          source: string
           status: Database["public"]["Enums"]["order_status"]
+          tracking_code: string | null
           updated_at: string
           vehicle_type: string | null
         }
@@ -167,12 +171,14 @@ export type Database = {
           assigned_driver_id?: string | null
           assigned_driver_ids?: string[]
           created_at?: string
-          created_by: string
+          created_by?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           destination?: string | null
           destination_lat?: number | null
           destination_lng?: number | null
+          estimated_distance_km?: number | null
+          estimated_price?: number | null
           id?: string
           notes?: string | null
           passengers?: number
@@ -182,7 +188,9 @@ export type Database = {
           priority?: boolean
           released?: boolean
           scheduled_time?: string | null
+          source?: string
           status?: Database["public"]["Enums"]["order_status"]
+          tracking_code?: string | null
           updated_at?: string
           vehicle_type?: string | null
         }
@@ -190,12 +198,14 @@ export type Database = {
           assigned_driver_id?: string | null
           assigned_driver_ids?: string[]
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           destination?: string | null
           destination_lat?: number | null
           destination_lng?: number | null
+          estimated_distance_km?: number | null
+          estimated_price?: number | null
           id?: string
           notes?: string | null
           passengers?: number
@@ -205,7 +215,9 @@ export type Database = {
           priority?: boolean
           released?: boolean
           scheduled_time?: string | null
+          source?: string
           status?: Database["public"]["Enums"]["order_status"]
+          tracking_code?: string | null
           updated_at?: string
           vehicle_type?: string | null
         }
@@ -334,6 +346,42 @@ export type Database = {
         }
         Relationships: []
       }
+      tariffs: {
+        Row: {
+          base_fare: number
+          capacity: number
+          created_at: string
+          id: string
+          label: string
+          per_km: number
+          sort_order: number
+          updated_at: string
+          vehicle_type: string
+        }
+        Insert: {
+          base_fare?: number
+          capacity?: number
+          created_at?: string
+          id?: string
+          label: string
+          per_km?: number
+          sort_order?: number
+          updated_at?: string
+          vehicle_type: string
+        }
+        Update: {
+          base_fare?: number
+          capacity?: number
+          created_at?: string
+          id?: string
+          label?: string
+          per_km?: number
+          sort_order?: number
+          updated_at?: string
+          vehicle_type?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -362,6 +410,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          photo_url: string | null
           plate: string
           updated_at: string
         }
@@ -371,6 +420,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          photo_url?: string | null
           plate: string
           updated_at?: string
         }
@@ -380,6 +430,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          photo_url?: string | null
           plate?: string
           updated_at?: string
         }
