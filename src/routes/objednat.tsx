@@ -244,13 +244,15 @@ function OrderPage() {
         >
           {sending ? "ODESÍLÁM…" : "▸ OBJEDNAT JÍZDU"}
         </button>
-      </form>
+        </form>
+        </CustomerCard>
 
-      <div className="mt-6 text-center">
-        <Link to="/sledovat" className="text-[11px] text-muted-foreground underline">
-          Mám kód objednávky – sledovat jízdu
-        </Link>
+        <div className="mt-6 text-center">
+          <Link to="/sledovat" className="text-[11px] text-foreground/80 underline">
+            Mám kód objednávky – sledovat jízdu
+          </Link>
+        </div>
       </div>
-    </div>
+    </CustomerShell>
   );
 }
