@@ -3,6 +3,7 @@ import { ClientOnly } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { trackOrder } from "@/lib/customer.functions";
+import { CustomerShell, CustomerCard } from "@/components/CustomerShell";
 
 const CustomerMap = lazy(() => import("@/components/CustomerMap"));
 
@@ -53,17 +54,23 @@ function TrackPage() {
   }, [load]);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-primary">Načítám…</div>;
+    return (
+      <CustomerShell>
+        <div className="min-h-screen flex items-center justify-center text-primary">Načítám…</div>
+      </CustomerShell>
+    );
   }
 
   if (!state?.found) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6">
+      <CustomerShell>
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6">
         <div className="text-destructive">Objednávku s kódem {code} jsme nenašli.</div>
-        <Link to="/objednat" className="border border-primary text-primary px-6 py-2">
+        <Link to="/objednat" className="border border-primary bg-background/80 text-primary px-6 py-2">
           ▸ NOVÁ OBJEDNÁVKA
         </Link>
-      </div>
+        </div>
+      </CustomerShell>
     );
   }
 
@@ -72,15 +79,16 @@ function TrackPage() {
   const st = STATUS[o.status] ?? { label: o.status, color: "text-muted-foreground" };
 
   return (
-    <div className="min-h-screen px-4 py-6 max-w-md mx-auto space-y-4">
+    <CustomerShell>
+      <div className="px-4 py-6 max-w-md mx-auto space-y-4">
       <div>
         <h1 className="font-display text-xl text-primary glow-text">▸ VAŠE JÍZDA</h1>
         <div className="text-[11px] text-muted-foreground tracking-widest">KÓD: {code}</div>
       </div>
 
-      <div className={`border border-primary/40 p-3 font-bold tracking-widest ${st.color}`}>{st.label}</div>
+      <div className={`rounded-xl border border-primary/40 bg-background/80 backdrop-blur-md p-3 font-bold tracking-widest ${st.color}`}>{st.label}</div>
 
-      <div className="border border-border p-3 text-xs space-y-1">
+      <div className="rounded-xl border border-border bg-background/80 backdrop-blur-md p-3 text-xs space-y-1">
         <div>
           <span className="text-muted-foreground">Odkud:</span> {o.pickup_address}
         </div>
@@ -97,7 +105,7 @@ function TrackPage() {
       </div>
 
       {d && (
-        <div className="border border-primary/40 p-3 space-y-2">
+        <div className="rounded-xl border border-primary/40 bg-background/80 backdrop-blur-md p-3 space-y-2">
           <div className="text-[10px] text-muted-foreground tracking-widest">VÁŠ ŘIDIČ</div>
           <div className="flex items-center gap-3">
             {d.photo_url ? (
@@ -119,7 +127,7 @@ function TrackPage() {
         </div>
       )}
 
-      <div className="h-72 border border-border">
+      <div className="h-72 rounded-xl overflow-hidden border border-border">
         <ClientOnly fallback={<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">Mapa…</div>}>
           <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">Mapa…</div>}>
             <CustomerMap
@@ -131,10 +139,11 @@ function TrackPage() {
       </div>
 
       <div className="text-center">
-        <Link to="/objednat" className="text-[11px] text-muted-foreground underline">
+        <Link to="/objednat" className="text-[11px] text-foreground/80 underline">
           Objednat další jízdu
         </Link>
       </div>
-    </div>
+      </div>
+    </CustomerShell>
   );
 }
