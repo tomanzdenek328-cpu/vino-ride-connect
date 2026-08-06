@@ -38,14 +38,24 @@ function TrackPage() {
 
   const load = useCallback(async () => {
     try {
-      const r = await track({ data: { code } });
+      const r: any = await track({ data: { code } });
       setState(r);
+      try {
+        if (r?.found && ["completed", "cancelled"].includes(r.order.status)) {
+          if (localStorage.getItem("vt_ride_code") === code) localStorage.removeItem("vt_ride_code");
+        } else if (r?.found) {
+          localStorage.setItem("vt_ride_code", code);
+        }
+      } catch {
+        /* ignore */
+      }
     } catch {
       /* ignore */
     } finally {
       setLoading(false);
     }
   }, [track, code]);
+
 
   useEffect(() => {
     load();

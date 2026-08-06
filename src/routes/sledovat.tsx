@@ -20,6 +20,13 @@ export const Route = createFileRoute("/sledovat")({
 function TrackForm() {
   const navigate = useNavigate();
   const [code, setCode] = useState("");
+
+  // Poslední jízdu otevřeme automaticky – zákazník kód psát nemusí.
+  useEffect(() => {
+    const saved = localStorage.getItem("vt_ride_code");
+    if (saved) navigate({ to: "/jizda/$code", params: { code: saved } });
+  }, [navigate]);
+
   return (
     <CustomerShell>
       <div className="min-h-screen flex flex-col items-center justify-center p-6 gap-4">
