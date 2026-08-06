@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ObjednatRouteImport } from './routes/objednat'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InstallRouteImport } from './routes/install'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
@@ -20,6 +21,11 @@ import { Route as AuthenticatedDispatcherRouteImport } from './routes/_authentic
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObjednatRoute = ObjednatRouteImport.update({
+  id: '/objednat',
+  path: '/objednat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -56,6 +62,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
+  '/objednat': typeof ObjednatRoute
   '/signup': typeof SignupRoute
   '/dispatcher': typeof AuthenticatedDispatcherRoute
   '/driver': typeof AuthenticatedDriverRoute
@@ -64,6 +71,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
+  '/objednat': typeof ObjednatRoute
   '/signup': typeof SignupRoute
   '/dispatcher': typeof AuthenticatedDispatcherRoute
   '/driver': typeof AuthenticatedDriverRoute
@@ -74,21 +82,37 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/install': typeof InstallRoute
   '/login': typeof LoginRoute
+  '/objednat': typeof ObjednatRoute
   '/signup': typeof SignupRoute
   '/_authenticated/dispatcher': typeof AuthenticatedDispatcherRoute
   '/_authenticated/driver': typeof AuthenticatedDriverRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/install' | '/login' | '/signup' | '/dispatcher' | '/driver'
+  fullPaths:
+    | '/'
+    | '/install'
+    | '/login'
+    | '/objednat'
+    | '/signup'
+    | '/dispatcher'
+    | '/driver'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/install' | '/login' | '/signup' | '/dispatcher' | '/driver'
+  to:
+    | '/'
+    | '/install'
+    | '/login'
+    | '/objednat'
+    | '/signup'
+    | '/dispatcher'
+    | '/driver'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/install'
     | '/login'
+    | '/objednat'
     | '/signup'
     | '/_authenticated/dispatcher'
     | '/_authenticated/driver'
@@ -99,6 +123,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   InstallRoute: typeof InstallRoute
   LoginRoute: typeof LoginRoute
+  ObjednatRoute: typeof ObjednatRoute
   SignupRoute: typeof SignupRoute
 }
 
@@ -109,6 +134,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/objednat': {
+      id: '/objednat'
+      path: '/objednat'
+      fullPath: '/objednat'
+      preLoaderRoute: typeof ObjednatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -175,18 +207,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   InstallRoute: InstallRoute,
   LoginRoute: LoginRoute,
+  ObjednatRoute: ObjednatRoute,
   SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
