@@ -49,9 +49,10 @@ function TrackPage() {
 
   useEffect(() => {
     load();
-    const t = setInterval(load, 15000);
+    const t = setInterval(load, 5000);
     return () => clearInterval(t);
   }, [load]);
+
 
   if (loading) {
     return (
