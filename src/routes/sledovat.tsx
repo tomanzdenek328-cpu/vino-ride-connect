@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 import { CustomerShell, CustomerCard } from "@/components/CustomerShell";
 
 export const Route = createFileRoute("/sledovat")({
