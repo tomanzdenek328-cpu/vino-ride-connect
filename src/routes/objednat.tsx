@@ -132,7 +132,13 @@ function OrderPage() {
           estimated_distance_km: est?.km ?? null,
         },
       });
+      try {
+        localStorage.setItem("vt_ride_code", res.tracking_code);
+      } catch {
+        /* ignore */
+      }
       navigate({ to: "/jizda/$code", params: { code: res.tracking_code } });
+
     } catch (err: any) {
       setError(err?.message ?? "Objednávku se nepodařilo odeslat.");
     } finally {
