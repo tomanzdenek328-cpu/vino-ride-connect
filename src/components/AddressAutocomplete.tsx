@@ -47,14 +47,15 @@ export function AddressAutocomplete({ label, value, onChange, onSelect, required
     try {
       const p = await resolve({ data: { placeId: s.placeId, sessionToken: sessionRef.current } });
       sessionRef.current = crypto.randomUUID();
-      onSelect?.({ address: p.formattedAddress ?? s.text, lat: p.lat, lng: p.lng });
       skipNextRef.current = true;
       onChange(p.formattedAddress ?? s.text);
+      onSelect?.({ address: p.formattedAddress ?? s.text, lat: p.lat, lng: p.lng });
     } catch (e) {
       console.error(e);
       onSelect?.({ address: s.text });
     }
   };
+
 
   return (
     <label className="block relative">
