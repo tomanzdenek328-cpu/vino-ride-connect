@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
+import { CustomerShell } from "@/components/CustomerShell";
 
 export const Route = createFileRoute("/qr")({
   head: () => ({
@@ -24,7 +25,8 @@ function QrPage() {
   const url = `${origin}/objednat`;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-5 p-6 text-center">
+    <CustomerShell>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-5 p-6 text-center">
       <h1 className="font-display text-2xl text-primary glow-text">▸ OBJEDNEJ TAXI</h1>
       <div className="bg-white p-4">
         <QRCodeSVG value={url} size={240} />
@@ -39,6 +41,7 @@ function QrPage() {
       >
         ▸ VYTISKNOUT
       </button>
-    </div>
+      </div>
+    </CustomerShell>
   );
 }

@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { CustomerShell, CustomerCard } from "@/components/CustomerShell";
 
 export const Route = createFileRoute("/sledovat")({
   head: () => ({
@@ -19,7 +20,9 @@ function TrackForm() {
   const navigate = useNavigate();
   const [code, setCode] = useState("");
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 gap-4">
+    <CustomerShell>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 gap-4">
+      <CustomerCard>
       <h1 className="font-display text-xl text-primary glow-text">▸ SLEDOVAT JÍZDU</h1>
       <form
         className="w-full max-w-xs space-y-3"
@@ -38,6 +41,8 @@ function TrackForm() {
           ▸ ZOBRAZIT
         </button>
       </form>
-    </div>
+      </CustomerCard>
+      </div>
+    </CustomerShell>
   );
 }
