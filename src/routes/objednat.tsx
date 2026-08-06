@@ -120,9 +120,21 @@ function OrderPage() {
   };
 
   return (
-    <div className="min-h-screen px-4 py-6 max-w-md mx-auto">
-      <h1 className="font-display text-2xl text-primary glow-text mb-1">▸ OBJEDNAT TAXI</h1>
-      <p className="text-[11px] text-muted-foreground mb-5 tracking-widest">VINNÉ TAXI · ONLINE OBJEDNÁVKA</p>
+    <CustomerShell>
+      <div className="px-4 py-6 max-w-md mx-auto">
+        <div className="text-center mb-4">
+          <img
+            src={logo}
+            alt="Vinné Taxi"
+            className="mx-auto w-56 drop-shadow-[0_0_25px_rgba(57,255,20,0.45)]"
+          />
+          <p className="text-[11px] text-muted-foreground mt-1 tracking-widest">
+            OBJEDNEJTE SI JÍZDU ONLINE
+          </p>
+        </div>
+
+        <CustomerCard>
+          <h1 className="font-display text-xl text-primary glow-text mb-3">▸ OBJEDNAT TAXI</h1>
 
       <form onSubmit={submit} className="space-y-3">
         <AddressAutocomplete
