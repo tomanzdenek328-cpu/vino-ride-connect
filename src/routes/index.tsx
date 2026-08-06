@@ -39,10 +39,16 @@ function Index() {
         ▸ DISPATCH TERMINAL v1.0
       </div>
       <Link
-        to="/login"
-        className="mt-8 border border-primary text-primary px-8 py-3 hover:bg-primary hover:text-primary-foreground tracking-widest font-bold glow"
+        to="/objednat"
+        className="mt-8 border border-primary bg-primary/10 text-primary px-8 py-3 hover:bg-primary hover:text-primary-foreground tracking-widest font-bold glow"
       >
-        ▸ PŘIHLÁSIT
+        ▸ OBJEDNAT TAXI
+      </Link>
+      <Link
+        to="/login"
+        className="mt-3 border border-border text-muted-foreground px-8 py-2 text-sm tracking-widest"
+      >
+        ▸ PŘIHLÁSIT (ŘIDIČ / DISPEČER)
       </Link>
     </div>
   );
