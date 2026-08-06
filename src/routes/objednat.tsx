@@ -36,11 +36,14 @@ type Estimate = {
   options: (Tariff & { price: number })[];
 };
 
+const ACTIVE = ["pending", "assigned", "accepted", "in_progress"];
+
 function OrderPage() {
   const navigate = useNavigate();
   const estimate = useServerFn(estimateRide);
   const create = useServerFn(createCustomerOrder);
   const tariffsFn = useServerFn(getTariffs);
+  const track = useServerFn(trackOrder);
 
   const [pickup, setPickup] = useState<Point>({ address: "" });
   const [dest, setDest] = useState<Point>({ address: "" });
@@ -56,6 +59,21 @@ function OrderPage() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
 
+  // Pokud má zákazník rozjetou jízdu, otevřeme ji rovnou – bez zadávání kódu.
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("vt_ride_code") : null;
+    if (!saved) return;
+    track({ data: { code: saved } })
+      .then((r: any) => {
+        if (r?.found && ACTIVE.includes(r.order.status)) {
+          navigate({ to: "/jizda/$code", params: { code: saved } });
+        } else {
+          localStorage.removeItem("vt_ride_code");
+        }
+      })
+      .catch(() => {});
+  }, [track, navigate]);
+
   useEffect(() => {
     tariffsFn()
       .then((t) => {
@@ -64,6 +82,7 @@ function OrderPage() {
       })
       .catch(() => {});
   }, [tariffsFn]);
+
 
   useEffect(() => {
     if (pickup.lat == null || dest.lat == null) {
