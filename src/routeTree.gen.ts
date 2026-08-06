@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as InstallRouteImport } from './routes/install'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as JizdaCodeRouteImport } from './routes/jizda.$code'
 import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated.driver'
 import { Route as AuthenticatedDispatcherRouteImport } from './routes/_authenticated.dispatcher'
 
@@ -47,6 +48,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JizdaCodeRoute = JizdaCodeRouteImport.update({
+  id: '/jizda/$code',
+  path: '/jizda/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedDriverRoute = AuthenticatedDriverRouteImport.update({
   id: '/driver',
   path: '/driver',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/dispatcher': typeof AuthenticatedDispatcherRoute
   '/driver': typeof AuthenticatedDriverRoute
+  '/jizda/$code': typeof JizdaCodeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/dispatcher': typeof AuthenticatedDispatcherRoute
   '/driver': typeof AuthenticatedDriverRoute
+  '/jizda/$code': typeof JizdaCodeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_authenticated/dispatcher': typeof AuthenticatedDispatcherRoute
   '/_authenticated/driver': typeof AuthenticatedDriverRoute
+  '/jizda/$code': typeof JizdaCodeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/dispatcher'
     | '/driver'
+    | '/jizda/$code'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/dispatcher'
     | '/driver'
+    | '/jizda/$code'
   id:
     | '__root__'
     | '/'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_authenticated/dispatcher'
     | '/_authenticated/driver'
+    | '/jizda/$code'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -125,6 +137,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ObjednatRoute: typeof ObjednatRoute
   SignupRoute: typeof SignupRoute
+  JizdaCodeRoute: typeof JizdaCodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/jizda/$code': {
+      id: '/jizda/$code'
+      path: '/jizda/$code'
+      fullPath: '/jizda/$code'
+      preLoaderRoute: typeof JizdaCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/driver': {
       id: '/_authenticated/driver'
       path: '/driver'
@@ -209,6 +229,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ObjednatRoute: ObjednatRoute,
   SignupRoute: SignupRoute,
+  JizdaCodeRoute: JizdaCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
