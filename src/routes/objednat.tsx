@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { CustomerShell, CustomerCard } from "@/components/CustomerShell";
 import logo from "@/assets/logo.png";
-import { createCustomerOrder, estimateRide, getTariffs, type Tariff } from "@/lib/customer.functions";
+import { createCustomerOrder, estimateRide, getTariffs, trackOrder, type Tariff } from "@/lib/customer.functions";
 
 export const Route = createFileRoute("/objednat")({
   head: () => ({
