@@ -89,23 +89,18 @@ function TrackPage() {
 
       <div className={`rounded-xl border border-primary/40 bg-background/80 backdrop-blur-md p-3 font-bold tracking-widest ${st.color}`}>{st.label}</div>
 
-      <div className="rounded-xl border border-border bg-background/80 backdrop-blur-md p-3 text-xs space-y-1">
-        <div>
-          <span className="text-muted-foreground">Odkud:</span> {o.pickup_address}
-        </div>
-        <div>
-          <span className="text-muted-foreground">Kam:</span> {o.destination}
-        </div>
-        {o.estimated_price != null && (
-          <div>
-            <span className="text-muted-foreground">Orientační cena:</span>{" "}
-            <span className="text-primary font-bold">{o.estimated_price} Kč</span>
-            {o.estimated_distance_km != null && ` · ${o.estimated_distance_km} km`}
-          </div>
-        )}
+      <div className="h-72 rounded-xl overflow-hidden border border-border">
+        <ClientOnly fallback={<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">Mapa…</div>}>
+          <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">Mapa…</div>}>
+            <CustomerMap
+              pickup={o.pickup_lat != null ? { lat: o.pickup_lat, lng: o.pickup_lng } : null}
+              car={d?.lat != null ? { lat: d.lat, lng: d.lng } : null}
+            />
+          </Suspense>
+        </ClientOnly>
       </div>
 
-      {d && (
+      {d ? (
         <div className="rounded-xl border border-primary/40 bg-background/80 backdrop-blur-md p-3 space-y-2">
           <div className="text-[10px] text-muted-foreground tracking-widest">VÁŠ ŘIDIČ</div>
           <div className="flex items-center gap-3">
@@ -125,19 +120,32 @@ function TrackPage() {
           {d.eta_minutes != null && (
             <div className="text-primary font-bold">Příjezd cca za {d.eta_minutes} min</div>
           )}
+          {d.lat == null && (
+            <div className="text-[11px] text-muted-foreground">Polohu vozu zatím nemáme – zobrazí se za chvíli.</div>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-background/80 backdrop-blur-md p-3 text-xs text-muted-foreground">
+          Hledáme pro vás nejbližší vůz… jakmile řidič jízdu přijme, uvidíte tu jeho jméno, auto a polohu na mapě.
         </div>
       )}
 
-      <div className="h-72 rounded-xl overflow-hidden border border-border">
-        <ClientOnly fallback={<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">Mapa…</div>}>
-          <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">Mapa…</div>}>
-            <CustomerMap
-              pickup={o.pickup_lat != null ? { lat: o.pickup_lat, lng: o.pickup_lng } : null}
-              car={d?.lat != null ? { lat: d.lat, lng: d.lng } : null}
-            />
-          </Suspense>
-        </ClientOnly>
+      <div className="rounded-xl border border-border bg-background/80 backdrop-blur-md p-3 text-xs space-y-1">
+        <div>
+          <span className="text-muted-foreground">Odkud:</span> {o.pickup_address}
+        </div>
+        <div>
+          <span className="text-muted-foreground">Kam:</span> {o.destination}
+        </div>
+        {o.estimated_price != null && (
+          <div>
+            <span className="text-muted-foreground">Orientační cena:</span>{" "}
+            <span className="text-primary font-bold">{o.estimated_price} Kč</span>
+            {o.estimated_distance_km != null && ` · ${o.estimated_distance_km} km`}
+          </div>
+        )}
       </div>
+
 
       <div className="text-center">
         <Link to="/objednat" className="text-[11px] text-foreground/80 underline">
