@@ -504,6 +504,8 @@ function DispatcherPage() {
       {archiveOrderDetail && <ArchiveOrderDetailModal order={archiveOrderDetail} onClose={() => setArchiveOrderDetail(null)} />}
       {editOrder && <OrderEditModal order={editOrder} onClose={() => setEditOrder(null)} />}
       {showVehicles && <VehiclesModal onClose={() => setShowVehicles(false)} />}
+      {showTariffs && <TariffsModal onClose={() => setShowTariffs(false)} />}
+
 
       {user && <WalkieTalkie userId={user.id} callSign={callSign} open={walkieOpen} onClose={() => setWalkieOpen(false)} />}
       {user && (
