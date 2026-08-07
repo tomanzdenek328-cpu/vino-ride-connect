@@ -2,13 +2,14 @@
 // Na webu je vše no-op, takže se nic nerozbije.
 // Pozn.: Capacitor pluginy načítáme přes runtime require, aby je Vite
 // vůbec nezkoušel resolvnout při buildu webu (jejich main entry je nativní).
-import { Capacitor } from "@capacitor/core";
-import { BackgroundGeolocation } from "@capacitor-community/background-geolocation";
+import { Capacitor, registerPlugin } from "@capacitor/core";
+import type { BackgroundGeolocationPlugin } from "@capacitor-community/background-geolocation";
 import { supabase } from "@/integrations/supabase/client";
 
 export const isNative = () => Capacitor.isNativePlatform?.() ?? false;
 
 let bgWatcherId: string | null = null;
+const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
 
 async function loadNativeModule(name: string): Promise<any> {
   const spec = name;
