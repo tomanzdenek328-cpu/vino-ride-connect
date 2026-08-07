@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { autocompleteAddress, resolvePlace } from "@/lib/places.functions";
+import { autocompleteAddress, resolvePlace, reverseGeocode } from "@/lib/places.functions";
 
 interface Props {
   label: string;
@@ -8,11 +8,15 @@ interface Props {
   onChange: (v: string) => void;
   onSelect?: (p: { address: string; lat?: number; lng?: number }) => void;
   required?: boolean;
+  allowCurrentLocation?: boolean;
 }
 
-export function AddressAutocomplete({ label, value, onChange, onSelect, required }: Props) {
+export function AddressAutocomplete({ label, value, onChange, onSelect, required, allowCurrentLocation }: Props) {
   const ac = useServerFn(autocompleteAddress);
   const resolve = useServerFn(resolvePlace);
+  const reverse = useServerFn(reverseGeocode);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState("");
   const [suggestions, setSuggestions] = useState<{ placeId: string; text: string }[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
