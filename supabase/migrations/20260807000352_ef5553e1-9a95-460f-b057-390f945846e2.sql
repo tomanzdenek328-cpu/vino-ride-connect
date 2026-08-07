@@ -1,0 +1,2 @@
+CREATE POLICY "dispatchers manage vehicle photos" ON storage.objects FOR ALL TO authenticated USING (bucket_id = 'vehicle-photos' AND public.has_role(auth.uid(), 'dispatcher')) WITH CHECK (bucket_id = 'vehicle-photos' AND public.has_role(auth.uid(), 'dispatcher'));
+CREATE POLICY "authenticated read vehicle photos" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'vehicle-photos');
