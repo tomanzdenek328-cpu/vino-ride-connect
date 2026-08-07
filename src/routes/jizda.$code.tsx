@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClientOnly } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { trackOrder } from "@/lib/customer.functions";
+import { trackOrder, trackPosition } from "@/lib/customer.functions";
 import { CustomerShell, CustomerCard } from "@/components/CustomerShell";
 
 const CustomerMap = lazy(() => import("@/components/CustomerMap"));
@@ -33,7 +33,9 @@ const STATUS: Record<string, { label: string; color: string }> = {
 function TrackPage() {
   const { code } = Route.useParams();
   const track = useServerFn(trackOrder);
+  const trackPos = useServerFn(trackPosition);
   const [state, setState] = useState<any>(null);
+  const [livePos, setLivePos] = useState<{ lat: number; lng: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -59,9 +61,29 @@ function TrackPage() {
 
   useEffect(() => {
     load();
-    const t = setInterval(load, 5000);
+    // full refresh (driver, ETA, status) every 15 s
+    const t = setInterval(load, 15000);
     return () => clearInterval(t);
   }, [load]);
+
+  // near-real-time car position (light query every second)
+  useEffect(() => {
+    let stop = false;
+    const tick = async () => {
+      try {
+        const p: any = await trackPos({ data: { code } });
+        if (!stop && p?.found && p.lat != null && p.lng != null) {
+          setLivePos({ lat: p.lat, lng: p.lng });
+        }
+      } catch {
+        /* ignore */
+      }
+    };
+    tick();
+    const t = setInterval(() => { if (!document.hidden) tick(); }, 1000);
+    return () => { stop = true; clearInterval(t); };
+  }, [trackPos, code]);
+
 
 
   if (loading) {
@@ -104,7 +126,7 @@ function TrackPage() {
           <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">Mapa…</div>}>
             <CustomerMap
               pickup={o.pickup_lat != null ? { lat: o.pickup_lat, lng: o.pickup_lng } : null}
-              car={d?.lat != null ? { lat: d.lat, lng: d.lng } : null}
+              car={livePos ?? (d?.lat != null ? { lat: d.lat, lng: d.lng } : null)}
             />
           </Suspense>
         </ClientOnly>

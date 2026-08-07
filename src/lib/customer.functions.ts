@@ -264,3 +264,31 @@ export const trackOrder = createServerFn({ method: "POST" })
       driver,
     };
   });
+
+/**
+ * Lightweight, high-frequency position poll for the customer tracking page.
+ * Returns only the car position + status (no route/ETA calls), so it can run every second.
+ */
+export const trackPosition = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => z.object({ code: z.string().min(4).max(16) }).parse(i))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("status,assigned_driver_id")
+      .eq("tracking_code", data.code.toUpperCase())
+      .maybeSingle();
+    if (!order) return { found: false as const };
+    if (!order.assigned_driver_id) return { found: true as const, status: order.status, lat: null, lng: null };
+    const { data: loc } = await supabaseAdmin
+      .from("driver_locations")
+      .select("lat,lng,updated_at")
+      .eq("driver_id", order.assigned_driver_id)
+      .maybeSingle();
+    return {
+      found: true as const,
+      status: order.status,
+      lat: loc?.lat ?? null,
+      lng: loc?.lng ?? null,
+    };
+  });
