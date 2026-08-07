@@ -89,6 +89,8 @@ function DispatcherPage() {
   const [showMap, setShowMap] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
   const [showVehicles, setShowVehicles] = useState(false);
+  const [showTariffs, setShowTariffs] = useState(false);
+
   const [callSign, setCallSign] = useState("DISP");
   const [driverDetail, setDriverDetail] = useState<Driver | null>(null);
   const [archiveOrderDetail, setArchiveOrderDetail] = useState<Order | null>(null);
