@@ -40,6 +40,7 @@ const UpdateSchema = z.object({
   car_type: z.string().max(80).optional(),
   notes: z.string().max(255).optional().nullable(),
   active: z.boolean().optional(),
+  photo_url: z.string().max(500).optional().nullable(),
 });
 
 export const updateVehicle = createServerFn({ method: "POST" })
@@ -47,15 +48,17 @@ export const updateVehicle = createServerFn({ method: "POST" })
   .inputValidator((input) => UpdateSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertDispatcher(context.supabase, context.userId);
-    const patch: { plate?: string; car_type?: string; notes?: string | null; active?: boolean } = {};
+    const patch: { plate?: string; car_type?: string; notes?: string | null; active?: boolean; photo_url?: string | null } = {};
     if (data.plate !== undefined) patch.plate = data.plate.trim();
     if (data.car_type !== undefined) patch.car_type = data.car_type.trim();
     if (data.notes !== undefined) patch.notes = data.notes?.trim() || null;
     if (data.active !== undefined) patch.active = data.active;
+    if (data.photo_url !== undefined) patch.photo_url = data.photo_url || null;
     const { error } = await supabaseAdmin.from("vehicles").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 const IdSchema = z.object({ id: z.string().uuid() });
 
