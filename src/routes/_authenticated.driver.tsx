@@ -333,6 +333,7 @@ function DriverPage() {
             heading: pos.coords.heading ?? null,
             speed: pos.coords.speed ?? null,
             online: true,
+             updated_at: new Date().toISOString(),
           });
         },
         (err) => { console.error(err); },
@@ -403,6 +404,7 @@ function DriverPage() {
             heading: pos.coords.heading ?? null,
             speed: pos.coords.speed ?? null,
             online: true,
+             updated_at: new Date().toISOString(),
           });
         },
         () => {},

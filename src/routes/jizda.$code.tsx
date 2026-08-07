@@ -30,6 +30,21 @@ const STATUS: Record<string, { label: string; color: string }> = {
   cancelled: { label: "ZRUŠENO", color: "text-destructive" },
 };
 
+function approximateEtaMinutes(
+  car: { lat: number; lng: number } | null,
+  pickup: { lat: number; lng: number } | null,
+) {
+  if (!car || !pickup) return null;
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const dLat = toRad(pickup.lat - car.lat);
+  const dLng = toRad(pickup.lng - car.lng);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(car.lat)) * Math.cos(toRad(pickup.lat)) * Math.sin(dLng / 2) ** 2;
+  const roadKm = 2 * 6371 * Math.asin(Math.sqrt(a)) * 1.3;
+  return Math.max(1, Math.round((roadKm / 35) * 60));
+}
+
 function TrackPage() {
   const { code } = Route.useParams();
   const track = useServerFn(trackOrder);
@@ -116,6 +131,12 @@ function TrackPage() {
 
   const o = state.order;
   const d = state.driver;
+  const pickupPosition =
+    o.pickup_lat != null && o.pickup_lng != null
+      ? { lat: o.pickup_lat, lng: o.pickup_lng }
+      : null;
+  const carPosition = livePos ?? (d?.lat != null && d?.lng != null ? { lat: d.lat, lng: d.lng } : null);
+  const liveEta = approximateEtaMinutes(carPosition, pickupPosition);
   let st = STATUS[o.status] ?? { label: o.status, color: "text-muted-foreground" };
   if (o.approval === "rejected" || o.status === "cancelled") {
     st = { label: "MOMENTÁLNĚ NEJSOU K DISPOZICI VOLNÁ AUTA", color: "text-destructive" };
@@ -137,8 +158,8 @@ function TrackPage() {
         <ClientOnly fallback={<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">Mapa…</div>}>
           <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">Mapa…</div>}>
             <CustomerMap
-              pickup={o.pickup_lat != null ? { lat: o.pickup_lat, lng: o.pickup_lng } : null}
-              car={livePos ?? (d?.lat != null ? { lat: d.lat, lng: d.lng } : null)}
+              pickup={pickupPosition}
+              car={carPosition}
             />
           </Suspense>
         </ClientOnly>
@@ -161,8 +182,8 @@ function TrackPage() {
               {d.car_type && <div className="text-xs text-muted-foreground">{d.car_type}</div>}
             </div>
           </div>
-          {d.eta_minutes != null && (
-            <div className="text-primary font-bold">Příjezd cca za {d.eta_minutes} min</div>
+          {(liveEta ?? d.eta_minutes) != null && (
+            <div className="text-primary font-bold">Příjezd cca za {liveEta ?? d.eta_minutes} min</div>
           )}
           {d.lat == null && (
             <div className="text-[11px] text-muted-foreground">Polohu vozu zatím nemáme – zobrazí se za chvíli.</div>

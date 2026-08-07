@@ -2,15 +2,15 @@
 // Na webu je vše no-op, takže se nic nerozbije.
 // Pozn.: Capacitor pluginy načítáme přes runtime require, aby je Vite
 // vůbec nezkoušel resolvnout při buildu webu (jejich main entry je nativní).
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, registerPlugin } from "@capacitor/core";
+import type { BackgroundGeolocationPlugin } from "@capacitor-community/background-geolocation";
 import { supabase } from "@/integrations/supabase/client";
 
 export const isNative = () => Capacitor.isNativePlatform?.() ?? false;
 
 let bgWatcherId: string | null = null;
+const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
 
-// Skryjeme specifikátor importu před statickou analýzou Vite/Rollup tím,
-// že ho složíme za běhu. Vite tak modul nezkusí při web buildu resolvnout.
 async function loadNativeModule(name: string): Promise<any> {
   const spec = name;
   // @vite-ignore – záměrně dynamický specifikátor, modul existuje jen v APK.
@@ -24,10 +24,6 @@ async function loadNativeModule(name: string): Promise<any> {
 export async function startBackgroundGeolocation(driverId: string) {
   if (!isNative()) return;
   try {
-    const mod: any = await loadNativeModule(
-      "@capacitor-community/background-geolocation",
-    );
-    const BackgroundGeolocation = mod.BackgroundGeolocation ?? mod.default;
     if (bgWatcherId) {
       await BackgroundGeolocation.removeWatcher({ id: bgWatcherId });
       bgWatcherId = null;
@@ -48,14 +44,16 @@ export async function startBackgroundGeolocation(driverId: string) {
           return;
         }
         if (!location) return;
-        await supabase.from("driver_locations").upsert({
+        const { error: updateError } = await supabase.from("driver_locations").upsert({
           driver_id: driverId,
           lat: location.latitude,
           lng: location.longitude,
           heading: location.bearing ?? null,
           speed: location.speed ?? null,
           online: true,
+          updated_at: new Date().toISOString(),
         });
+        if (updateError) console.warn("[bg-geo] uložení polohy selhalo", updateError);
       },
     );
   } catch (e) {
@@ -66,10 +64,6 @@ export async function startBackgroundGeolocation(driverId: string) {
 export async function stopBackgroundGeolocation() {
   if (!isNative() || !bgWatcherId) return;
   try {
-    const mod: any = await loadNativeModule(
-      "@capacitor-community/background-geolocation",
-    );
-    const BackgroundGeolocation = mod.BackgroundGeolocation ?? mod.default;
     await BackgroundGeolocation.removeWatcher({ id: bgWatcherId });
   } catch (e) {
     console.warn("Background geolocation stop failed", e);
