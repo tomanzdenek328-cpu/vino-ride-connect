@@ -117,7 +117,7 @@ function TrackPage() {
   const o = state.order;
   const d = state.driver;
   let st = STATUS[o.status] ?? { label: o.status, color: "text-muted-foreground" };
-  if (o.approval === "rejected") {
+  if (o.approval === "rejected" || o.status === "cancelled") {
     st = { label: "MOMENTÁLNĚ NEJSOU K DISPOZICI VOLNÁ AUTA", color: "text-destructive" };
   } else if (o.approval === "pending") {
     st = { label: "HLEDÁME ŘIDIČE…", color: "text-orange-400" };
