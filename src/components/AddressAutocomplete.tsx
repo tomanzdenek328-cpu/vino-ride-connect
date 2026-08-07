@@ -60,10 +60,42 @@ export function AddressAutocomplete({ label, value, onChange, onSelect, required
     }
   };
 
+  const useCurrent = () => {
+    setGeoError("");
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setGeoError("Poloha není v tomto prohlížeči dostupná.");
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const p = await reverse({ data: { lat: pos.coords.latitude, lng: pos.coords.longitude } });
+          skipNextRef.current = true;
+          setOpen(false);
+          setSuggestions([]);
+          onChange(p.formattedAddress);
+          onSelect?.({ address: p.formattedAddress, lat: p.lat, lng: p.lng });
+        } catch (e) {
+          console.error(e);
+          setGeoError("Adresu se nepodařilo načíst.");
+        } finally {
+          setGeoLoading(false);
+        }
+      },
+      (err) => {
+        console.warn(err);
+        setGeoLoading(false);
+        setGeoError("Nepodařilo se zjistit polohu. Povolte prosím přístup k poloze.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
+  };
 
   return (
     <label className="block relative">
       <div className="text-[10px] text-muted-foreground mb-1">{label}</div>
+
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
