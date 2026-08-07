@@ -298,7 +298,12 @@ function DriverPage() {
     setPayouts((data ?? []) as Payout[]);
   };
 
-  useEffect(() => { loadRides(); loadPayouts(); }, [user]);
+  useEffect(() => {
+    loadRides(); loadPayouts();
+    // Automatická aktualizace každých 5 sekund
+    const poll = window.setInterval(() => { loadRides(); loadPayouts(); }, 5000);
+    return () => window.clearInterval(poll);
+  }, [user]);
 
   // Geolocation streaming + Wake Lock to keep tracking when screen would otherwise sleep
   useEffect(() => {
