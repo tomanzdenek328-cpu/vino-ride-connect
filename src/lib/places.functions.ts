@@ -60,3 +60,23 @@ export const resolvePlace = createServerFn({ method: "POST" })
       lng: j.location?.longitude as number | undefined,
     };
   });
+
+export const reverseGeocode = createServerFn({ method: "POST" })
+  .inputValidator((d: { lat: number; lng: number }) => d)
+  .handler(async ({ data }) => {
+    const r = await fetch(
+      `${GATEWAY}/maps/api/geocode/json?latlng=${data.lat},${data.lng}&language=cs&region=cz`,
+      { headers: headers() },
+    );
+    if (!r.ok) {
+      const t = await r.text();
+      throw new Error(`reverse geocode ${r.status}: ${t}`);
+    }
+    const j = await r.json();
+    const first = j.results?.[0];
+    return {
+      formattedAddress: (first?.formatted_address as string) ?? `${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}`,
+      lat: data.lat,
+      lng: data.lng,
+    };
+  });
