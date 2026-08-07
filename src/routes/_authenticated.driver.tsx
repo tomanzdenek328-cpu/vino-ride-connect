@@ -315,7 +315,8 @@ function DriverPage() {
       watchIdRef.current = navigator.geolocation.watchPosition(
         async (pos) => {
           const now = Date.now();
-          if (now - lastSentRef.current < 4000) return;
+          // stream position in near real time (max ~1×/s to protect the network)
+          if (now - lastSentRef.current < 1000) return;
           lastSentRef.current = now;
           await supabase.from("driver_locations").upsert({
             driver_id: user.id,
@@ -327,8 +328,9 @@ function DriverPage() {
           });
         },
         (err) => { console.error(err); },
-        { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
       );
+
     };
 
     const requestWakeLock = async () => {
