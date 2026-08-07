@@ -33,7 +33,8 @@ type Estimate = {
   km: number;
   minutes: number;
   approx: boolean;
-  options: (Tariff & { price: number })[];
+  weekend?: boolean;
+  options: (Tariff & { price: number; fare_mode?: string; fare_note?: string })[];
 };
 
 const ACTIVE = ["pending", "assigned", "accepted", "in_progress"];
