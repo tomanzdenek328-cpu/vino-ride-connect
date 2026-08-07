@@ -38,7 +38,9 @@ export async function startBackgroundGeolocation(driverId: string) {
         backgroundTitle: "Sledování polohy",
         requestPermissions: true,
         stale: false,
-        distanceFilter: 10,
+        // Ten metres caused visible pauses at city speeds. A short filter keeps
+        // movement fluid while still letting Android batch tiny GPS jitter.
+        distanceFilter: 2,
       },
       async (location: any, error: any) => {
         if (error) {

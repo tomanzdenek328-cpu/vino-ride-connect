@@ -315,8 +315,9 @@ function DriverPage() {
       watchIdRef.current = navigator.geolocation.watchPosition(
         async (pos) => {
           const now = Date.now();
-          // stream position in near real time (max ~1×/s to protect the network)
-          if (now - lastSentRef.current < 1000) return;
+          // Send every fresh GPS sample, capped at 2×/s. Most phones provide
+          // native fixes once per second, but faster samples no longer get lost.
+          if (now - lastSentRef.current < 500) return;
           lastSentRef.current = now;
           await supabase.from("driver_locations").upsert({
             driver_id: user.id,
