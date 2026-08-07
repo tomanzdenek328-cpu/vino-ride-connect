@@ -358,9 +358,11 @@ export type Database = {
           mikulov_flat: number
           mikulov_flat_weekend: number
           per_km: number
+          short_base_fare: number
+          short_base_fare_weekend: number
           short_km_limit: number
-          short_price: number
-          short_price_weekend: number
+          short_per_km: number
+          short_per_km_weekend: number
           sort_order: number
           updated_at: string
           vehicle_type: string
@@ -378,9 +380,11 @@ export type Database = {
           mikulov_flat?: number
           mikulov_flat_weekend?: number
           per_km?: number
+          short_base_fare?: number
+          short_base_fare_weekend?: number
           short_km_limit?: number
-          short_price?: number
-          short_price_weekend?: number
+          short_per_km?: number
+          short_per_km_weekend?: number
           sort_order?: number
           updated_at?: string
           vehicle_type: string
@@ -398,9 +402,11 @@ export type Database = {
           mikulov_flat?: number
           mikulov_flat_weekend?: number
           per_km?: number
+          short_base_fare?: number
+          short_base_fare_weekend?: number
           short_km_limit?: number
-          short_price?: number
-          short_price_weekend?: number
+          short_per_km?: number
+          short_per_km_weekend?: number
           sort_order?: number
           updated_at?: string
           vehicle_type?: string

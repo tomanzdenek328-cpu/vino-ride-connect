@@ -1640,8 +1640,10 @@ interface TariffRow {
   weekend_base_fare: number;
   weekend_per_km: number;
   short_km_limit: number;
-  short_price: number;
-  short_price_weekend: number;
+  short_base_fare: number;
+  short_per_km: number;
+  short_base_fare_weekend: number;
+  short_per_km_weekend: number;
   mikulov_flat: number;
   mikulov_flat_weekend: number;
   hustopece_flat: number;
@@ -1662,8 +1664,12 @@ const NUM_FIELDS: { key: keyof TariffRow; label: string }[][] = [
     { key: "capacity", label: "MÍST" },
   ],
   [
-    { key: "short_price", label: "DO X KM – TÝDEN" },
-    { key: "short_price_weekend", label: "DO X KM – VÍKEND" },
+    { key: "short_base_fare", label: "KRÁTKÁ – NÁSTUPNÍ TÝDEN" },
+    { key: "short_per_km", label: "KRÁTKÁ – Kč/KM TÝDEN" },
+  ],
+  [
+    { key: "short_base_fare_weekend", label: "KRÁTKÁ – NÁSTUPNÍ VÍKEND" },
+    { key: "short_per_km_weekend", label: "KRÁTKÁ – Kč/KM VÍKEND" },
   ],
   [
     { key: "mikulov_flat", label: "MIKULOV – TÝDEN" },
@@ -1703,8 +1709,10 @@ function TariffsModal({ onClose }: { onClose: () => void }) {
             weekend_base_fare: t.weekend_base_fare,
             weekend_per_km: t.weekend_per_km,
             short_km_limit: t.short_km_limit,
-            short_price: t.short_price,
-            short_price_weekend: t.short_price_weekend,
+            short_base_fare: t.short_base_fare,
+            short_per_km: t.short_per_km,
+            short_base_fare_weekend: t.short_base_fare_weekend,
+            short_per_km_weekend: t.short_per_km_weekend,
             mikulov_flat: t.mikulov_flat,
             mikulov_flat_weekend: t.mikulov_flat_weekend,
             hustopece_flat: t.hustopece_flat,

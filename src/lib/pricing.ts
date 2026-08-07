@@ -17,8 +17,10 @@ export interface TariffFull {
   weekend_base_fare: number;
   weekend_per_km: number;
   short_km_limit: number;
-  short_price: number;
-  short_price_weekend: number;
+  short_base_fare: number;
+  short_per_km: number;
+  short_base_fare_weekend: number;
+  short_per_km_weekend: number;
   mikulov_flat: number;
   mikulov_flat_weekend: number;
   hustopece_flat: number;
@@ -28,7 +30,7 @@ export interface TariffFull {
 export type FareMode = "auto" | "km" | "short" | "mikulov" | "hustopece";
 
 export const TARIFF_COLUMNS =
-  "vehicle_type,label,base_fare,per_km,capacity,weekend_base_fare,weekend_per_km,short_km_limit,short_price,short_price_weekend,mikulov_flat,mikulov_flat_weekend,hustopece_flat,hustopece_flat_weekend";
+  "vehicle_type,label,base_fare,per_km,capacity,weekend_base_fare,weekend_per_km,short_km_limit,short_base_fare,short_per_km,short_base_fare_weekend,short_per_km_weekend,mikulov_flat,mikulov_flat_weekend,hustopece_flat,hustopece_flat_weekend";
 
 /** Víkend = sobota nebo neděle podle času v Praze. */
 export function isWeekend(when: Date | string | null | undefined = new Date()): boolean {
@@ -93,13 +95,14 @@ export function computeFare(
     mode = "km";
   }
   if (mode === "short") {
-    const p = pick(t.short_price, t.short_price_weekend);
-    if (p > 0)
+    const sBase = pick(t.short_base_fare, t.short_base_fare_weekend);
+    const sPerKm = pick(t.short_per_km, t.short_per_km_weekend);
+    if (sBase > 0 || sPerKm > 0)
       return {
-        price: round10(p),
+        price: round10(sBase + sPerKm * km),
         mode,
         weekend,
-        note: `Jízda do ${Number(t.short_km_limit) || 5} km`,
+        note: `Do ${Number(t.short_km_limit) || 5} km: ${sBase} Kč + ${sPerKm} Kč/km`,
       };
     mode = "km";
   }
