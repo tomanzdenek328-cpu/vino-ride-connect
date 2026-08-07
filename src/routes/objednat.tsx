@@ -33,7 +33,8 @@ type Estimate = {
   km: number;
   minutes: number;
   approx: boolean;
-  options: (Tariff & { price: number })[];
+  weekend?: boolean;
+  options: (Tariff & { price: number; fare_mode?: string; fare_note?: string })[];
 };
 
 const ACTIVE = ["pending", "assigned", "accepted", "in_progress"];
@@ -95,6 +96,7 @@ function OrderPage() {
       data: {
         pickup: { address: pickup.address, lat: pickup.lat!, lng: pickup.lng! },
         destination: { address: dest.address, lat: dest.lat!, lng: dest.lng! },
+        when: when ? new Date(when).toISOString() : null,
       },
     })
       .then((r) => {
@@ -105,7 +107,7 @@ function OrderPage() {
     return () => {
       cancelled = true;
     };
-  }, [pickup.lat, pickup.lng, dest.lat, dest.lng, estimate]);
+  }, [pickup.lat, pickup.lng, dest.lat, dest.lng, when, estimate]);
 
   const chosen = est?.options.find((o) => o.vehicle_type === vehicleType) ?? est?.options[0] ?? null;
 
@@ -186,6 +188,8 @@ function OrderPage() {
               <>
                 <div className="text-[11px] text-muted-foreground mb-2">
                   Trasa {est.km} km · cca {est.minutes} min {est.approx && "(odhad)"}
+                  {" · "}
+                  <span className="text-primary">{est.weekend ? "víkendový tarif" : "týdenní tarif"}</span>
                 </div>
                 <div className="space-y-2">
                   {est.options.map((o) => (
@@ -199,11 +203,15 @@ function OrderPage() {
                           : "border-border text-muted-foreground"
                       }`}
                     >
-                      <span className="text-xs">{o.label}</span>
+                      <span className="text-xs">
+                        {o.label}
+                        {o.fare_note && <span className="block text-[9px] opacity-70">{o.fare_note}</span>}
+                      </span>
                       <span className="font-bold">{o.price} Kč</span>
                     </button>
                   ))}
                 </div>
+
                 <div className="text-[10px] text-muted-foreground mt-2">
                   Cena je orientační, konečnou částku určuje taxametr.
                 </div>

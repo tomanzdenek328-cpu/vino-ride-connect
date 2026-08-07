@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { TARIFF_COLUMNS, computeFare, isWeekend, type TariffFull } from "./pricing";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_maps";
 
@@ -78,6 +79,8 @@ function serverClient() {
   });
 }
 
+export type { TariffFull } from "./pricing";
+
 export interface Tariff {
   vehicle_type: string;
   label: string;
@@ -90,10 +93,10 @@ export const getTariffs = createServerFn({ method: "GET" }).handler(async () => 
   const sb = await serverClient();
   const { data, error } = await sb
     .from("tariffs")
-    .select("vehicle_type,label,base_fare,per_km,capacity")
+    .select(TARIFF_COLUMNS)
     .order("sort_order");
   if (error) throw new Error(error.message);
-  return (data ?? []) as unknown as Tariff[];
+  return (data ?? []) as unknown as TariffFull[];
 });
 
 const PointSchema = z.object({
@@ -103,22 +106,36 @@ const PointSchema = z.object({
 });
 
 export const estimateRide = createServerFn({ method: "POST" })
-  .inputValidator((i: unknown) => z.object({ pickup: PointSchema, destination: PointSchema }).parse(i))
+  .inputValidator((i: unknown) =>
+    z.object({ pickup: PointSchema, destination: PointSchema, when: z.string().optional().nullable() }).parse(i),
+  )
   .handler(async ({ data }) => {
     const [{ km, minutes, approx }, sb] = await Promise.all([
       routeDistance(data.pickup, data.destination),
       serverClient(),
     ]);
-    const { data: tariffs } = await sb
-      .from("tariffs")
-      .select("vehicle_type,label,base_fare,per_km,capacity")
-      .order("sort_order");
-    const options = ((tariffs ?? []) as unknown as Tariff[]).map((t) => ({
-      ...t,
-      price: Math.round((Number(t.base_fare) + Number(t.per_km) * km) / 10) * 10,
-    }));
-    return { km: Math.round(km * 10) / 10, minutes, approx, options };
+    const { data: tariffs } = await sb.from("tariffs").select(TARIFF_COLUMNS).order("sort_order");
+    const weekend = isWeekend(data.when ?? new Date());
+    const options = ((tariffs ?? []) as unknown as TariffFull[]).map((t) => {
+      const fare = computeFare(t, km, {
+        weekend,
+        pickup: data.pickup.address,
+        destination: data.destination.address,
+      });
+      return {
+        vehicle_type: t.vehicle_type,
+        label: t.label,
+        base_fare: t.base_fare,
+        per_km: t.per_km,
+        capacity: t.capacity,
+        price: fare.price,
+        fare_mode: fare.mode,
+        fare_note: fare.note,
+      };
+    });
+    return { km: Math.round(km * 10) / 10, minutes, approx, weekend, options };
   });
+
 
 const CreateSchema = z.object({
   pickup: PointSchema,

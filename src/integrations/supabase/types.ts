@@ -351,34 +351,61 @@ export type Database = {
           base_fare: number
           capacity: number
           created_at: string
+          hustopece_flat: number
+          hustopece_flat_weekend: number
           id: string
           label: string
+          mikulov_flat: number
+          mikulov_flat_weekend: number
           per_km: number
+          short_km_limit: number
+          short_price: number
+          short_price_weekend: number
           sort_order: number
           updated_at: string
           vehicle_type: string
+          weekend_base_fare: number
+          weekend_per_km: number
         }
         Insert: {
           base_fare?: number
           capacity?: number
           created_at?: string
+          hustopece_flat?: number
+          hustopece_flat_weekend?: number
           id?: string
           label: string
+          mikulov_flat?: number
+          mikulov_flat_weekend?: number
           per_km?: number
+          short_km_limit?: number
+          short_price?: number
+          short_price_weekend?: number
           sort_order?: number
           updated_at?: string
           vehicle_type: string
+          weekend_base_fare?: number
+          weekend_per_km?: number
         }
         Update: {
           base_fare?: number
           capacity?: number
           created_at?: string
+          hustopece_flat?: number
+          hustopece_flat_weekend?: number
           id?: string
           label?: string
+          mikulov_flat?: number
+          mikulov_flat_weekend?: number
           per_km?: number
+          short_km_limit?: number
+          short_price?: number
+          short_price_weekend?: number
           sort_order?: number
           updated_at?: string
           vehicle_type?: string
+          weekend_base_fare?: number
+          weekend_per_km?: number
         }
         Relationships: []
       }

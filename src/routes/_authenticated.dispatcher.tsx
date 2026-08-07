@@ -16,6 +16,8 @@ import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { createVehicle, updateVehicle, deleteVehicle } from "@/lib/vehicles.functions";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
 import { SOSAlerts } from "@/components/SOSAlerts";
+import { estimateRide } from "@/lib/customer.functions";
+import { computeFare, isWeekend, FARE_MODE_LABELS, type FareMode, type TariffFull } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/dispatcher")({
   component: DispatcherPage,
@@ -543,6 +545,54 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const [submitting, setSubmitting] = useState(false);
   const autoAssignFn = useServerFn(autoAssignOrder);
   const notifyNewOrderFn = useServerFn(notifyNewOrder);
+  const estimateFn = useServerFn(estimateRide);
+
+  const [dayMode, setDayMode] = useState<"auto" | "week" | "weekend">("auto");
+  const [fareMode, setFareMode] = useState<FareMode>("auto");
+  const [tariffs, setTariffs] = useState<TariffFull[]>([]);
+  const [km, setKm] = useState<number | null>(null);
+  const [calcBusy, setCalcBusy] = useState(false);
+  const [price, setPrice] = useState("");
+  const [priceTouched, setPriceTouched] = useState(false);
+  const [fareNote, setFareNote] = useState("");
+
+  useEffect(() => {
+    supabase
+      .from("tariffs")
+      .select("*")
+      .order("sort_order")
+      .then(({ data }) => setTariffs((data ?? []) as unknown as TariffFull[]));
+  }, []);
+
+  // Vzdálenost po silnici, jakmile jsou známé obě adresy.
+  useEffect(() => {
+    if (pickupCoords.lat == null || destCoords.lat == null) { setKm(null); return; }
+    let cancelled = false;
+    setCalcBusy(true);
+    estimateFn({
+      data: {
+        pickup: { address: pickup, lat: pickupCoords.lat, lng: pickupCoords.lng! },
+        destination: { address: destination, lat: destCoords.lat, lng: destCoords.lng! },
+      },
+    })
+      .then((r: any) => { if (!cancelled) setKm(r?.km ?? null); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setCalcBusy(false); });
+    return () => { cancelled = true; };
+  }, [pickupCoords.lat, pickupCoords.lng, destCoords.lat, destCoords.lng, estimateFn]);
+
+  // Přepočet ceny podle tarifu.
+  useEffect(() => {
+    const t = tariffs.find((x) => x.vehicle_type === (vehicleType === "van" ? "dodavka" : "osobni"));
+    if (!t) return;
+    const whenDate = when === "later" && scheduledTime ? new Date(scheduledTime) : new Date();
+    const weekend = dayMode === "auto" ? isWeekend(whenDate) : dayMode === "weekend";
+    const fare = computeFare(t, km ?? 0, { weekend, mode: fareMode, pickup, destination });
+    setFareNote(`${weekend ? "víkend" : "týden"} · ${fare.note}`);
+    if (!priceTouched) setPrice(String(fare.price));
+  }, [tariffs, vehicleType, km, dayMode, fareMode, when, scheduledTime, pickup, destination, priceTouched]);
+
+
 
 
   const submit = async (e: FormEvent) => {
@@ -559,6 +609,9 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
       passengers,
       vehicle_type: vehicleType,
       notes: notes || null,
+      estimated_price: price ? Number(price) : null,
+      estimated_distance_km: km ?? null,
+
 
       customer_phone: customerPhone || null,
       created_by: userId,
@@ -652,6 +705,40 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
           </div>
           <div className="text-[10px] text-muted-foreground mt-1">Max. 30 osob</div>
         </div>
+
+        <div className="border border-primary/30 p-2 space-y-2">
+          <div className="text-[10px] text-muted-foreground">TARIF</div>
+          <div className="grid grid-cols-3 gap-2">
+            {([["auto", "AUTO"], ["week", "TÝDEN"], ["weekend", "VÍKEND"]] as const).map(([v, l]) => (
+              <button key={v} type="button" onClick={() => setDayMode(v)}
+                className={`border py-1.5 text-[11px] ${dayMode === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
+                {l}
+              </button>
+            ))}
+          </div>
+          <div className="text-[10px] text-muted-foreground">TYP JÍZDY</div>
+          <div className="grid grid-cols-2 gap-2">
+            {(["auto", "km", "short", "mikulov", "hustopece"] as FareMode[]).map((m) => (
+              <button key={m} type="button" onClick={() => setFareMode(m)}
+                className={`border py-1.5 text-[11px] ${fareMode === m ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
+                {FARE_MODE_LABELS[m]}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-2 items-end">
+            <div>
+              <div className="text-[10px] text-muted-foreground mb-1">CENA (Kč)</div>
+              <input type="number" inputMode="decimal" value={price}
+                onChange={(e) => { setPriceTouched(true); setPrice(e.target.value); }}
+                className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
+            </div>
+            <div className="text-[10px] text-muted-foreground pb-2">
+              {calcBusy ? "Počítám trasu…" : km != null ? `${km} km · ${fareNote}` : "Vyberte adresy z nabídky"}
+            </div>
+          </div>
+        </div>
+
+
 
 
 
@@ -1550,7 +1637,43 @@ interface TariffRow {
   per_km: number;
   capacity: number;
   sort_order: number;
+  weekend_base_fare: number;
+  weekend_per_km: number;
+  short_km_limit: number;
+  short_price: number;
+  short_price_weekend: number;
+  mikulov_flat: number;
+  mikulov_flat_weekend: number;
+  hustopece_flat: number;
+  hustopece_flat_weekend: number;
 }
+
+const NUM_FIELDS: { key: keyof TariffRow; label: string }[][] = [
+  [
+    { key: "base_fare", label: "NÁSTUPNÍ TÝDEN" },
+    { key: "per_km", label: "Kč/KM TÝDEN" },
+  ],
+  [
+    { key: "weekend_base_fare", label: "NÁSTUPNÍ VÍKEND" },
+    { key: "weekend_per_km", label: "Kč/KM VÍKEND" },
+  ],
+  [
+    { key: "short_km_limit", label: "LIMIT KRÁTKÉ (km)" },
+    { key: "capacity", label: "MÍST" },
+  ],
+  [
+    { key: "short_price", label: "DO X KM – TÝDEN" },
+    { key: "short_price_weekend", label: "DO X KM – VÍKEND" },
+  ],
+  [
+    { key: "mikulov_flat", label: "MIKULOV – TÝDEN" },
+    { key: "mikulov_flat_weekend", label: "MIKULOV – VÍKEND" },
+  ],
+  [
+    { key: "hustopece_flat", label: "HUSTOPEČE – TÝDEN" },
+    { key: "hustopece_flat_weekend", label: "HUSTOPEČE – VÍKEND" },
+  ],
+];
 
 function TariffsModal({ onClose }: { onClose: () => void }) {
   const [list, setList] = useState<TariffRow[]>([]);
@@ -1572,7 +1695,21 @@ function TariffsModal({ onClose }: { onClose: () => void }) {
       for (const t of list) {
         const { error } = await supabase
           .from("tariffs")
-          .update({ label: t.label, base_fare: t.base_fare, per_km: t.per_km, capacity: t.capacity })
+          .update({
+            label: t.label,
+            base_fare: t.base_fare,
+            per_km: t.per_km,
+            capacity: t.capacity,
+            weekend_base_fare: t.weekend_base_fare,
+            weekend_per_km: t.weekend_per_km,
+            short_km_limit: t.short_km_limit,
+            short_price: t.short_price,
+            short_price_weekend: t.short_price_weekend,
+            mikulov_flat: t.mikulov_flat,
+            mikulov_flat_weekend: t.mikulov_flat_weekend,
+            hustopece_flat: t.hustopece_flat,
+            hustopece_flat_weekend: t.hustopece_flat_weekend,
+          })
           .eq("id", t.id);
         if (error) throw new Error(error.message);
       }
@@ -1590,8 +1727,10 @@ function TariffsModal({ onClose }: { onClose: () => void }) {
           <h3 className="text-primary font-display text-lg">▸ CENÍK PRO ZÁKAZNÍKY</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-primary"><X className="w-5 h-5" /></button>
         </div>
-        <div className="text-[10px] text-muted-foreground">
-          Cena = nástupní sazba + (Kč/km × vzdálenost). Projeví se hned na objednávkové stránce zákazníka.
+        <div className="text-[10px] text-muted-foreground leading-relaxed">
+          Pořadí výpočtu: smluvní jízdné (Mikulov / Hustopeče – když je start i cíl ve stejném městě) → jízda do
+          limitu km → nástupní sazba + Kč/km. Po–Pá se počítá týdenní tarif, So–Ne víkendový. Nula = pravidlo se
+          nepoužije. Projeví se hned u zákazníka.
         </div>
         {list.length === 0 && <div className="text-xs text-muted-foreground py-4 text-center">Žádné sazby.</div>}
         {list.map((t) => (
@@ -1601,23 +1740,18 @@ function TariffsModal({ onClose }: { onClose: () => void }) {
               <input value={t.label} onChange={(e) => setField(t.id, "label", e.target.value)}
                 className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <div className="text-[10px] text-muted-foreground mb-1">NÁSTUPNÍ (Kč)</div>
-                <input type="number" inputMode="decimal" value={t.base_fare} onChange={(e) => setField(t.id, "base_fare", e.target.value)}
-                  className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
+            {NUM_FIELDS.map((row, i) => (
+              <div key={i} className="grid grid-cols-2 gap-2">
+                {row.map((f) => (
+                  <div key={String(f.key)}>
+                    <div className="text-[10px] text-muted-foreground mb-1">{f.label}</div>
+                    <input type="number" inputMode="decimal" value={Number(t[f.key] ?? 0)}
+                      onChange={(e) => setField(t.id, f.key, e.target.value)}
+                      className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
+                  </div>
+                ))}
               </div>
-              <div>
-                <div className="text-[10px] text-muted-foreground mb-1">Kč / KM</div>
-                <input type="number" inputMode="decimal" value={t.per_km} onChange={(e) => setField(t.id, "per_km", e.target.value)}
-                  className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
-              </div>
-              <div>
-                <div className="text-[10px] text-muted-foreground mb-1">MÍST</div>
-                <input type="number" value={t.capacity} onChange={(e) => setField(t.id, "capacity", e.target.value)}
-                  className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
-              </div>
-            </div>
+            ))}
           </div>
         ))}
         <button onClick={save} disabled={busy}
@@ -1628,4 +1762,5 @@ function TariffsModal({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
+
 
