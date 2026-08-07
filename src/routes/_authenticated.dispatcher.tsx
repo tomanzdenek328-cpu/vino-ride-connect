@@ -40,6 +40,8 @@ interface Order {
   created_at: string;
   released: boolean;
   priority: boolean;
+  source?: string | null;
+  approval?: string | null;
 }
 
 // Sort by scheduled time ascending (earliest first); fall back to created_at.
@@ -225,6 +227,19 @@ function DispatcherPage() {
     if (error) toast.error(error.message); else toast.success("▸ UVOLNĚNO PRO ŘIDIČE");
   };
 
+  const setApproval = async (orderId: string, approval: "approved" | "rejected") => {
+    const { error } = await supabase
+      .from("orders")
+      .update(
+        approval === "approved"
+          ? ({ approval: "approved", released: true } as any)
+          : ({ approval: "rejected", status: "cancelled" } as any),
+      )
+      .eq("id", orderId);
+    if (error) toast.error(error.message);
+    else toast.success(approval === "approved" ? "▸ OBJEDNÁVKA POVOLENA" : "▸ OBJEDNÁVKA ODMÍTNUTA");
+  };
+
   const togglePriority = async (orderId: string, next: boolean) => {
     const { error } = await supabase.from("orders").update({ priority: next }).eq("id", orderId);
     if (error) toast.error(error.message); else toast.success(next ? "▸ OZNAČENO JAKO URGENTNÍ" : "▸ PRIORITA ZRUŠENA");
@@ -337,7 +352,11 @@ function DispatcherPage() {
               const isAssignedUnconfirmed = o.status === "assigned";
               const isPendingUnassigned = o.status === "pending" && !o.assigned_driver_id;
               const isAcceptedByDriver = o.status === "accepted" || o.status === "in_progress";
-              const cardClass = !o.released
+              const isCustomerOrder = o.source === "customer";
+              const needsApproval = isCustomerOrder && o.approval === "pending";
+              const cardClass = isCustomerOrder
+                ? "border-2 border-purple-500 bg-purple-500/10"
+                : !o.released
                 ? "border-amber-warn/40 bg-amber-warn/5"
                 : isAssignedUnconfirmed
                 ? "border-2 border-orange-500 bg-orange-500/10 blink"
@@ -350,6 +369,11 @@ function DispatcherPage() {
               <div key={o.id} className={`border-b p-3 text-sm ${cardClass}`}>
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
+                    {isCustomerOrder && (
+                      <div className="text-[10px] font-bold tracking-widest text-purple-400">
+                        🟣 OBJEDNÁVKA ZÁKAZNÍK
+                      </div>
+                    )}
                     <div className="text-primary font-bold truncate">▸ {o.pickup_address}</div>
                     {o.destination && <div className="text-xs text-muted-foreground truncate">→ {o.destination}</div>}
                     <div className="text-sm text-primary mt-1 font-medium">
@@ -375,6 +399,22 @@ function DispatcherPage() {
                   </div>
                 </div>
 
+                {needsApproval && (
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      onClick={() => setApproval(o.id, "approved")}
+                      className="flex-1 border border-primary text-primary py-1.5 text-[11px] font-bold hover:bg-primary hover:text-primary-foreground"
+                    >
+                      ✔ POVOLIT
+                    </button>
+                    <button
+                      onClick={() => setApproval(o.id, "rejected")}
+                      className="flex-1 border border-destructive text-destructive py-1.5 text-[11px] font-bold hover:bg-destructive hover:text-white"
+                    >
+                      ✖ ODMÍTNOUT
+                    </button>
+                  </div>
+                )}
                 <div className="mt-2 flex gap-2">
                   <button
                     onClick={() => setEditOrder(o)}
