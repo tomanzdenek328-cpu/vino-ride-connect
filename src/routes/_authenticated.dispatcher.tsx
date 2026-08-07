@@ -257,6 +257,10 @@ function DispatcherPage() {
             <button onClick={() => setShowVehicles(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
               <Car className="w-4 h-4" /> AUTA
             </button>
+            <button onClick={() => setShowTariffs(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
+              💰 CENÍK
+            </button>
+
             <button onClick={() => setShowDriverForm(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
               <UserPlus className="w-4 h-4" /> ŘIDIČ
             </button>
