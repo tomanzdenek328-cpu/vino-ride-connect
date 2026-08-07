@@ -178,7 +178,8 @@ export const createCustomerOrder = createServerFn({ method: "POST" })
         notes: data.notes?.trim() || null,
         scheduled_time: data.scheduled_time ?? null,
         status: "pending",
-        released: true,
+        released: false,
+        approval: "pending",
         source: "customer",
         tracking_code,
         estimated_price: data.estimated_price ?? null,
@@ -197,7 +198,7 @@ export const trackOrder = createServerFn({ method: "POST" })
     const { data: order } = await supabaseAdmin
       .from("orders")
       .select(
-        "id,status,pickup_address,pickup_lat,pickup_lng,destination,customer_name,scheduled_time,estimated_price,estimated_distance_km,assigned_driver_id,created_at",
+        "id,status,approval,pickup_address,pickup_lat,pickup_lng,destination,customer_name,scheduled_time,estimated_price,estimated_distance_km,assigned_driver_id,created_at",
       )
       .eq("tracking_code", data.code.toUpperCase())
       .maybeSingle();
