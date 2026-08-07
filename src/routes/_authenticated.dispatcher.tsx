@@ -587,22 +587,9 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const notifyNewOrderFn = useServerFn(notifyNewOrder);
   const estimateFn = useServerFn(estimateRide);
 
-  const [dayMode, setDayMode] = useState<"auto" | "week" | "weekend">("auto");
-  const [fareMode, setFareMode] = useState<FareMode>("auto");
-  const [tariffs, setTariffs] = useState<TariffFull[]>([]);
   const [km, setKm] = useState<number | null>(null);
-  const [calcBusy, setCalcBusy] = useState(false);
-  const [price, setPrice] = useState("");
-  const [priceTouched, setPriceTouched] = useState(false);
-  const [fareNote, setFareNote] = useState("");
+  const [, setCalcBusy] = useState(false);
 
-  useEffect(() => {
-    supabase
-      .from("tariffs")
-      .select("*")
-      .order("sort_order")
-      .then(({ data }) => setTariffs((data ?? []) as unknown as TariffFull[]));
-  }, []);
 
   // Vzdálenost po silnici, jakmile jsou známé obě adresy.
   useEffect(() => {
@@ -621,16 +608,6 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
     return () => { cancelled = true; };
   }, [pickupCoords.lat, pickupCoords.lng, destCoords.lat, destCoords.lng, estimateFn]);
 
-  // Přepočet ceny podle tarifu.
-  useEffect(() => {
-    const t = tariffs.find((x) => x.vehicle_type === (vehicleType === "van" ? "dodavka" : "osobni"));
-    if (!t) return;
-    const whenDate = when === "later" && scheduledTime ? new Date(scheduledTime) : new Date();
-    const weekend = dayMode === "auto" ? isWeekend(whenDate) : dayMode === "weekend";
-    const fare = computeFare(t, km ?? 0, { weekend, mode: fareMode, pickup, destination });
-    setFareNote(`${weekend ? "víkend" : "týden"} · ${fare.note}`);
-    if (!priceTouched) setPrice(String(fare.price));
-  }, [tariffs, vehicleType, km, dayMode, fareMode, when, scheduledTime, pickup, destination, priceTouched]);
 
 
 
@@ -649,7 +626,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
       passengers,
       vehicle_type: vehicleType,
       notes: notes || null,
-      estimated_price: price ? Number(price) : null,
+      estimated_price: null,
       estimated_distance_km: km ?? null,
 
 
@@ -746,37 +723,6 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
           <div className="text-[10px] text-muted-foreground mt-1">Max. 30 osob</div>
         </div>
 
-        <div className="border border-primary/30 p-2 space-y-2">
-          <div className="text-[10px] text-muted-foreground">TARIF</div>
-          <div className="grid grid-cols-3 gap-2">
-            {([["auto", "AUTO"], ["week", "TÝDEN"], ["weekend", "VÍKEND"]] as const).map(([v, l]) => (
-              <button key={v} type="button" onClick={() => setDayMode(v)}
-                className={`border py-1.5 text-[11px] ${dayMode === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
-                {l}
-              </button>
-            ))}
-          </div>
-          <div className="text-[10px] text-muted-foreground">TYP JÍZDY</div>
-          <div className="grid grid-cols-2 gap-2">
-            {(["auto", "km", "short", "mikulov", "hustopece"] as FareMode[]).map((m) => (
-              <button key={m} type="button" onClick={() => setFareMode(m)}
-                className={`border py-1.5 text-[11px] ${fareMode === m ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
-                {FARE_MODE_LABELS[m]}
-              </button>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-2 items-end">
-            <div>
-              <div className="text-[10px] text-muted-foreground mb-1">CENA (Kč)</div>
-              <input type="number" inputMode="decimal" value={price}
-                onChange={(e) => { setPriceTouched(true); setPrice(e.target.value); }}
-                className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
-            </div>
-            <div className="text-[10px] text-muted-foreground pb-2">
-              {calcBusy ? "Počítám trasu…" : km != null ? `${km} km · ${fareNote}` : "Vyberte adresy z nabídky"}
-            </div>
-          </div>
-        </div>
 
 
 
