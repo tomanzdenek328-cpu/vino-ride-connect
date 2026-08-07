@@ -621,16 +621,6 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
     return () => { cancelled = true; };
   }, [pickupCoords.lat, pickupCoords.lng, destCoords.lat, destCoords.lng, estimateFn]);
 
-  // Přepočet ceny podle tarifu.
-  useEffect(() => {
-    const t = tariffs.find((x) => x.vehicle_type === (vehicleType === "van" ? "dodavka" : "osobni"));
-    if (!t) return;
-    const whenDate = when === "later" && scheduledTime ? new Date(scheduledTime) : new Date();
-    const weekend = dayMode === "auto" ? isWeekend(whenDate) : dayMode === "weekend";
-    const fare = computeFare(t, km ?? 0, { weekend, mode: fareMode, pickup, destination });
-    setFareNote(`${weekend ? "víkend" : "týden"} · ${fare.note}`);
-    if (!priceTouched) setPrice(String(fare.price));
-  }, [tariffs, vehicleType, km, dayMode, fareMode, when, scheduledTime, pickup, destination, priceTouched]);
 
 
 
