@@ -69,6 +69,7 @@ function TrackPage() {
   // near-real-time car position (light query every second)
   useEffect(() => {
     let stop = false;
+    let timer: number | null = null;
     const tick = async () => {
       try {
         const p: any = await trackPos({ data: { code } });
@@ -77,11 +78,17 @@ function TrackPage() {
         }
       } catch {
         /* ignore */
+      } finally {
+        // Start the next request only after this one has finished. This avoids
+        // older, slower responses moving the car backwards on the map.
+        if (!stop) timer = window.setTimeout(tick, 700);
       }
     };
     tick();
-    const t = setInterval(() => { if (!document.hidden) tick(); }, 1000);
-    return () => { stop = true; clearInterval(t); };
+    return () => {
+      stop = true;
+      if (timer !== null) window.clearTimeout(timer);
+    };
   }, [trackPos, code]);
 
 

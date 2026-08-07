@@ -51,17 +51,17 @@ function FollowCar({ car }: { car: [number, number] | null }) {
  * Smoothly interpolates between the last two known car positions so the marker
  * glides instead of jumping each time a new position arrives.
  */
-function useSmoothPosition(target: { lat: number; lng: number } | null | undefined, durationMs = 1800) {
+function useSmoothPosition(target: { lat: number; lng: number } | null | undefined, durationMs = 1100) {
   const [pos, setPos] = useState<[number, number] | null>(target ? [target.lat, target.lng] : null);
-  const fromRef = useRef<[number, number] | null>(pos);
+  const currentRef = useRef<[number, number] | null>(pos);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!target) return;
     const to: [number, number] = [target.lat, target.lng];
-    const from = fromRef.current;
+    const from = currentRef.current;
     if (!from) {
-      fromRef.current = to;
+      currentRef.current = to;
       setPos(to);
       return;
     }
@@ -70,21 +70,22 @@ function useSmoothPosition(target: { lat: number; lng: number } | null | undefin
     const start = performance.now();
     const step = (now: number) => {
       const t = Math.min(1, (now - start) / durationMs);
-      const eased = t * (2 - t); // ease-out
+      // A linear segment keeps the car moving at a constant speed between GPS
+      // samples. Ease-out visibly slows/stops the marker before every update.
+      const eased = t;
       const next: [number, number] = [
         from[0] + (to[0] - from[0]) * eased,
         from[1] + (to[1] - from[1]) * eased,
       ];
+      currentRef.current = next;
       setPos(next);
       if (t < 1) rafRef.current = requestAnimationFrame(step);
-      else fromRef.current = to;
+      else currentRef.current = to;
     };
     rafRef.current = requestAnimationFrame(step);
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      fromRef.current = pos ?? from;
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target?.lat, target?.lng, durationMs]);
 
   return pos;
