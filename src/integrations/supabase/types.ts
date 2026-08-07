@@ -141,6 +141,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          approval: string
           assigned_driver_id: string | null
           assigned_driver_ids: string[]
           created_at: string
@@ -168,6 +169,7 @@ export type Database = {
           vehicle_type: string | null
         }
         Insert: {
+          approval?: string
           assigned_driver_id?: string | null
           assigned_driver_ids?: string[]
           created_at?: string
@@ -195,6 +197,7 @@ export type Database = {
           vehicle_type?: string | null
         }
         Update: {
+          approval?: string
           assigned_driver_id?: string | null
           assigned_driver_ids?: string[]
           created_at?: string
