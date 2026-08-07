@@ -107,7 +107,7 @@ function OrderPage() {
     return () => {
       cancelled = true;
     };
-  }, [pickup.lat, pickup.lng, dest.lat, dest.lng, estimate]);
+  }, [pickup.lat, pickup.lng, dest.lat, dest.lng, when, estimate]);
 
   const chosen = est?.options.find((o) => o.vehicle_type === vehicleType) ?? est?.options[0] ?? null;
 
