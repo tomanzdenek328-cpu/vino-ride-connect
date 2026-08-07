@@ -746,37 +746,6 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
           <div className="text-[10px] text-muted-foreground mt-1">Max. 30 osob</div>
         </div>
 
-        <div className="border border-primary/30 p-2 space-y-2">
-          <div className="text-[10px] text-muted-foreground">TARIF</div>
-          <div className="grid grid-cols-3 gap-2">
-            {([["auto", "AUTO"], ["week", "TÝDEN"], ["weekend", "VÍKEND"]] as const).map(([v, l]) => (
-              <button key={v} type="button" onClick={() => setDayMode(v)}
-                className={`border py-1.5 text-[11px] ${dayMode === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
-                {l}
-              </button>
-            ))}
-          </div>
-          <div className="text-[10px] text-muted-foreground">TYP JÍZDY</div>
-          <div className="grid grid-cols-2 gap-2">
-            {(["auto", "km", "short", "mikulov", "hustopece"] as FareMode[]).map((m) => (
-              <button key={m} type="button" onClick={() => setFareMode(m)}
-                className={`border py-1.5 text-[11px] ${fareMode === m ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
-                {FARE_MODE_LABELS[m]}
-              </button>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-2 items-end">
-            <div>
-              <div className="text-[10px] text-muted-foreground mb-1">CENA (Kč)</div>
-              <input type="number" inputMode="decimal" value={price}
-                onChange={(e) => { setPriceTouched(true); setPrice(e.target.value); }}
-                className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
-            </div>
-            <div className="text-[10px] text-muted-foreground pb-2">
-              {calcBusy ? "Počítám trasu…" : km != null ? `${km} km · ${fareNote}` : "Vyberte adresy z nabídky"}
-            </div>
-          </div>
-        </div>
 
 
 
