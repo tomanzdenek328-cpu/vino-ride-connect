@@ -95,13 +95,14 @@ export function computeFare(
     mode = "km";
   }
   if (mode === "short") {
-    const p = pick(t.short_price, t.short_price_weekend);
-    if (p > 0)
+    const sBase = pick(t.short_base_fare, t.short_base_fare_weekend);
+    const sPerKm = pick(t.short_per_km, t.short_per_km_weekend);
+    if (sBase > 0 || sPerKm > 0)
       return {
-        price: round10(p),
+        price: round10(sBase + sPerKm * km),
         mode,
         weekend,
-        note: `Jízda do ${Number(t.short_km_limit) || 5} km`,
+        note: `Do ${Number(t.short_km_limit) || 5} km: ${sBase} Kč + ${sPerKm} Kč/km`,
       };
     mode = "km";
   }
