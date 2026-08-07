@@ -126,7 +126,7 @@ function TrackPage() {
           <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">Mapa…</div>}>
             <CustomerMap
               pickup={o.pickup_lat != null ? { lat: o.pickup_lat, lng: o.pickup_lng } : null}
-              car={d?.lat != null ? { lat: d.lat, lng: d.lng } : null}
+              car={livePos ?? (d?.lat != null ? { lat: d.lat, lng: d.lng } : null)}
             />
           </Suspense>
         </ClientOnly>
