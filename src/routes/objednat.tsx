@@ -171,6 +171,7 @@ function OrderPage() {
           value={pickup.address}
           onChange={(v) => setPickup({ address: v })}
           onSelect={(p) => setPickup(p)}
+          allowCurrentLocation
           required
         />
         <AddressAutocomplete

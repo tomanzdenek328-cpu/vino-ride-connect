@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { autocompleteAddress, resolvePlace } from "@/lib/places.functions";
+import { autocompleteAddress, resolvePlace, reverseGeocode } from "@/lib/places.functions";
 
 interface Props {
   label: string;
@@ -8,11 +8,15 @@ interface Props {
   onChange: (v: string) => void;
   onSelect?: (p: { address: string; lat?: number; lng?: number }) => void;
   required?: boolean;
+  allowCurrentLocation?: boolean;
 }
 
-export function AddressAutocomplete({ label, value, onChange, onSelect, required }: Props) {
+export function AddressAutocomplete({ label, value, onChange, onSelect, required, allowCurrentLocation }: Props) {
   const ac = useServerFn(autocompleteAddress);
   const resolve = useServerFn(resolvePlace);
+  const reverse = useServerFn(reverseGeocode);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState("");
   const [suggestions, setSuggestions] = useState<{ placeId: string; text: string }[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -56,10 +60,42 @@ export function AddressAutocomplete({ label, value, onChange, onSelect, required
     }
   };
 
+  const useCurrent = () => {
+    setGeoError("");
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setGeoError("Poloha není v tomto prohlížeči dostupná.");
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const p = await reverse({ data: { lat: pos.coords.latitude, lng: pos.coords.longitude } });
+          skipNextRef.current = true;
+          setOpen(false);
+          setSuggestions([]);
+          onChange(p.formattedAddress);
+          onSelect?.({ address: p.formattedAddress, lat: p.lat, lng: p.lng });
+        } catch (e) {
+          console.error(e);
+          setGeoError("Adresu se nepodařilo načíst.");
+        } finally {
+          setGeoLoading(false);
+        }
+      },
+      (err) => {
+        console.warn(err);
+        setGeoLoading(false);
+        setGeoError("Nepodařilo se zjistit polohu. Povolte prosím přístup k poloze.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
+  };
 
   return (
     <label className="block relative">
       <div className="text-[10px] text-muted-foreground mb-1">{label}</div>
+
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -69,6 +105,19 @@ export function AddressAutocomplete({ label, value, onChange, onSelect, required
         autoComplete="off"
         className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm focus:border-primary focus:outline-none"
       />
+      {allowCurrentLocation && (
+        <>
+          <button
+            type="button"
+            onClick={useCurrent}
+            disabled={geoLoading}
+            className="mt-1.5 w-full border border-primary/60 text-primary text-[11px] py-1.5 tracking-wide hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
+          >
+            {geoLoading ? "ZJIŠŤUJI POLOHU…" : "📍 POUŽÍT AKTUÁLNÍ POLOHU"}
+          </button>
+          {geoError && <div className="text-[10px] text-destructive mt-1">{geoError}</div>}
+        </>
+      )}
       {loading && <div className="absolute right-2 top-7 text-[10px] text-muted-foreground">...</div>}
       {open && suggestions.length > 0 && (
         <div className="absolute z-50 left-0 right-0 mt-1 bg-black border border-primary/60 max-h-60 overflow-y-auto">
