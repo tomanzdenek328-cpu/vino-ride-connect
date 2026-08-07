@@ -96,6 +96,7 @@ function OrderPage() {
       data: {
         pickup: { address: pickup.address, lat: pickup.lat!, lng: pickup.lng! },
         destination: { address: dest.address, lat: dest.lat!, lng: dest.lng! },
+        when: when ? new Date(when).toISOString() : null,
       },
     })
       .then((r) => {
