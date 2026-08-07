@@ -32,12 +32,21 @@ export type FareMode = "auto" | "km" | "short" | "mikulov" | "hustopece";
 export const TARIFF_COLUMNS =
   "vehicle_type,label,base_fare,per_km,capacity,weekend_base_fare,weekend_per_km,short_km_limit,short_base_fare,short_per_km,short_base_fare_weekend,short_per_km_weekend,mikulov_flat,mikulov_flat_weekend,hustopece_flat,hustopece_flat_weekend";
 
-/** Víkend = sobota nebo neděle podle času v Praze. */
+/** Víkend = pátek od 18:00, sobota nebo neděle (čas v Praze). */
 export function isWeekend(when: Date | string | null | undefined = new Date()): boolean {
   const d = when ? new Date(when) : new Date();
-  const day = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Prague", weekday: "short" }).format(d);
-  return day === "Sat" || day === "Sun";
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Prague",
+    weekday: "short",
+    hour: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+  const day = parts.find((p) => p.type === "weekday")?.value;
+  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
+  if (day === "Sat" || day === "Sun") return true;
+  return day === "Fri" && hour >= 18;
 }
+
 
 function norm(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
