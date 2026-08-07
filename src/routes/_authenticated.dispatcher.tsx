@@ -587,22 +587,9 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const notifyNewOrderFn = useServerFn(notifyNewOrder);
   const estimateFn = useServerFn(estimateRide);
 
-  const [dayMode, setDayMode] = useState<"auto" | "week" | "weekend">("auto");
-  const [fareMode, setFareMode] = useState<FareMode>("auto");
-  const [tariffs, setTariffs] = useState<TariffFull[]>([]);
   const [km, setKm] = useState<number | null>(null);
-  const [calcBusy, setCalcBusy] = useState(false);
-  const [price, setPrice] = useState("");
-  const [priceTouched, setPriceTouched] = useState(false);
-  const [fareNote, setFareNote] = useState("");
+  const [, setCalcBusy] = useState(false);
 
-  useEffect(() => {
-    supabase
-      .from("tariffs")
-      .select("*")
-      .order("sort_order")
-      .then(({ data }) => setTariffs((data ?? []) as unknown as TariffFull[]));
-  }, []);
 
   // Vzdálenost po silnici, jakmile jsou známé obě adresy.
   useEffect(() => {
