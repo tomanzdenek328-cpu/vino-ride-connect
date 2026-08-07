@@ -187,6 +187,8 @@ function OrderPage() {
               <>
                 <div className="text-[11px] text-muted-foreground mb-2">
                   Trasa {est.km} km · cca {est.minutes} min {est.approx && "(odhad)"}
+                  {" · "}
+                  <span className="text-primary">{est.weekend ? "víkendový tarif" : "týdenní tarif"}</span>
                 </div>
                 <div className="space-y-2">
                   {est.options.map((o) => (
@@ -200,11 +202,15 @@ function OrderPage() {
                           : "border-border text-muted-foreground"
                       }`}
                     >
-                      <span className="text-xs">{o.label}</span>
+                      <span className="text-xs">
+                        {o.label}
+                        {o.fare_note && <span className="block text-[9px] opacity-70">{o.fare_note}</span>}
+                      </span>
                       <span className="font-bold">{o.price} Kč</span>
                     </button>
                   ))}
                 </div>
+
                 <div className="text-[10px] text-muted-foreground mt-2">
                   Cena je orientační, konečnou částku určuje taxametr.
                 </div>
