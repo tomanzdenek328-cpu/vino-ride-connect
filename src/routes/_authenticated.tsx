@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, Navigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
+import appBg from "@/assets/app-bg.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthLayout,
@@ -15,5 +16,18 @@ function AuthLayout() {
     );
   }
   if (!user) return <Navigate to="/login" />;
-  return <Outlet />;
+  return (
+    <div className="relative min-h-screen">
+      <div
+        className="fixed inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${appBg.url})` }}
+        aria-hidden
+      />
+      <div className="fixed inset-0 bg-background/85 backdrop-blur-[2px]" aria-hidden />
+      <div className="relative z-10 min-h-screen">
+        <Outlet />
+      </div>
+    </div>
+  );
 }
+
