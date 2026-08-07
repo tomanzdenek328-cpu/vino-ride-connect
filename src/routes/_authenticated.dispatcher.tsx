@@ -143,11 +143,14 @@ function DispatcherPage() {
     };
     loadOrders(); loadDrivers();
 
+    // Automatická aktualizace každých 5 sekund
+    const poll = window.setInterval(() => { loadOrders(); loadDrivers(); }, 5000);
+
     const ch = supabase.channel("dispatch_rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => loadOrders())
       .on("postgres_changes", { event: "*", schema: "public", table: "driver_locations" }, () => loadDrivers())
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { window.clearInterval(poll); supabase.removeChannel(ch); };
   }, []);
 
   // Upozornění: hodinu před plánovaným časem zakázky, která ještě není uvolněná.
