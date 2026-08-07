@@ -1664,8 +1664,12 @@ const NUM_FIELDS: { key: keyof TariffRow; label: string }[][] = [
     { key: "capacity", label: "MÍST" },
   ],
   [
-    { key: "short_price", label: "DO X KM – TÝDEN" },
-    { key: "short_price_weekend", label: "DO X KM – VÍKEND" },
+    { key: "short_base_fare", label: "KRÁTKÁ – NÁSTUPNÍ TÝDEN" },
+    { key: "short_per_km", label: "KRÁTKÁ – Kč/KM TÝDEN" },
+  ],
+  [
+    { key: "short_base_fare_weekend", label: "KRÁTKÁ – NÁSTUPNÍ VÍKEND" },
+    { key: "short_per_km_weekend", label: "KRÁTKÁ – Kč/KM VÍKEND" },
   ],
   [
     { key: "mikulov_flat", label: "MIKULOV – TÝDEN" },
