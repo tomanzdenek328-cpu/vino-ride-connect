@@ -33,7 +33,9 @@ const STATUS: Record<string, { label: string; color: string }> = {
 function TrackPage() {
   const { code } = Route.useParams();
   const track = useServerFn(trackOrder);
+  const trackPos = useServerFn(trackPosition);
   const [state, setState] = useState<any>(null);
+  const [livePos, setLivePos] = useState<{ lat: number; lng: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -59,9 +61,29 @@ function TrackPage() {
 
   useEffect(() => {
     load();
-    const t = setInterval(load, 5000);
+    // full refresh (driver, ETA, status) every 15 s
+    const t = setInterval(load, 15000);
     return () => clearInterval(t);
   }, [load]);
+
+  // near-real-time car position (light query every second)
+  useEffect(() => {
+    let stop = false;
+    const tick = async () => {
+      try {
+        const p: any = await trackPos({ data: { code } });
+        if (!stop && p?.found && p.lat != null && p.lng != null) {
+          setLivePos({ lat: p.lat, lng: p.lng });
+        }
+      } catch {
+        /* ignore */
+      }
+    };
+    tick();
+    const t = setInterval(() => { if (!document.hidden) tick(); }, 1000);
+    return () => { stop = true; clearInterval(t); };
+  }, [trackPos, code]);
+
 
 
   if (loading) {
