@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClientOnly } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { trackOrder } from "@/lib/customer.functions";
+import { trackOrder, trackPosition } from "@/lib/customer.functions";
 import { CustomerShell, CustomerCard } from "@/components/CustomerShell";
 
 const CustomerMap = lazy(() => import("@/components/CustomerMap"));
