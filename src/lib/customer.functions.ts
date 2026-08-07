@@ -229,6 +229,13 @@ export const trackOrder = createServerFn({ method: "POST" })
         );
         eta = r.minutes;
       }
+      let photoUrl: string | null = vehicle?.photo_url ?? null;
+      if (photoUrl && !photoUrl.startsWith("http")) {
+        const { data: signed } = await supabaseAdmin.storage
+          .from("vehicle-photos")
+          .createSignedUrl(photoUrl, 60 * 60 * 6);
+        photoUrl = signed?.signedUrl ?? null;
+      }
       driver = {
         call_sign: prof?.call_sign ?? "",
         full_name: prof?.full_name ?? "",
@@ -236,9 +243,10 @@ export const trackOrder = createServerFn({ method: "POST" })
         lng: loc?.lng ?? null,
         plate: vehicle?.plate ?? null,
         car_type: vehicle?.car_type ?? null,
-        photo_url: vehicle?.photo_url ?? null,
+        photo_url: photoUrl,
         eta_minutes: eta,
       };
+
     }
 
     return {
