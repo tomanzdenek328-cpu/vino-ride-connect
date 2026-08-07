@@ -543,6 +543,54 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const [submitting, setSubmitting] = useState(false);
   const autoAssignFn = useServerFn(autoAssignOrder);
   const notifyNewOrderFn = useServerFn(notifyNewOrder);
+  const estimateFn = useServerFn(estimateRide);
+
+  const [dayMode, setDayMode] = useState<"auto" | "week" | "weekend">("auto");
+  const [fareMode, setFareMode] = useState<FareMode>("auto");
+  const [tariffs, setTariffs] = useState<TariffFull[]>([]);
+  const [km, setKm] = useState<number | null>(null);
+  const [calcBusy, setCalcBusy] = useState(false);
+  const [price, setPrice] = useState("");
+  const [priceTouched, setPriceTouched] = useState(false);
+  const [fareNote, setFareNote] = useState("");
+
+  useEffect(() => {
+    supabase
+      .from("tariffs")
+      .select("*")
+      .order("sort_order")
+      .then(({ data }) => setTariffs((data ?? []) as unknown as TariffFull[]));
+  }, []);
+
+  // Vzdálenost po silnici, jakmile jsou známé obě adresy.
+  useEffect(() => {
+    if (pickupCoords.lat == null || destCoords.lat == null) { setKm(null); return; }
+    let cancelled = false;
+    setCalcBusy(true);
+    estimateFn({
+      data: {
+        pickup: { address: pickup, lat: pickupCoords.lat, lng: pickupCoords.lng! },
+        destination: { address: destination, lat: destCoords.lat, lng: destCoords.lng! },
+      },
+    })
+      .then((r: any) => { if (!cancelled) setKm(r?.km ?? null); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setCalcBusy(false); });
+    return () => { cancelled = true; };
+  }, [pickupCoords.lat, pickupCoords.lng, destCoords.lat, destCoords.lng, estimateFn]);
+
+  // Přepočet ceny podle tarifu.
+  useEffect(() => {
+    const t = tariffs.find((x) => x.vehicle_type === (vehicleType === "van" ? "dodavka" : "osobni"));
+    if (!t) return;
+    const whenDate = when === "later" && scheduledTime ? new Date(scheduledTime) : new Date();
+    const weekend = dayMode === "auto" ? isWeekend(whenDate) : dayMode === "weekend";
+    const fare = computeFare(t, km ?? 0, { weekend, mode: fareMode, pickup, destination });
+    setFareNote(`${weekend ? "víkend" : "týden"} · ${fare.note}`);
+    if (!priceTouched) setPrice(String(fare.price));
+  }, [tariffs, vehicleType, km, dayMode, fareMode, when, scheduledTime, pickup, destination, priceTouched]);
+
+
 
 
   const submit = async (e: FormEvent) => {
