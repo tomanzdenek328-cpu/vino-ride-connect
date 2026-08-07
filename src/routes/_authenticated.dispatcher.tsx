@@ -1640,8 +1640,10 @@ interface TariffRow {
   weekend_base_fare: number;
   weekend_per_km: number;
   short_km_limit: number;
-  short_price: number;
-  short_price_weekend: number;
+  short_base_fare: number;
+  short_per_km: number;
+  short_base_fare_weekend: number;
+  short_per_km_weekend: number;
   mikulov_flat: number;
   mikulov_flat_weekend: number;
   hustopece_flat: number;
