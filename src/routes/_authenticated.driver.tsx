@@ -274,7 +274,9 @@ function DriverPage() {
         load();
       })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    // Automatická aktualizace každých 5 sekund
+    const poll = window.setInterval(() => { load(); }, 5000);
+    return () => { window.clearInterval(poll); supabase.removeChannel(ch); };
   }, [user]);
 
 
