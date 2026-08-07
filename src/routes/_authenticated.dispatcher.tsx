@@ -16,6 +16,8 @@ import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { createVehicle, updateVehicle, deleteVehicle } from "@/lib/vehicles.functions";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
 import { SOSAlerts } from "@/components/SOSAlerts";
+import { estimateRide } from "@/lib/customer.functions";
+import { computeFare, isWeekend, FARE_MODE_LABELS, type FareMode, type TariffFull } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/dispatcher")({
   component: DispatcherPage,
