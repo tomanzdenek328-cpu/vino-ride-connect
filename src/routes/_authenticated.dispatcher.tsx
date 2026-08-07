@@ -626,7 +626,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
       passengers,
       vehicle_type: vehicleType,
       notes: notes || null,
-      estimated_price: price ? Number(price) : null,
+      estimated_price: null,
       estimated_distance_km: km ?? null,
 
 
