@@ -89,6 +89,8 @@ function DispatcherPage() {
   const [showMap, setShowMap] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
   const [showVehicles, setShowVehicles] = useState(false);
+  const [showTariffs, setShowTariffs] = useState(false);
+
   const [callSign, setCallSign] = useState("DISP");
   const [driverDetail, setDriverDetail] = useState<Driver | null>(null);
   const [archiveOrderDetail, setArchiveOrderDetail] = useState<Order | null>(null);
@@ -255,6 +257,10 @@ function DispatcherPage() {
             <button onClick={() => setShowVehicles(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
               <Car className="w-4 h-4" /> AUTA
             </button>
+            <button onClick={() => setShowTariffs(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
+              💰 CENÍK
+            </button>
+
             <button onClick={() => setShowDriverForm(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
               <UserPlus className="w-4 h-4" /> ŘIDIČ
             </button>
@@ -502,6 +508,8 @@ function DispatcherPage() {
       {archiveOrderDetail && <ArchiveOrderDetailModal order={archiveOrderDetail} onClose={() => setArchiveOrderDetail(null)} />}
       {editOrder && <OrderEditModal order={editOrder} onClose={() => setEditOrder(null)} />}
       {showVehicles && <VehiclesModal onClose={() => setShowVehicles(false)} />}
+      {showTariffs && <TariffsModal onClose={() => setShowTariffs(false)} />}
+
 
       {user && <WalkieTalkie userId={user.id} callSign={callSign} open={walkieOpen} onClose={() => setWalkieOpen(false)} />}
       {user && (
@@ -1371,10 +1379,12 @@ interface Vehicle {
   car_type: string;
   notes: string | null;
   active: boolean;
+  photo_url: string | null;
 }
 
 function VehiclesModal({ onClose }: { onClose: () => void }) {
   const [list, setList] = useState<Vehicle[]>([]);
+  const [previews, setPreviews] = useState<Record<string, string>>({});
   const [plate, setPlate] = useState("");
   const [carType, setCarType] = useState("");
   const [busy, setBusy] = useState(false);
@@ -1384,7 +1394,15 @@ function VehiclesModal({ onClose }: { onClose: () => void }) {
 
   const load = async () => {
     const { data } = await supabase.from("vehicles").select("*").order("plate");
-    setList((data ?? []) as Vehicle[]);
+    const rows = (data ?? []) as Vehicle[];
+    setList(rows);
+    const paths = rows.map((r) => r.photo_url).filter((p): p is string => !!p && !p.startsWith("http"));
+    if (paths.length) {
+      const { data: signed } = await supabase.storage.from("vehicle-photos").createSignedUrls(paths, 3600);
+      const map: Record<string, string> = {};
+      (signed ?? []).forEach((s: any) => { if (s.path && s.signedUrl) map[s.path] = s.signedUrl; });
+      setPreviews(map);
+    } else setPreviews({});
   };
   useEffect(() => { load(); }, []);
 
@@ -1399,6 +1417,32 @@ function VehiclesModal({ onClose }: { onClose: () => void }) {
     } catch (err: any) {
       toast.error(err?.message ?? "Chyba");
     } finally { setBusy(false); }
+  };
+
+  const uploadPhoto = async (v: Vehicle, file: File) => {
+    if (file.size > 5 * 1024 * 1024) { toast.error("Fotka je moc velká (max 5 MB)."); return; }
+    setBusy(true);
+    try {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `${v.id}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("vehicle-photos").upload(path, file, { upsert: true });
+      if (error) throw new Error(error.message);
+      await updateFn({ data: { id: v.id, photo_url: path } });
+      toast.success("Fotka nahrána");
+      await load();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Chyba při nahrávání");
+    } finally { setBusy(false); }
+  };
+
+  const removePhoto = async (v: Vehicle) => {
+    try {
+      if (v.photo_url && !v.photo_url.startsWith("http")) {
+        await supabase.storage.from("vehicle-photos").remove([v.photo_url]);
+      }
+      await updateFn({ data: { id: v.id, photo_url: null } });
+      await load();
+    } catch (err: any) { toast.error(err?.message ?? "Chyba"); }
   };
 
   const toggleActive = async (v: Vehicle) => {
@@ -1449,22 +1493,47 @@ function VehiclesModal({ onClose }: { onClose: () => void }) {
         <div className="divide-y divide-primary/20">
           {list.length === 0 && <div className="text-xs text-muted-foreground py-4 text-center">Žádná auta.</div>}
           {list.map((v) => (
-            <div key={v.id} className="flex items-center gap-2 py-2 text-sm">
-              <div className="flex-1 min-w-0">
-                <button onClick={() => editPlate(v)} className={`font-bold ${v.active ? "text-primary" : "text-muted-foreground line-through"}`}>
-                  {v.plate}
+            <div key={v.id} className="py-2 text-sm space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <button onClick={() => editPlate(v)} className={`font-bold ${v.active ? "text-primary" : "text-muted-foreground line-through"}`}>
+                    {v.plate}
+                  </button>
+                  <button onClick={() => editType(v)} className="ml-2 text-xs text-muted-foreground hover:text-primary">
+                    {v.car_type || "— typ —"}
+                  </button>
+                </div>
+                <button onClick={() => toggleActive(v)}
+                  className={`text-[10px] px-2 py-1 border ${v.active ? "border-primary text-primary" : "border-muted-foreground text-muted-foreground"}`}>
+                  {v.active ? "AKTIVNÍ" : "VYŘAZENO"}
                 </button>
-                <button onClick={() => editType(v)} className="ml-2 text-xs text-muted-foreground hover:text-primary">
-                  {v.car_type || "— typ —"}
+                <button onClick={() => remove(v)} className="text-amber-warn hover:text-red-500 p-1" aria-label="Smazat">
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-              <button onClick={() => toggleActive(v)}
-                className={`text-[10px] px-2 py-1 border ${v.active ? "border-primary text-primary" : "border-muted-foreground text-muted-foreground"}`}>
-                {v.active ? "AKTIVNÍ" : "VYŘAZENO"}
-              </button>
-              <button onClick={() => remove(v)} className="text-amber-warn hover:text-red-500 p-1" aria-label="Smazat">
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                {v.photo_url ? (
+                  <img
+                    src={v.photo_url.startsWith("http") ? v.photo_url : previews[v.photo_url]}
+                    alt={`Auto ${v.plate}`}
+                    className="w-24 h-16 object-cover border border-primary/40"
+                  />
+                ) : (
+                  <div className="w-24 h-16 border border-dashed border-primary/30 flex items-center justify-center text-[10px] text-muted-foreground">
+                    BEZ FOTKY
+                  </div>
+                )}
+                <label className="border border-primary/40 px-2 py-1.5 text-[11px] text-primary cursor-pointer hover:border-primary">
+                  📷 NAHRÁT FOTKU
+                  <input type="file" accept="image/*" className="hidden" disabled={busy}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(v, f); e.target.value = ""; }} />
+                </label>
+                {v.photo_url && (
+                  <button onClick={() => removePhoto(v)} className="text-[11px] text-muted-foreground hover:text-red-500">
+                    ODEBRAT
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -1472,3 +1541,91 @@ function VehiclesModal({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
+
+interface TariffRow {
+  id: string;
+  vehicle_type: string;
+  label: string;
+  base_fare: number;
+  per_km: number;
+  capacity: number;
+  sort_order: number;
+}
+
+function TariffsModal({ onClose }: { onClose: () => void }) {
+  const [list, setList] = useState<TariffRow[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    const { data } = await supabase.from("tariffs").select("*").order("sort_order");
+    setList((data ?? []) as TariffRow[]);
+  };
+  useEffect(() => { load(); }, []);
+
+  const setField = (id: string, field: keyof TariffRow, value: string) => {
+    setList((prev) => prev.map((t) => (t.id === id ? { ...t, [field]: field === "label" ? value : Number(value) } as TariffRow : t)));
+  };
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      for (const t of list) {
+        const { error } = await supabase
+          .from("tariffs")
+          .update({ label: t.label, base_fare: t.base_fare, per_km: t.per_km, capacity: t.capacity })
+          .eq("id", t.id);
+        if (error) throw new Error(error.message);
+      }
+      toast.success("Ceník uložen");
+      await load();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Chyba při ukládání");
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/90 z-[2000] flex items-center justify-center p-4">
+      <div className="bg-black border border-primary glow p-5 max-w-lg w-full max-h-[85vh] overflow-y-auto space-y-3">
+        <div className="flex justify-between items-center">
+          <h3 className="text-primary font-display text-lg">▸ CENÍK PRO ZÁKAZNÍKY</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-primary"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="text-[10px] text-muted-foreground">
+          Cena = nástupní sazba + (Kč/km × vzdálenost). Projeví se hned na objednávkové stránce zákazníka.
+        </div>
+        {list.length === 0 && <div className="text-xs text-muted-foreground py-4 text-center">Žádné sazby.</div>}
+        {list.map((t) => (
+          <div key={t.id} className="border border-primary/30 p-2 space-y-2">
+            <div>
+              <div className="text-[10px] text-muted-foreground mb-1">NÁZEV ({t.vehicle_type})</div>
+              <input value={t.label} onChange={(e) => setField(t.id, "label", e.target.value)}
+                className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <div className="text-[10px] text-muted-foreground mb-1">NÁSTUPNÍ (Kč)</div>
+                <input type="number" inputMode="decimal" value={t.base_fare} onChange={(e) => setField(t.id, "base_fare", e.target.value)}
+                  className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
+              </div>
+              <div>
+                <div className="text-[10px] text-muted-foreground mb-1">Kč / KM</div>
+                <input type="number" inputMode="decimal" value={t.per_km} onChange={(e) => setField(t.id, "per_km", e.target.value)}
+                  className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
+              </div>
+              <div>
+                <div className="text-[10px] text-muted-foreground mb-1">MÍST</div>
+                <input type="number" value={t.capacity} onChange={(e) => setField(t.id, "capacity", e.target.value)}
+                  className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm" />
+              </div>
+            </div>
+          </div>
+        ))}
+        <button onClick={save} disabled={busy}
+          className="w-full border border-primary bg-primary text-primary-foreground py-2 text-sm font-bold disabled:opacity-40">
+          ULOŽIT CENÍK
+        </button>
+      </div>
+    </div>
+  );
+}
+
