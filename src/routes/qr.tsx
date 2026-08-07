@@ -17,24 +17,33 @@ export const Route = createFileRoute("/qr")({
   component: QrPage,
 });
 
+const PUBLIC_URL = "https://vino-ride-connect.lovable.app/objednat";
+
 function QrPage() {
-  const [origin, setOrigin] = useState("https://vino-ride-connect.lovable.app");
+  const [url, setUrl] = useState(PUBLIC_URL);
   useEffect(() => {
-    if (typeof window !== "undefined") setOrigin(window.location.origin);
+    if (typeof window === "undefined") return;
+    const host = window.location.hostname;
+    // Na náhledu/lokálu ukaž vlastní origin, jinak vždy veřejnou adresu.
+    if (host === "localhost" || host.endsWith("lovableproject.com") || host.includes("-preview--")) {
+      setUrl(`${window.location.origin}/objednat`);
+    }
   }, []);
-  const url = `${origin}/objednat`;
 
   return (
     <CustomerShell>
       <div className="min-h-screen flex flex-col items-center justify-center gap-5 p-6 text-center">
       <h1 className="font-display text-2xl text-primary glow-text">▸ OBJEDNEJ TAXI</h1>
       <div className="bg-white p-4">
-        <QRCodeSVG value={url} size={240} />
+        <QRCodeSVG value={url} size={240} level="M" includeMargin />
       </div>
-      <div className="text-xs text-muted-foreground break-all max-w-xs">{url}</div>
+      <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline break-all max-w-xs">
+        {url}
+      </a>
       <p className="text-xs text-muted-foreground max-w-xs">
         Naskenujte telefonem – otevře se objednávka jízdy. Stránku lze přidat na plochu jako aplikaci.
       </p>
+
       <button
         onClick={() => window.print()}
         className="border border-primary text-primary px-6 py-2 text-sm tracking-widest"
