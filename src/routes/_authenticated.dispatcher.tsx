@@ -586,7 +586,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const [notes, setNotes] = useState("");
   const [priority, setPriority] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const autoAssignFn = useServerFn(autoAssignOrder);
+  
   const notifyNewOrderFn = useServerFn(notifyNewOrder);
   const estimateFn = useServerFn(estimateRide);
 
