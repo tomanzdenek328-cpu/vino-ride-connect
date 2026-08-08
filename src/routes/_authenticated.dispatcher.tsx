@@ -644,16 +644,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
     if (error) { toast.error(error.message); return; }
     toast.success("▸ ZAKÁZKA ODESLÁNA");
     onClose();
-    // Auto-assign nearest driver for immediate rides with known pickup.
-    if (inserted?.id && when === "now" && pickupCoords.lat != null && pickupCoords.lng != null) {
-      try {
-        const res = await autoAssignFn({ data: { order_id: inserted.id } });
-        if (res?.ok) toast.success("▸ AUTOMATICKY PŘIDĚLENO");
-        else if (res?.reason === "no_drivers") toast.message("▸ Žádný volný řidič – zakázka čeká");
-      } catch (err: any) {
-        toast.error(err?.message ?? "Auto-přidělení selhalo");
-      }
-    }
+
     // Push notifikace řidičům (přiřazený nebo všichni online u pending).
     if (inserted?.id && when === "now") {
       notifyNewOrderFn({ data: { order_id: inserted.id } }).catch((e) => console.warn("notify failed", e));
