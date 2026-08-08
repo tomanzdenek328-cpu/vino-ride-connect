@@ -243,14 +243,17 @@ function OrderPage() {
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
             <div className="text-[10px] text-muted-foreground mb-1">POČET OSOB</div>
-            <input
-              type="number"
-              min={1}
-              max={8}
+            <select
               value={passengers}
-              onChange={(e) => setPassengers(Math.max(1, Math.min(8, Number(e.target.value) || 1)))}
+              onChange={(e) => setPassengers(Number(e.target.value))}
               className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm focus:border-primary focus:outline-none"
-            />
+            >
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                <option key={n} value={n} className="bg-background text-primary">
+                  {n}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="block">
             <div className="text-[10px] text-muted-foreground mb-1">ČAS (nepovinné)</div>
