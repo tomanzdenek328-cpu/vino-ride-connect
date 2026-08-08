@@ -8,7 +8,7 @@ import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useChatNotifications } from "@/hooks/useChatNotifications";
 import { createDriver, updateDriver, deleteDriver, resetDriverRides, deleteRide, getDriverEmail } from "@/lib/drivers.functions";
-import { autoAssignOrder } from "@/lib/auto-assign.functions";
+
 import { notifyNewOrder } from "@/lib/push.functions";
 import { toast } from "sonner";
 import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, MessageSquare, Mail, FileText } from "lucide-react";
@@ -586,7 +586,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const [notes, setNotes] = useState("");
   const [priority, setPriority] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const autoAssignFn = useServerFn(autoAssignOrder);
+  
   const notifyNewOrderFn = useServerFn(notifyNewOrder);
   const estimateFn = useServerFn(estimateRide);
 
@@ -644,16 +644,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
     if (error) { toast.error(error.message); return; }
     toast.success("▸ ZAKÁZKA ODESLÁNA");
     onClose();
-    // Auto-assign nearest driver for immediate rides with known pickup.
-    if (inserted?.id && when === "now" && pickupCoords.lat != null && pickupCoords.lng != null) {
-      try {
-        const res = await autoAssignFn({ data: { order_id: inserted.id } });
-        if (res?.ok) toast.success("▸ AUTOMATICKY PŘIDĚLENO");
-        else if (res?.reason === "no_drivers") toast.message("▸ Žádný volný řidič – zakázka čeká");
-      } catch (err: any) {
-        toast.error(err?.message ?? "Auto-přidělení selhalo");
-      }
-    }
+
     // Push notifikace řidičům (přiřazený nebo všichni online u pending).
     if (inserted?.id && when === "now") {
       notifyNewOrderFn({ data: { order_id: inserted.id } }).catch((e) => console.warn("notify failed", e));
