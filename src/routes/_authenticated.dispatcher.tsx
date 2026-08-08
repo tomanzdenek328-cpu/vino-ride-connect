@@ -133,7 +133,11 @@ function DispatcherPage() {
       online: !!locMap[p.id]?.online,
       busy: !!locMap[p.id]?.busy,
       car_type: (locMap[p.id]?.vehicle_id && vehMap[locMap[p.id]!.vehicle_id!]) || "",
-    })));
+    })).sort((a, b) =>
+      (a.call_sign || "").localeCompare(b.call_sign || "", "cs") ||
+      (a.full_name || "").localeCompare(b.full_name || "", "cs") ||
+      a.id.localeCompare(b.id)
+    ));
   };
 
   useEffect(() => {
