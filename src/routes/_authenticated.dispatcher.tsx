@@ -8,7 +8,7 @@ import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useChatNotifications } from "@/hooks/useChatNotifications";
 import { createDriver, updateDriver, deleteDriver, resetDriverRides, deleteRide, getDriverEmail } from "@/lib/drivers.functions";
-import { autoAssignOrder } from "@/lib/auto-assign.functions";
+
 import { notifyNewOrder } from "@/lib/push.functions";
 import { toast } from "sonner";
 import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, MessageSquare, Mail, FileText } from "lucide-react";
