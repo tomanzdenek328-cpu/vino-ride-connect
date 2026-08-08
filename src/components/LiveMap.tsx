@@ -166,8 +166,10 @@ export function LiveMap({ center, showOrders = false, onOrderClick, followDriver
 
   // Zobrazujeme jen online řidiče (i obsazené), offline se nezobrazují
   const onlineDrivers = drivers.filter((d) => d.online);
-  const sortedDrivers = [...onlineDrivers].sort((a, b) =>
-    a.call_sign.localeCompare(b.call_sign),
+  const sortedDrivers = [...onlineDrivers].sort(
+    (a, b) =>
+      (a.call_sign || "").localeCompare(b.call_sign || "", "cs") ||
+      (a.driver_id || "").localeCompare(b.driver_id || ""),
   );
 
   const visibleDrivers = sortedDrivers.filter(
