@@ -617,7 +617,7 @@ function DriverPage() {
           <section>
             <h2 className="font-display text-primary text-sm mb-2">▸ MOJE JÍZDA ({myOrders.length})</h2>
             {myOrders.map((o) => (
-              <div key={o.id} className="p-3 mb-2 border border-primary glow">
+              <div key={o.id} className="p-3 mb-2 border-2 border-primary bg-black/85 glow">
                 <div className="flex items-start justify-between gap-2">
                   <div className="text-primary font-bold flex-1 min-w-0">▸ {o.pickup_address}</div>
                   {o.priority && (
