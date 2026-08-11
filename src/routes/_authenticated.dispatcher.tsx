@@ -89,6 +89,10 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: "ZRUŠENO",
 };
 
+// Skrytý řidič – vidí ho jen dispečer Torpédo
+const HIDDEN_DRIVER_ID = "5ab5bc1d-a16e-4bfe-862e-61ecf8c0b2fb";
+const ALLOWED_DISPATCHER_ID = "b7636c0d-5323-4bb4-b394-44f5736d6e0d";
+
 function DispatcherPage() {
   const { user, role, loading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -160,7 +164,8 @@ function DispatcherPage() {
 
   const loadDrivers = async () => {
     const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "driver");
-    const ids = (roles ?? []).map((r: any) => r.user_id);
+    let ids = (roles ?? []).map((r: any) => r.user_id);
+    if (user?.id !== ALLOWED_DISPATCHER_ID) ids = ids.filter((id: string) => id !== HIDDEN_DRIVER_ID);
     if (!ids.length) { setDrivers([]); return; }
     const [{ data: profs }, { data: locs }, { data: vehs }] = await Promise.all([
       supabase.from("profiles").select("id,full_name,call_sign").in("id", ids),
