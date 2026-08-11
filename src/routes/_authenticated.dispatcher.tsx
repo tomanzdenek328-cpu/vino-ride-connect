@@ -113,11 +113,49 @@ function DispatcherPage() {
   });
   const [walkieOpen, setWalkieOpen] = useState(false);
 
+  const savePushSubFn = useServerFn(saveDriverPushSubscription);
+
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("call_sign").eq("id", user.id).maybeSingle()
       .then(({ data }) => { if (data?.call_sign) setCallSign(data.call_sign); });
-  }, [user]);
+
+    // Nativní APK: push + lokální notifikace
+    if (isNative()) {
+      initPushNotifications();
+      initLocalNotifications();
+    }
+
+    // Web Push (PWA/prohlížeč) – aby upozornění došlo i při zavřené aplikaci.
+    (async () => {
+      try {
+        if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+        let perm = Notification.permission;
+        if (perm === "default") perm = await Notification.requestPermission();
+        if (perm !== "granted") return;
+        const reg = await navigator.serviceWorker.register("/sw-push.js");
+        await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
+          });
+        }
+        const json: any = sub.toJSON();
+        await savePushSubFn({
+          data: {
+            endpoint: json.endpoint,
+            p256dh: json.keys?.p256dh,
+            auth: json.keys?.auth,
+            user_agent: navigator.userAgent.slice(0, 500),
+          },
+        });
+      } catch (e) {
+        console.warn("Push subscribe failed", e);
+      }
+    })();
+  }, [user, savePushSubFn]);
 
   const loadDrivers = async () => {
     const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "driver");
