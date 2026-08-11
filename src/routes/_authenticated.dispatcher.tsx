@@ -470,7 +470,17 @@ function DispatcherPage() {
                     <div className="text-sm text-primary mt-1 font-medium">
                       {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                       {" · "}👥 {o.passengers}
-                      {o.vehicle_type ? ` · ${o.vehicle_type === "van" ? "🚐 DODÁVKA" : "🚗 OSOBNÍ"}` : ""}
+                      {o.vehicle_type
+                        ? ` · ${
+                            o.vehicle_type === "van" || o.vehicle_type === "dodavka"
+                              ? "🚐 DODÁVKA"
+                              : o.vehicle_type === "limo" || o.vehicle_type === "vip_limuzina"
+                                ? "🚘 LIMUZÍNA"
+                                : o.vehicle_type === "vip_tesla"
+                                  ? "⚡ VIP TESLA"
+                                  : "🚗 OSOBNÍ"
+                          }`
+                        : ""}
                     </div>
                     {o.estimated_price != null && (
                       <div className="text-sm font-bold text-purple-300 mt-0.5">
