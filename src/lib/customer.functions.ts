@@ -189,6 +189,31 @@ export const createCustomerOrder = createServerFn({ method: "POST" })
       .select("id,tracking_code")
       .maybeSingle();
     if (error) throw new Error(error.message);
+
+    // Upozornění dispečerům na novou zákaznickou objednávku.
+    try {
+      const { data: roles } = await supabaseAdmin
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "dispatcher");
+      const ids = (roles ?? []).map((r: any) => r.user_id as string);
+      if (ids.length) {
+        const { sendPushToUsers } = await import("./notify.server");
+        const when = data.scheduled_time
+          ? new Date(data.scheduled_time).toLocaleString("cs-CZ", { timeZone: "Europe/Prague" })
+          : "HNED";
+        await sendPushToUsers(ids, {
+          title: "🧾 OBJEDNÁVKA OD ZÁKAZNÍKA",
+          body: `${data.pickup.address} → ${data.destination.address} • ${when}`,
+          url: "/dispatcher",
+          priority: true,
+          tag: `customer-order-${tracking_code}`,
+        });
+      }
+    } catch (e) {
+      console.error("dispatcher notify failed", e);
+    }
+
     return { ok: true as const, tracking_code: row?.tracking_code ?? tracking_code };
   });
 
