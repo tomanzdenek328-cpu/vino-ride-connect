@@ -164,7 +164,8 @@ function DispatcherPage() {
 
   const loadDrivers = async () => {
     const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "driver");
-    const ids = (roles ?? []).map((r: any) => r.user_id);
+    let ids = (roles ?? []).map((r: any) => r.user_id);
+    if (user?.id !== ALLOWED_DISPATCHER_ID) ids = ids.filter((id: string) => id !== HIDDEN_DRIVER_ID);
     if (!ids.length) { setDrivers([]); return; }
     const [{ data: profs }, { data: locs }, { data: vehs }] = await Promise.all([
       supabase.from("profiles").select("id,full_name,call_sign").in("id", ids),
