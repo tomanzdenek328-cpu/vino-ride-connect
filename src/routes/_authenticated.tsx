@@ -8,6 +8,8 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthLayout() {
   const { user, loading } = useAuth();
+  const { pathname } = useLocation();
+  const isDriver = pathname.startsWith("/driver");
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -23,7 +25,14 @@ function AuthLayout() {
         style={{ backgroundImage: `url(${appBg.url})` }}
         aria-hidden
       />
-      <div className="fixed inset-0 bg-background/85 backdrop-blur-[2px]" aria-hidden />
+      <div
+        className={
+          isDriver
+            ? "fixed inset-0 bg-background/95 backdrop-blur-[6px]"
+            : "fixed inset-0 bg-background/85 backdrop-blur-[2px]"
+        }
+        aria-hidden
+      />
       <div className="relative z-10 min-h-screen">
         <Outlet />
       </div>
