@@ -617,14 +617,15 @@ function DriverPage() {
           <section>
             <h2 className="font-display text-primary text-sm mb-2">▸ MOJE JÍZDA ({myOrders.length})</h2>
             {myOrders.map((o) => (
-              <div key={o.id} className="p-3 mb-2 border-2 border-primary bg-neutral-500/30 backdrop-blur-[2px] glow">
+              <div key={o.id} className="p-3 mb-2 border-2 border-primary bg-neutral-500/45 backdrop-blur-[2px] glow">
                 <div className="flex items-start justify-between gap-2">
                   <div className="text-primary font-bold flex-1 min-w-0">▸ {o.pickup_address}</div>
                   {o.priority && (
                     <span className="text-[10px] px-1.5 py-0.5 border border-destructive text-destructive font-bold blink shrink-0">🚨 URGENT</span>
                   )}
                 </div>
-                {o.destination && <div className="text-xs text-muted-foreground">→ {o.destination}</div>}
+                {o.destination && <div className="text-xs text-primary font-bold">→ {o.destination}</div>}
+
                 <div className="text-sm text-primary mt-1.5 font-medium">
                   {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                   {" · "}👥 {o.passengers}
@@ -697,15 +698,15 @@ function DriverPage() {
         <section>
           <h2 className="font-display text-primary text-sm mb-2">▸ VOLNÉ ZAKÁZKY ({pending.length})</h2>
           {pending.map((o) => (
-            <div key={o.id} className={`p-3 mb-2 border-2 bg-neutral-500/30 backdrop-blur-[2px] ${o.released ? (o.priority ? "border-destructive" : "border-amber-warn") : "border-amber-warn/70"}`}>
+            <div key={o.id} className={`p-3 mb-2 border-2 backdrop-blur-[2px] ${o.released ? `bg-neutral-500/45 ${o.priority ? "border-destructive" : "border-amber-warn"}` : "bg-neutral-700/55 border-neutral-300/70"}`}>
               <div className="flex items-start justify-between gap-2">
-                <div className={`font-bold flex-1 min-w-0 ${o.released ? (o.priority ? "text-destructive" : "text-amber-warn") : "text-amber-warn/90"}`}>▸ {o.pickup_address}</div>
+                <div className={`font-bold flex-1 min-w-0 ${o.released ? (o.priority ? "text-destructive" : "text-amber-warn") : "text-neutral-100"}`}>▸ {o.pickup_address}</div>
                 {o.priority && (
                   <span className="text-[10px] px-1.5 py-0.5 border border-destructive text-destructive font-bold blink shrink-0">🚨 URGENT</span>
                 )}
               </div>
-              {o.destination && <div className="text-xs text-foreground/80">→ {o.destination}</div>}
-              <div className="text-xs text-foreground/90 mt-1 font-medium">
+              {o.destination && <div className={`text-xs font-bold ${o.released ? (o.priority ? "text-destructive" : "text-amber-warn") : "text-neutral-100"}`}>→ {o.destination}</div>}
+              <div className={`text-xs mt-1 font-medium ${o.released ? "text-foreground/90" : "text-neutral-200"}`}>
                 {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                 {" · "}👥 {o.passengers}
               </div>
@@ -716,10 +717,11 @@ function DriverPage() {
                   ▸ VZÍT
                 </button>
               ) : (
-                <div className="mt-2 w-full border-2 border-amber-warn/70 bg-amber-warn/10 text-amber-warn/90 font-bold py-2 text-xs text-center">
+                <div className="mt-2 w-full border-2 border-neutral-300/60 bg-neutral-200/10 text-neutral-100 font-bold py-2 text-xs text-center">
                   🔒 ČEKÁ NA UVOLNĚNÍ DISPEČEREM
                 </div>
               )}
+
             </div>
 
           ))}
