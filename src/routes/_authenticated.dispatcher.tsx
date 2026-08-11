@@ -142,10 +142,52 @@ function DispatcherPage() {
     ));
   };
 
+  // Zvukový signál + notifikace na novou zákaznickou objednávku.
+  const seenCustomerRef = useRef<Set<string> | null>(null);
+  const alertCustomerOrder = (o: Order) => {
+    const title = "🧾 OBJEDNÁVKA OD ZÁKAZNÍKA";
+    const body = `${o.pickup_address}${o.destination ? ` → ${o.destination}` : ""}`;
+    toast.success(title, { description: body, duration: 20000 });
+    try {
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(title, { body });
+      }
+    } catch {}
+    showLocalNotification(title, body);
+    try {
+      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+      if (Ctx) {
+        const ctx = new Ctx();
+        [0, 0.35, 0.7].forEach((t, i) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.value = i === 1 ? 1320 : 990;
+          g.gain.setValueAtTime(0.0001, ctx.currentTime + t);
+          g.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.3);
+          osc.connect(g).connect(ctx.destination);
+          osc.start(ctx.currentTime + t);
+          osc.stop(ctx.currentTime + t + 0.32);
+        });
+        setTimeout(() => ctx.close().catch(() => {}), 1500);
+      }
+    } catch {}
+  };
+
   useEffect(() => {
     const loadOrders = async () => {
       const { data } = await supabase.from("orders").select("*");
-      setOrders((data ?? []) as Order[]);
+      const rows = (data ?? []) as Order[];
+      const customerIds = rows.filter((o) => o.source === "customer").map((o) => o.id);
+      if (seenCustomerRef.current === null) {
+        seenCustomerRef.current = new Set(customerIds);
+      } else {
+        rows
+          .filter((o) => o.source === "customer" && !seenCustomerRef.current!.has(o.id))
+          .forEach((o) => { seenCustomerRef.current!.add(o.id); alertCustomerOrder(o); });
+      }
+      setOrders(rows);
     };
     loadOrders(); loadDrivers();
 
