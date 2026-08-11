@@ -9,7 +9,9 @@ import { ChatPanel } from "@/components/ChatPanel";
 import { useChatNotifications } from "@/hooks/useChatNotifications";
 import { createDriver, updateDriver, deleteDriver, resetDriverRides, deleteRide, getDriverEmail } from "@/lib/drivers.functions";
 
-import { notifyNewOrder } from "@/lib/push.functions";
+import { notifyNewOrder, saveDriverPushSubscription } from "@/lib/push.functions";
+import { initPushNotifications, initLocalNotifications, isNative, showLocalNotification } from "@/lib/native";
+import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array } from "@/lib/vapid";
 import { toast } from "sonner";
 import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, MessageSquare, Mail, FileText } from "lucide-react";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
@@ -111,11 +113,49 @@ function DispatcherPage() {
   });
   const [walkieOpen, setWalkieOpen] = useState(false);
 
+  const savePushSubFn = useServerFn(saveDriverPushSubscription);
+
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("call_sign").eq("id", user.id).maybeSingle()
       .then(({ data }) => { if (data?.call_sign) setCallSign(data.call_sign); });
-  }, [user]);
+
+    // Nativní APK: push + lokální notifikace
+    if (isNative()) {
+      initPushNotifications();
+      initLocalNotifications();
+    }
+
+    // Web Push (PWA/prohlížeč) – aby upozornění došlo i při zavřené aplikaci.
+    (async () => {
+      try {
+        if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+        let perm = Notification.permission;
+        if (perm === "default") perm = await Notification.requestPermission();
+        if (perm !== "granted") return;
+        const reg = await navigator.serviceWorker.register("/sw-push.js");
+        await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
+          });
+        }
+        const json: any = sub.toJSON();
+        await savePushSubFn({
+          data: {
+            endpoint: json.endpoint,
+            p256dh: json.keys?.p256dh,
+            auth: json.keys?.auth,
+            user_agent: navigator.userAgent.slice(0, 500),
+          },
+        });
+      } catch (e) {
+        console.warn("Push subscribe failed", e);
+      }
+    })();
+  }, [user, savePushSubFn]);
 
   const loadDrivers = async () => {
     const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "driver");
@@ -142,10 +182,52 @@ function DispatcherPage() {
     ));
   };
 
+  // Zvukový signál + notifikace na novou zákaznickou objednávku.
+  const seenCustomerRef = useRef<Set<string> | null>(null);
+  const alertCustomerOrder = (o: Order) => {
+    const title = "🧾 OBJEDNÁVKA OD ZÁKAZNÍKA";
+    const body = `${o.pickup_address}${o.destination ? ` → ${o.destination}` : ""}`;
+    toast.success(title, { description: body, duration: 20000 });
+    try {
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(title, { body });
+      }
+    } catch {}
+    showLocalNotification(title, body);
+    try {
+      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+      if (Ctx) {
+        const ctx = new Ctx();
+        [0, 0.35, 0.7].forEach((t, i) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.value = i === 1 ? 1320 : 990;
+          g.gain.setValueAtTime(0.0001, ctx.currentTime + t);
+          g.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.3);
+          osc.connect(g).connect(ctx.destination);
+          osc.start(ctx.currentTime + t);
+          osc.stop(ctx.currentTime + t + 0.32);
+        });
+        setTimeout(() => ctx.close().catch(() => {}), 1500);
+      }
+    } catch {}
+  };
+
   useEffect(() => {
     const loadOrders = async () => {
       const { data } = await supabase.from("orders").select("*");
-      setOrders((data ?? []) as Order[]);
+      const rows = (data ?? []) as Order[];
+      const customerIds = rows.filter((o) => o.source === "customer").map((o) => o.id);
+      if (seenCustomerRef.current === null) {
+        seenCustomerRef.current = new Set(customerIds);
+      } else {
+        rows
+          .filter((o) => o.source === "customer" && !seenCustomerRef.current!.has(o.id))
+          .forEach((o) => { seenCustomerRef.current!.add(o.id); alertCustomerOrder(o); });
+      }
+      setOrders(rows);
     };
     loadOrders(); loadDrivers();
 
