@@ -1418,7 +1418,7 @@ function OrderEditModal({ order, onClose }: { order: Order; onClose: () => void 
   };
   const [scheduledTime, setScheduledTime] = useState(toLocal(order.scheduled_time));
   const [passengers, setPassengers] = useState(order.passengers);
-  const [vehicleType, setVehicleType] = useState<"car" | "van">((order.vehicle_type as any) || "car");
+  const [vehicleType, setVehicleType] = useState<"car" | "van" | "limo">((order.vehicle_type as any) || "car");
   const [customerPhone, setCustomerPhone] = useState(order.customer_phone ?? "");
   const [notes, setNotes] = useState(order.notes ?? "");
   const [saving, setSaving] = useState(false);
