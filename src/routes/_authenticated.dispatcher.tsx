@@ -384,7 +384,7 @@ function DispatcherPage() {
                       </div>
                     )}
                     <div className="text-primary font-bold truncate">▸ {o.pickup_address}</div>
-                    {o.destination && <div className="text-xs text-muted-foreground truncate">→ {o.destination}</div>}
+                    {o.destination && <div className="text-muted-foreground truncate">→ {o.destination}</div>}
                     <div className="text-sm text-primary mt-1 font-medium">
                       {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                       {" · "}👥 {o.passengers}
@@ -520,7 +520,7 @@ function DispatcherPage() {
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="text-primary truncate">▸ {o.pickup_address}</div>
-                    {o.destination && <div className="text-xs text-muted-foreground truncate">→ {o.destination}</div>}
+                    {o.destination && <div className="text-muted-foreground truncate">→ {o.destination}</div>}
                     <div className="text-sm text-primary mt-1 font-medium">
                        {new Date(o.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
                        {" · "}👥 {o.passengers}

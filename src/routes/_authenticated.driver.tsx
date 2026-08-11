@@ -624,7 +624,7 @@ function DriverPage() {
                     <span className="text-[10px] px-1.5 py-0.5 border border-destructive text-destructive font-bold blink shrink-0">🚨 URGENT</span>
                   )}
                 </div>
-                {o.destination && <div className="text-xs text-primary font-bold">→ {o.destination}</div>}
+                {o.destination && <div className="text-primary font-bold">→ {o.destination}</div>}
 
                 <div className="text-sm text-primary mt-1.5 font-medium">
                   {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
@@ -705,7 +705,7 @@ function DriverPage() {
                   <span className="text-[10px] px-1.5 py-0.5 border border-destructive text-destructive font-bold blink shrink-0">🚨 URGENT</span>
                 )}
               </div>
-              {o.destination && <div className={`text-xs font-bold ${o.released ? (o.priority ? "text-destructive" : "text-amber-warn") : "text-neutral-100"}`}>→ {o.destination}</div>}
+              {o.destination && <div className={`font-bold ${o.released ? (o.priority ? "text-destructive" : "text-amber-warn") : "text-neutral-100"}`}>→ {o.destination}</div>}
               <div className={`text-xs mt-1 font-medium ${o.released ? "text-foreground/90" : "text-neutral-200"}`}>
                 {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                 {" · "}👥 {o.passengers}
