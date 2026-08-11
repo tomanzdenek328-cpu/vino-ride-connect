@@ -617,7 +617,7 @@ function DriverPage() {
           <section>
             <h2 className="font-display text-primary text-sm mb-2">▸ MOJE JÍZDA ({myOrders.length})</h2>
             {myOrders.map((o) => (
-              <div key={o.id} className="p-3 mb-2 border-2 border-primary bg-black/85 glow">
+              <div key={o.id} className="p-3 mb-2 border-2 border-primary bg-neutral-500/30 backdrop-blur-[2px] glow">
                 <div className="flex items-start justify-between gap-2">
                   <div className="text-primary font-bold flex-1 min-w-0">▸ {o.pickup_address}</div>
                   {o.priority && (
@@ -697,7 +697,7 @@ function DriverPage() {
         <section>
           <h2 className="font-display text-primary text-sm mb-2">▸ VOLNÉ ZAKÁZKY ({pending.length})</h2>
           {pending.map((o) => (
-            <div key={o.id} className={`p-3 mb-2 border-2 bg-black/85 ${o.released ? (o.priority ? "border-destructive" : "border-amber-warn") : "border-amber-warn/70"}`}>
+            <div key={o.id} className={`p-3 mb-2 border-2 bg-neutral-500/30 backdrop-blur-[2px] ${o.released ? (o.priority ? "border-destructive" : "border-amber-warn") : "border-amber-warn/70"}`}>
               <div className="flex items-start justify-between gap-2">
                 <div className={`font-bold flex-1 min-w-0 ${o.released ? (o.priority ? "text-destructive" : "text-amber-warn") : "text-amber-warn/90"}`}>▸ {o.pickup_address}</div>
                 {o.priority && (
