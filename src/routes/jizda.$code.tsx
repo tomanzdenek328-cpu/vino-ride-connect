@@ -21,6 +21,14 @@ export const Route = createFileRoute("/jizda/$code")({
   component: TrackPage,
 });
 
+function formatEta(mins: number) {
+  const m = Math.max(0, Math.round(mins));
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  const rest = m % 60;
+  return rest === 0 ? `${h} h` : `${h} h ${rest} min`;
+}
+
 const STATUS: Record<string, { label: string; color: string }> = {
   pending: { label: "HLEDÁME ŘIDIČE", color: "text-orange-400" },
   assigned: { label: "ŘIDIČ PŘIDĚLEN", color: "text-orange-400" },
