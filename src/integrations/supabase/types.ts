@@ -354,9 +354,11 @@ export type Database = {
           base_fare: number
           capacity: number
           created_at: string
+          hourly_rate: number
           hustopece_flat: number
           hustopece_flat_weekend: number
           id: string
+          included_km: number
           label: string
           mikulov_flat: number
           mikulov_flat_weekend: number
@@ -376,9 +378,11 @@ export type Database = {
           base_fare?: number
           capacity?: number
           created_at?: string
+          hourly_rate?: number
           hustopece_flat?: number
           hustopece_flat_weekend?: number
           id?: string
+          included_km?: number
           label: string
           mikulov_flat?: number
           mikulov_flat_weekend?: number
@@ -398,9 +402,11 @@ export type Database = {
           base_fare?: number
           capacity?: number
           created_at?: string
+          hourly_rate?: number
           hustopece_flat?: number
           hustopece_flat_weekend?: number
           id?: string
+          included_km?: number
           label?: string
           mikulov_flat?: number
           mikulov_flat_weekend?: number
