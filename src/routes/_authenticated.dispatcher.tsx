@@ -41,6 +41,8 @@ interface Order {
   released: boolean;
   priority: boolean;
   source?: string | null;
+  estimated_price?: number | null;
+  estimated_distance_km?: number | null;
   approval?: string | null;
 }
 
@@ -388,6 +390,13 @@ function DispatcherPage() {
                       {" · "}👥 {o.passengers}
                       {o.vehicle_type ? ` · ${o.vehicle_type === "van" ? "🚐 DODÁVKA" : "🚗 OSOBNÍ"}` : ""}
                     </div>
+                    {o.estimated_price != null && (
+                      <div className="text-sm font-bold text-purple-300 mt-0.5">
+                        💰 {Math.round(Number(o.estimated_price))} Kč
+                        {o.estimated_distance_km != null ? ` · ${Number(o.estimated_distance_km).toFixed(1)} km` : ""}
+                        <span className="text-[10px] text-muted-foreground"> (odhad zákazník)</span>
+                      </div>
+                    )}
                     {o.notes && <div className="text-xs text-amber-warn truncate">⚠ {o.notes}</div>}
                   </div>
                   <div className="flex flex-col items-end gap-1">
@@ -516,6 +525,9 @@ function DispatcherPage() {
                        {new Date(o.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
                        {" · "}👥 {o.passengers}
                      </div>
+                    {o.estimated_price != null && (
+                      <div className="text-sm font-bold text-purple-300 mt-0.5">💰 {Math.round(Number(o.estimated_price))} Kč</div>
+                    )}
                     <div className="text-[10px] text-primary/60 mt-0.5">Klikni pro detail</div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
