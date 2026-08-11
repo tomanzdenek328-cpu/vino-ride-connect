@@ -390,6 +390,13 @@ function DispatcherPage() {
                       {" · "}👥 {o.passengers}
                       {o.vehicle_type ? ` · ${o.vehicle_type === "van" ? "🚐 DODÁVKA" : "🚗 OSOBNÍ"}` : ""}
                     </div>
+                    {o.estimated_price != null && (
+                      <div className="text-sm font-bold text-purple-300 mt-0.5">
+                        💰 {Math.round(Number(o.estimated_price))} Kč
+                        {o.estimated_distance_km != null ? ` · ${Number(o.estimated_distance_km).toFixed(1)} km` : ""}
+                        <span className="text-[10px] text-muted-foreground"> (odhad zákazník)</span>
+                      </div>
+                    )}
                     {o.notes && <div className="text-xs text-amber-warn truncate">⚠ {o.notes}</div>}
                   </div>
                   <div className="flex flex-col items-end gap-1">
