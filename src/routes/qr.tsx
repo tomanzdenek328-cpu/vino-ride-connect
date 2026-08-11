@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { CustomerShell } from "@/components/CustomerShell";
+import logo from "@/assets/logo.png";
+
 
 export const Route = createFileRoute("/qr")({
   head: () => ({
@@ -32,11 +34,13 @@ function QrPage() {
 
   return (
     <CustomerShell>
-      <div className="min-h-screen flex flex-col items-center justify-center gap-5 p-6 text-center">
-      <h1 className="font-display text-2xl text-primary glow-text">▸ OBJEDNEJ TAXI</h1>
-      <div className="bg-white p-4">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-5 p-6 text-center bg-background/60">
+      <img src={logo} alt="Vinné Taxi logo" className="h-24 w-auto drop-shadow-[0_0_18px_rgba(0,0,0,0.7)]" />
+      <h1 className="font-display text-2xl text-primary glow-text">▸ OBJEDNEJ SI S NÁMI JÍZDU</h1>
+      <div className="bg-white p-4 rounded-lg shadow-[0_0_40px_rgba(0,0,0,0.8)]">
         <QRCodeSVG value={url} size={240} level="M" includeMargin />
       </div>
+
       <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline break-all max-w-xs">
         {url}
       </a>

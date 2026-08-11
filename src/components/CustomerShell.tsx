@@ -10,7 +10,7 @@ export function CustomerShell({ children }: { children: ReactNode }) {
         style={{ backgroundImage: `url(${bg})` }}
         aria-hidden
       />
-      <div className="fixed inset-0 bg-background/70 backdrop-blur-[2px]" aria-hidden />
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-[3px] contrast-125" aria-hidden />
       <div className="relative z-10 min-h-screen">{children}</div>
     </div>
   );
