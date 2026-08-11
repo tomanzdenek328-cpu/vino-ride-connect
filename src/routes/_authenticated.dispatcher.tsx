@@ -525,6 +525,9 @@ function DispatcherPage() {
                        {new Date(o.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
                        {" · "}👥 {o.passengers}
                      </div>
+                    {o.estimated_price != null && (
+                      <div className="text-sm font-bold text-purple-300 mt-0.5">💰 {Math.round(Number(o.estimated_price))} Kč</div>
+                    )}
                     <div className="text-[10px] text-primary/60 mt-0.5">Klikni pro detail</div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
