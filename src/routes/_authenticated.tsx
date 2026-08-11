@@ -28,7 +28,7 @@ function AuthLayout() {
       <div
         className={
           isDriver
-            ? "fixed inset-0 bg-background/95 backdrop-blur-[6px]"
+            ? "fixed inset-0 bg-background/45"
             : "fixed inset-0 bg-background/85 backdrop-blur-[2px]"
         }
         aria-hidden
