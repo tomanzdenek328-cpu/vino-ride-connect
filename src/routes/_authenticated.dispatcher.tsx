@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, MessageSquare, Mail, FileText } from "lucide-react";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { createVehicle, updateVehicle, deleteVehicle } from "@/lib/vehicles.functions";
-import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
+import logoVinneTaxi from "@/assets/logo-vinne-taxi-transparent.png";
 import { SOSAlerts } from "@/components/SOSAlerts";
 import { estimateRide } from "@/lib/customer.functions";
 import { computeFare, isWeekend, FARE_MODE_LABELS, type FareMode, type TariffFull } from "@/lib/pricing";
@@ -260,7 +260,7 @@ function DispatcherPage() {
           <img
             src={logoVinneTaxi}
             alt="VINNÉ TAXI"
-            className="h-36 sm:h-48 w-full object-contain"
+            className="h-16 sm:h-20 w-full object-contain"
           />
         </div>
         <div className="flex items-center justify-between gap-2 flex-wrap">

@@ -8,7 +8,7 @@ import { ChatPanel } from "@/components/ChatPanel";
 import { useChatNotifications } from "@/hooks/useChatNotifications";
 import { toast } from "sonner";
 import { LogOut, Power, Navigation, Map as MapIcon, X, Wallet, CreditCard, Banknote, Car, Minus, Trash2, Siren, MessageSquare, Mail, FileText } from "lucide-react";
-import logoVinneTaxi from "@/assets/logo-vinne-taxi.png";
+import logoVinneTaxi from "@/assets/logo-vinne-taxi-transparent.png";
 import { startBackgroundGeolocation, stopBackgroundGeolocation, initPushNotifications, isNative, initLocalNotifications, showLocalNotification } from "@/lib/native";
 import { SOSAlerts } from "@/components/SOSAlerts";
 import { useServerFn } from "@tanstack/react-start";
@@ -511,7 +511,7 @@ function DriverPage() {
           <img
             src={logoVinneTaxi}
             alt="VINNÉ TAXI"
-            className="h-36 sm:h-48 w-full object-contain"
+            className="h-16 sm:h-20 w-full object-contain"
           />
         </div>
         <div className="text-center">
