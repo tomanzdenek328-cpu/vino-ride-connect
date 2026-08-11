@@ -41,6 +41,8 @@ interface Order {
   released: boolean;
   priority: boolean;
   source?: string | null;
+  estimated_price?: number | null;
+  estimated_distance_km?: number | null;
   approval?: string | null;
 }
 
