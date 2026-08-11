@@ -119,6 +119,7 @@ export const estimateRide = createServerFn({ method: "POST" })
     const options = ((tariffs ?? []) as unknown as TariffFull[]).map((t) => {
       const fare = computeFare(t, km, {
         weekend,
+        minutes,
         pickup: data.pickup.address,
         destination: data.destination.address,
       });
