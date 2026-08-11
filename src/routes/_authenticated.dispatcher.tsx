@@ -89,6 +89,10 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: "ZRUŠENO",
 };
 
+// Skrytý řidič – vidí ho jen dispečer Torpédo
+const HIDDEN_DRIVER_ID = "5ab5bc1d-a16e-4bfe-862e-61ecf8c0b2fb";
+const ALLOWED_DISPATCHER_ID = "b7636c0d-5323-4bb4-b394-44f5736d6e0d";
+
 function DispatcherPage() {
   const { user, role, loading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
