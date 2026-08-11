@@ -27,12 +27,14 @@ export interface TariffFull {
   hustopece_flat_weekend: number;
   hourly_rate?: number;
   included_km?: number;
+  hourly_next_hour?: number;
+  hourly_extra_km?: number;
 }
 
 export type FareMode = "auto" | "km" | "short" | "mikulov" | "hustopece" | "hourly";
 
 export const TARIFF_COLUMNS =
-  "vehicle_type,label,base_fare,per_km,capacity,weekend_base_fare,weekend_per_km,short_km_limit,short_base_fare,short_per_km,short_base_fare_weekend,short_per_km_weekend,mikulov_flat,mikulov_flat_weekend,hustopece_flat,hustopece_flat_weekend,hourly_rate,included_km";
+  "vehicle_type,label,base_fare,per_km,capacity,weekend_base_fare,weekend_per_km,short_km_limit,short_base_fare,short_per_km,short_base_fare_weekend,short_per_km_weekend,mikulov_flat,mikulov_flat_weekend,hustopece_flat,hustopece_flat_weekend,hourly_rate,included_km,hourly_next_hour,hourly_extra_km";
 
 /** Víkend = pátek od 18:00, sobota nebo neděle (čas v Praze). */
 export function isWeekend(when: Date | string | null | undefined = new Date()): boolean {
@@ -76,20 +78,41 @@ const round10 = (n: number) => Math.max(0, Math.round(n / 10) * 10);
 export function computeFare(
   t: TariffFull,
   km: number,
-  opts: { weekend?: boolean; mode?: FareMode; pickup?: string | null; destination?: string | null; when?: Date | string | null } = {},
+  opts: {
+    weekend?: boolean;
+    mode?: FareMode;
+    pickup?: string | null;
+    destination?: string | null;
+    when?: Date | string | null;
+    minutes?: number | null;
+  } = {},
 ): FareResult {
   const weekend = opts.weekend ?? isWeekend(opts.when ?? new Date());
 
-  // Hodinová sazba (VIP limuzína): pevná cena za hodinu s nájezdem do X km.
+  // Hodinová sazba (VIP limuzína):
+  //  - 1. hodina = hourly_rate (nájezd do included_km)
+  //  - každá další započatá hodina = hourly_next_hour
+  //  - každý km nad nájezd (included_km × počet hodin) = hourly_extra_km
   const hourly = Number(t.hourly_rate ?? 0);
   const inclKm = Number(t.included_km ?? 0) || 30;
+  const nextHour = Number(t.hourly_next_hour ?? 0) || hourly;
+  const extraKmRate = Number(t.hourly_extra_km ?? 0);
   if (hourly > 0 && (!opts.mode || opts.mode === "auto" || opts.mode === "hourly")) {
-    const hours = Math.max(1, Math.ceil((km || 0) / inclKm));
+    const dist = km || 0;
+    const mins = Number(opts.minutes ?? 0);
+    // Počet započatých hodin podle délky jízdy (navigace), min. 1 hodina.
+    const hours = Math.max(1, Math.ceil(mins > 0 ? mins / 60 : dist / 50));
+    const includedTotal = inclKm * hours;
+    const extraKm = Math.max(0, dist - includedTotal);
+    const price = hourly + (hours - 1) * nextHour + extraKm * extraKmRate;
+    const parts = [`${hourly} Kč/1. hod. (do ${inclKm} km)`];
+    if (hours > 1) parts.push(`${hours - 1}× ${nextHour} Kč další hod.`);
+    if (extraKm > 0) parts.push(`${Math.round(extraKm)} km × ${extraKmRate} Kč`);
     return {
-      price: round10(hourly * hours),
+      price: round10(price),
       mode: "hourly",
       weekend,
-      note: `${hourly} Kč/hod. (nájezd do ${inclKm} km)`,
+      note: parts.join(" + "),
     };
   }
 
