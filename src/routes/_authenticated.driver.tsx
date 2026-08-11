@@ -511,13 +511,13 @@ function DriverPage() {
           <img
             src={logoVinneTaxi}
             alt="VINNÉ TAXI"
-            className="h-16 sm:h-20 w-full object-contain"
+            className="h-10 sm:h-12 w-full object-contain"
           />
         </div>
         <div className="text-center">
           <div className="text-xl text-primary glow-text font-display">▸ {callSign}</div>
           <div className="text-[10px] text-muted-foreground">ŘIDIČ</div>
-          <button onClick={() => supabase.auth.signOut()} className="mt-1 border border-primary/40 px-5 py-2.5 text-sm hover:border-primary inline-flex items-center gap-2">
+          <button onClick={() => supabase.auth.signOut()} className="mt-1 border-2 border-primary px-5 py-2.5 text-sm hover:bg-primary/10 inline-flex items-center gap-2">
             <LogOut className="w-5 h-5" /> ODHLÁSIT
           </button>
           <button
@@ -553,16 +553,16 @@ function DriverPage() {
             {busy ? "OBSAZENO" : "VOLNÝ"}
           </button>
           <button onClick={() => setShowMap(true)}
-            className="border border-primary/60 px-4 py-2 text-sm font-bold flex items-center gap-2 hover:border-primary hover:bg-primary/10">
+            className="border-2 border-primary px-4 py-2 text-sm font-bold flex items-center gap-2 hover:bg-primary/10">
             <MapIcon className="w-4 h-4" /> MAPA
           </button>
         </div>
         <div className="mt-1 flex justify-center items-center gap-2 flex-wrap">
           <button onClick={() => setShowRides(true)}
-            className="border border-primary/60 px-5 py-2 text-sm font-bold flex items-center gap-2 hover:border-primary hover:bg-primary/10">
+            className="border-2 border-primary bg-primary text-primary-foreground glow px-5 py-2 text-sm font-bold flex items-center gap-2">
             <Wallet className="w-4 h-4" /> MOJE JÍZDY · {totals.total.toFixed(0)} Kč
           </button>
-          <label className="border border-primary/60 px-3 py-2 text-sm font-bold flex items-center gap-2 hover:border-primary hover:bg-primary/10 cursor-pointer">
+          <label className="border-2 border-primary px-3 py-2 text-sm font-bold flex items-center gap-2 hover:bg-primary/10 cursor-pointer">
             <Car className="w-4 h-4" />
             <select
               value={vehicleId ?? ""}
