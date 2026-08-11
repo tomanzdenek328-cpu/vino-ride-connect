@@ -3,6 +3,8 @@ import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { CustomerShell } from "@/components/CustomerShell";
 import logo from "@/assets/logo.png";
+import plakat from "@/assets/qr-plakat.png.asset.json";
+
 
 
 export const Route = createFileRoute("/qr")({
@@ -48,12 +50,22 @@ function QrPage() {
         Naskenujte telefonem – otevře se objednávka jízdy. Stránku lze přidat na plochu jako aplikaci.
       </p>
 
-      <button
-        onClick={() => window.print()}
-        className="border border-primary text-primary px-6 py-2 text-sm tracking-widest"
-      >
-        ▸ VYTISKNOUT
-      </button>
+      <div className="flex flex-col gap-3 items-center">
+        <button
+          onClick={() => window.print()}
+          className="border border-primary text-primary px-6 py-2 text-sm tracking-widest"
+        >
+          ▸ VYTISKNOUT
+        </button>
+        <a
+          href={plakat.url}
+          download="vinne-taxi-qr-plakat.png"
+          className="border border-primary bg-primary/20 text-primary px-6 py-2 text-sm tracking-widest"
+        >
+          ▸ STÁHNOUT PLAKÁT
+        </a>
+      </div>
+
       </div>
     </CustomerShell>
   );
