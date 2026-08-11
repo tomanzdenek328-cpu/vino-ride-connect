@@ -3,13 +3,17 @@ import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
 import carImg from "@/assets/car-3d-white.png";
 
-const carIcon = L.divIcon({
-  className: "",
-  iconSize: [44, 44],
-  iconAnchor: [22, 22],
-  html: `<img src="${carImg}" alt="vůz" style="width:44px;height:44px;object-fit:contain;
+/** Car marker rotated so the vehicle always points in the direction of travel. */
+const makeCarIcon = (heading: number) =>
+  L.divIcon({
+    className: "",
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+    html: `<img src="${carImg}" alt="vůz" style="width:44px;height:44px;object-fit:contain;
+    transform:rotate(${heading}deg);transform-origin:50% 50%;transition:transform .35s linear;
     filter:drop-shadow(0 2px 4px rgba(0,0,0,0.55))" />`,
-});
+  });
+
 
 const pinIcon = L.divIcon({
   className: "",
@@ -98,6 +102,22 @@ interface Props {
 
 export default function CustomerMap({ pickup, car }: Props) {
   const smoothCar = useSmoothPosition(car);
+  const [heading, setHeading] = useState(0);
+  const lastRef = useRef<[number, number] | null>(null);
+
+  useEffect(() => {
+    if (!smoothCar) return;
+    const prev = lastRef.current;
+    if (prev) {
+      const dLat = smoothCar[0] - prev[0];
+      const dLng = (smoothCar[1] - prev[1]) * Math.cos((smoothCar[0] * Math.PI) / 180);
+      if (Math.abs(dLat) > 1e-7 || Math.abs(dLng) > 1e-7) {
+        setHeading((Math.atan2(dLng, dLat) * 180) / Math.PI);
+      }
+    }
+    lastRef.current = smoothCar;
+  }, [smoothCar]);
+
   const points: [number, number][] = [];
   if (pickup) points.push([pickup.lat, pickup.lng]);
   if (smoothCar) points.push(smoothCar);
@@ -109,7 +129,7 @@ export default function CustomerMap({ pickup, car }: Props) {
       <FitOnce points={points} />
       <FollowCar car={smoothCar} />
       {pickup && <Marker position={[pickup.lat, pickup.lng]} icon={pinIcon} />}
-      {smoothCar && <Marker position={smoothCar} icon={carIcon} />}
+      {smoothCar && <Marker position={smoothCar} icon={makeCarIcon(heading)} />}
     </MapContainer>
   );
 }
