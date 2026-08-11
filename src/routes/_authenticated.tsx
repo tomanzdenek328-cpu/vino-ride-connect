@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Navigate, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import appBg from "@/assets/app-bg.png.asset.json";
 
