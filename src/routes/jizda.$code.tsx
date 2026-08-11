@@ -183,7 +183,7 @@ function TrackPage() {
             </div>
           </div>
           {(liveEta ?? d.eta_minutes) != null && (
-            <div className="text-primary font-bold">Příjezd cca za {liveEta ?? d.eta_minutes} min</div>
+            <div className="text-primary font-bold">Příjezd cca za {formatEta(liveEta ?? d.eta_minutes!)}</div>
           )}
           {d.lat == null && (
             <div className="text-[11px] text-muted-foreground">Polohu vozu zatím nemáme – zobrazí se za chvíli.</div>
