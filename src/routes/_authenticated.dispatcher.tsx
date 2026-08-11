@@ -476,7 +476,7 @@ function DispatcherPage() {
                           <span className="inline-flex items-center gap-1 align-middle">
                             {" · "}
                             <img src={limoSide} alt="Limuzína" loading="lazy" width={1024} height={512}
-                              className="h-6 w-auto object-contain drop-shadow" />
+                              className="h-3.5 w-auto shrink-0 object-contain drop-shadow" />
                             LIMUZÍNA
                           </span>
                         ) : (
@@ -810,9 +810,9 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
           <div className="grid grid-cols-3 gap-2">
             {([["car", "🚗 OSOBNÍ"], ["van", "🚐 DODÁVKA"], ["limo", "LIMUZÍNA"]] as const).map(([v, label]) => (
               <button key={v} type="button" onClick={() => setVehicleType(v)}
-                className={`border py-1.5 text-xs flex items-center justify-center gap-1 ${vehicleType === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
+                className={`border py-1.5 px-1 text-[11px] leading-none flex items-center justify-center gap-1 whitespace-nowrap ${vehicleType === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
                 {v === "limo" && (
-                  <img src={limoSide} alt="" loading="lazy" width={1024} height={512} className="h-6 w-auto object-contain" />
+                  <img src={limoSide} alt="" loading="lazy" width={1024} height={512} className="h-3.5 w-auto shrink-0 object-contain" />
                 )}
                 {label}
               </button>
@@ -1506,9 +1506,9 @@ function OrderEditModal({ order, onClose }: { order: Order; onClose: () => void 
           <div className="grid grid-cols-3 gap-2">
             {([["car", "🚗 OSOBNÍ"], ["van", "🚐 DODÁVKA"], ["limo", "LIMUZÍNA"]] as const).map(([v, label]) => (
               <button key={v} type="button" onClick={() => setVehicleType(v)}
-                className={`border py-1.5 text-xs flex items-center justify-center gap-1 ${vehicleType === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
+                className={`border py-1.5 px-1 text-[11px] leading-none flex items-center justify-center gap-1 whitespace-nowrap ${vehicleType === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
                 {v === "limo" && (
-                  <img src={limoSide} alt="" loading="lazy" width={1024} height={512} className="h-6 w-auto object-contain" />
+                  <img src={limoSide} alt="" loading="lazy" width={1024} height={512} className="h-3.5 w-auto shrink-0 object-contain" />
                 )}
                 {label}
               </button>
