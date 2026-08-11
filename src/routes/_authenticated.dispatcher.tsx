@@ -808,9 +808,12 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
         <div>
           <div className="text-[10px] text-muted-foreground mb-1">TYP AUTA</div>
           <div className="grid grid-cols-3 gap-2">
-            {([["car", "🚗 OSOBNÍ"], ["van", "🚐 DODÁVKA"], ["limo", "🚘 LIMUZÍNA"]] as const).map(([v, label]) => (
+            {([["car", "🚗 OSOBNÍ"], ["van", "🚐 DODÁVKA"], ["limo", "LIMUZÍNA"]] as const).map(([v, label]) => (
               <button key={v} type="button" onClick={() => setVehicleType(v)}
-                className={`border py-1.5 text-xs ${vehicleType === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
+                className={`border py-1.5 text-xs flex items-center justify-center gap-1 ${vehicleType === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
+                {v === "limo" && (
+                  <img src={limoSide} alt="" loading="lazy" width={1024} height={512} className="h-6 w-auto object-contain" />
+                )}
                 {label}
               </button>
             ))}
