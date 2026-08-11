@@ -470,7 +470,17 @@ function DispatcherPage() {
                     <div className="text-sm text-primary mt-1 font-medium">
                       {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                       {" · "}👥 {o.passengers}
-                      {o.vehicle_type ? ` · ${o.vehicle_type === "van" ? "🚐 DODÁVKA" : "🚗 OSOBNÍ"}` : ""}
+                      {o.vehicle_type
+                        ? ` · ${
+                            o.vehicle_type === "van" || o.vehicle_type === "dodavka"
+                              ? "🚐 DODÁVKA"
+                              : o.vehicle_type === "limo" || o.vehicle_type === "vip_limuzina"
+                                ? "🚘 LIMUZÍNA"
+                                : o.vehicle_type === "vip_tesla"
+                                  ? "⚡ VIP TESLA"
+                                  : "🚗 OSOBNÍ"
+                          }`
+                        : ""}
                     </div>
                     {o.estimated_price != null && (
                       <div className="text-sm font-bold text-purple-300 mt-0.5">
@@ -679,7 +689,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const [when, setWhen] = useState<"now" | "later">("now");
   const [scheduledTime, setScheduledTime] = useState("");
   const [passengers, setPassengers] = useState(1);
-  const [vehicleType, setVehicleType] = useState<"car" | "van">("car");
+  const [vehicleType, setVehicleType] = useState<"car" | "van" | "limo">("car");
   const [customerPhone, setCustomerPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [priority, setPriority] = useState(false);
@@ -789,8 +799,8 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
 
         <div>
           <div className="text-[10px] text-muted-foreground mb-1">TYP AUTA</div>
-          <div className="grid grid-cols-2 gap-2">
-            {([["car", "🚗 OSOBNÍ"], ["van", "🚐 DODÁVKA"]] as const).map(([v, label]) => (
+          <div className="grid grid-cols-3 gap-2">
+            {([["car", "🚗 OSOBNÍ"], ["van", "🚐 DODÁVKA"], ["limo", "🚘 LIMUZÍNA"]] as const).map(([v, label]) => (
               <button key={v} type="button" onClick={() => setVehicleType(v)}
                 className={`border py-1.5 text-xs ${vehicleType === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
                 {label}
@@ -1408,7 +1418,7 @@ function OrderEditModal({ order, onClose }: { order: Order; onClose: () => void 
   };
   const [scheduledTime, setScheduledTime] = useState(toLocal(order.scheduled_time));
   const [passengers, setPassengers] = useState(order.passengers);
-  const [vehicleType, setVehicleType] = useState<"car" | "van">((order.vehicle_type as any) || "car");
+  const [vehicleType, setVehicleType] = useState<"car" | "van" | "limo">((order.vehicle_type as any) || "car");
   const [customerPhone, setCustomerPhone] = useState(order.customer_phone ?? "");
   const [notes, setNotes] = useState(order.notes ?? "");
   const [saving, setSaving] = useState(false);
@@ -1482,8 +1492,8 @@ function OrderEditModal({ order, onClose }: { order: Order; onClose: () => void 
 
         <div>
           <div className="text-[10px] text-muted-foreground mb-1">TYP AUTA</div>
-          <div className="grid grid-cols-2 gap-2">
-            {([["car", "🚗 OSOBNÍ"], ["van", "🚐 DODÁVKA"]] as const).map(([v, label]) => (
+          <div className="grid grid-cols-3 gap-2">
+            {([["car", "🚗 OSOBNÍ"], ["van", "🚐 DODÁVKA"], ["limo", "🚘 LIMUZÍNA"]] as const).map(([v, label]) => (
               <button key={v} type="button" onClick={() => setVehicleType(v)}
                 className={`border py-1.5 text-xs ${vehicleType === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
                 {label}
