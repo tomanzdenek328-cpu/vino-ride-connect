@@ -697,30 +697,31 @@ function DriverPage() {
         <section>
           <h2 className="font-display text-primary text-sm mb-2">▸ VOLNÉ ZAKÁZKY ({pending.length})</h2>
           {pending.map((o) => (
-            <div key={o.id} className={`p-3 mb-2 border ${o.released ? (o.priority ? "border-destructive" : "border-amber-warn/60") : "border-muted-foreground/40 opacity-70"}`}>
+            <div key={o.id} className={`p-3 mb-2 border-2 bg-black/85 ${o.released ? (o.priority ? "border-destructive" : "border-amber-warn") : "border-amber-warn/70"}`}>
               <div className="flex items-start justify-between gap-2">
-                <div className={`font-bold flex-1 min-w-0 ${o.released ? (o.priority ? "text-destructive" : "text-amber-warn") : "text-muted-foreground"}`}>▸ {o.pickup_address}</div>
+                <div className={`font-bold flex-1 min-w-0 ${o.released ? (o.priority ? "text-destructive" : "text-amber-warn") : "text-amber-warn/90"}`}>▸ {o.pickup_address}</div>
                 {o.priority && (
                   <span className="text-[10px] px-1.5 py-0.5 border border-destructive text-destructive font-bold blink shrink-0">🚨 URGENT</span>
                 )}
               </div>
-              {o.destination && <div className="text-xs text-muted-foreground">→ {o.destination}</div>}
-              <div className="text-[10px] text-muted-foreground mt-1">
+              {o.destination && <div className="text-xs text-foreground/80">→ {o.destination}</div>}
+              <div className="text-xs text-foreground/90 mt-1 font-medium">
                 {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                 {" · "}👥 {o.passengers}
               </div>
-              {o.notes && <div className="text-xs mt-1">⚠ {o.notes}</div>}
+              {o.notes && <div className="text-xs text-amber-warn mt-1">⚠ {o.notes}</div>}
               {o.released ? (
                 <button onClick={() => acceptPending(o.id)} disabled={!online}
-                  className="mt-2 w-full border border-amber-warn text-amber-warn py-1.5 text-xs hover:bg-amber-warn hover:text-black disabled:opacity-40">
+                  className="mt-2 w-full border-2 border-amber-warn bg-amber-warn/15 text-amber-warn font-bold py-2 text-sm hover:bg-amber-warn hover:text-black disabled:opacity-40">
                   ▸ VZÍT
                 </button>
               ) : (
-                <div className="mt-2 w-full border border-muted-foreground/60 text-muted-foreground py-1.5 text-xs text-center">
+                <div className="mt-2 w-full border-2 border-amber-warn/70 bg-amber-warn/10 text-amber-warn/90 font-bold py-2 text-xs text-center">
                   🔒 ČEKÁ NA UVOLNĚNÍ DISPEČEREM
                 </div>
               )}
             </div>
+
           ))}
           {!pending.length && <div className="text-xs text-muted-foreground text-center p-4">Žádné volné zakázky.</div>}
         </section>
