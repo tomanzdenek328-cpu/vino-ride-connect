@@ -511,7 +511,7 @@ function DriverPage() {
           <img
             src={logoVinneTaxi}
             alt="VINNÉ TAXI"
-            className="h-36 sm:h-48 w-full object-contain"
+            className="h-16 sm:h-20 w-full object-contain"
           />
         </div>
         <div className="text-center">
