@@ -262,7 +262,7 @@ function DispatcherPage() {
           <img
             src={logoVinneTaxi}
             alt="VINNÉ TAXI"
-            className="h-16 sm:h-20 w-full object-contain"
+            className="h-10 sm:h-12 w-full object-contain"
           />
         </div>
         <div className="flex items-center justify-between gap-2 flex-wrap">
