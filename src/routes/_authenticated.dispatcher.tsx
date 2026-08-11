@@ -9,7 +9,9 @@ import { ChatPanel } from "@/components/ChatPanel";
 import { useChatNotifications } from "@/hooks/useChatNotifications";
 import { createDriver, updateDriver, deleteDriver, resetDriverRides, deleteRide, getDriverEmail } from "@/lib/drivers.functions";
 
-import { notifyNewOrder } from "@/lib/push.functions";
+import { notifyNewOrder, saveDriverPushSubscription } from "@/lib/push.functions";
+import { initPushNotifications, initLocalNotifications, isNative, showLocalNotification } from "@/lib/native";
+import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array } from "@/lib/vapid";
 import { toast } from "sonner";
 import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, MessageSquare, Mail, FileText } from "lucide-react";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
