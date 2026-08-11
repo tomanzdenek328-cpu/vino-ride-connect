@@ -17,6 +17,7 @@ import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, Messag
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { createVehicle, updateVehicle, deleteVehicle } from "@/lib/vehicles.functions";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi-transparent.png";
+import limoSide from "@/assets/limo-side-black.png";
 import { SOSAlerts } from "@/components/SOSAlerts";
 import { estimateRide } from "@/lib/customer.functions";
 import { computeFare, isWeekend, FARE_MODE_LABELS, type FareMode, type TariffFull } from "@/lib/pricing";
@@ -470,17 +471,24 @@ function DispatcherPage() {
                     <div className="text-sm text-primary mt-1 font-medium">
                       {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                       {" · "}👥 {o.passengers}
-                      {o.vehicle_type
-                        ? ` · ${
+                      {o.vehicle_type ? (
+                        o.vehicle_type === "limo" || o.vehicle_type === "vip_limuzina" ? (
+                          <span className="inline-flex items-center gap-1 align-middle">
+                            {" · "}
+                            <img src={limoSide} alt="Limuzína" loading="lazy" width={1024} height={512}
+                              className="h-6 w-auto object-contain drop-shadow" />
+                            LIMUZÍNA
+                          </span>
+                        ) : (
+                          ` · ${
                             o.vehicle_type === "van" || o.vehicle_type === "dodavka"
                               ? "🚐 DODÁVKA"
-                              : o.vehicle_type === "limo" || o.vehicle_type === "vip_limuzina"
-                                ? "🚘 LIMUZÍNA"
-                                : o.vehicle_type === "vip_tesla"
-                                  ? "⚡ VIP TESLA"
-                                  : "🚗 OSOBNÍ"
+                              : o.vehicle_type === "vip_tesla"
+                                ? "⚡ VIP TESLA"
+                                : "🚗 OSOBNÍ"
                           }`
-                        : ""}
+                        )
+                      ) : ""}
                     </div>
                     {o.estimated_price != null && (
                       <div className="text-sm font-bold text-purple-300 mt-0.5">
@@ -800,9 +808,12 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
         <div>
           <div className="text-[10px] text-muted-foreground mb-1">TYP AUTA</div>
           <div className="grid grid-cols-3 gap-2">
-            {([["car", "🚗 OSOBNÍ"], ["van", "🚐 DODÁVKA"], ["limo", "🚘 LIMUZÍNA"]] as const).map(([v, label]) => (
+            {([["car", "🚗 OSOBNÍ"], ["van", "🚐 DODÁVKA"], ["limo", "LIMUZÍNA"]] as const).map(([v, label]) => (
               <button key={v} type="button" onClick={() => setVehicleType(v)}
-                className={`border py-1.5 text-xs ${vehicleType === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
+                className={`border py-1.5 text-xs flex items-center justify-center gap-1 ${vehicleType === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
+                {v === "limo" && (
+                  <img src={limoSide} alt="" loading="lazy" width={1024} height={512} className="h-6 w-auto object-contain" />
+                )}
                 {label}
               </button>
             ))}
@@ -1493,9 +1504,12 @@ function OrderEditModal({ order, onClose }: { order: Order; onClose: () => void 
         <div>
           <div className="text-[10px] text-muted-foreground mb-1">TYP AUTA</div>
           <div className="grid grid-cols-3 gap-2">
-            {([["car", "🚗 OSOBNÍ"], ["van", "🚐 DODÁVKA"], ["limo", "🚘 LIMUZÍNA"]] as const).map(([v, label]) => (
+            {([["car", "🚗 OSOBNÍ"], ["van", "🚐 DODÁVKA"], ["limo", "LIMUZÍNA"]] as const).map(([v, label]) => (
               <button key={v} type="button" onClick={() => setVehicleType(v)}
-                className={`border py-1.5 text-xs ${vehicleType === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
+                className={`border py-1.5 text-xs flex items-center justify-center gap-1 ${vehicleType === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
+                {v === "limo" && (
+                  <img src={limoSide} alt="" loading="lazy" width={1024} height={512} className="h-6 w-auto object-contain" />
+                )}
                 {label}
               </button>
             ))}
