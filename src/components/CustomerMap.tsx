@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
+import carImg from "@/assets/car-3d-white.png";
 
 const carIcon = L.divIcon({
   className: "",
-  iconSize: [38, 38],
-  iconAnchor: [19, 19],
-  html: `<div style="width:38px;height:38px;border-radius:50%;background:rgba(57,255,20,0.18);
-    border:2px solid #39FF14;box-shadow:0 0 14px #39FF14;display:flex;align-items:center;
-    justify-content:center;font-size:18px">🚕</div>`,
+  iconSize: [44, 44],
+  iconAnchor: [22, 22],
+  html: `<img src="${carImg}" alt="vůz" style="width:44px;height:44px;object-fit:contain;
+    filter:drop-shadow(0 2px 4px rgba(0,0,0,0.55))" />`,
 });
 
 const pinIcon = L.divIcon({
