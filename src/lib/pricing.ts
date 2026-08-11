@@ -25,12 +25,14 @@ export interface TariffFull {
   mikulov_flat_weekend: number;
   hustopece_flat: number;
   hustopece_flat_weekend: number;
+  hourly_rate?: number;
+  included_km?: number;
 }
 
-export type FareMode = "auto" | "km" | "short" | "mikulov" | "hustopece";
+export type FareMode = "auto" | "km" | "short" | "mikulov" | "hustopece" | "hourly";
 
 export const TARIFF_COLUMNS =
-  "vehicle_type,label,base_fare,per_km,capacity,weekend_base_fare,weekend_per_km,short_km_limit,short_base_fare,short_per_km,short_base_fare_weekend,short_per_km_weekend,mikulov_flat,mikulov_flat_weekend,hustopece_flat,hustopece_flat_weekend";
+  "vehicle_type,label,base_fare,per_km,capacity,weekend_base_fare,weekend_per_km,short_km_limit,short_base_fare,short_per_km,short_base_fare_weekend,short_per_km_weekend,mikulov_flat,mikulov_flat_weekend,hustopece_flat,hustopece_flat_weekend,hourly_rate,included_km";
 
 /** Víkend = pátek od 18:00, sobota nebo neděle (čas v Praze). */
 export function isWeekend(when: Date | string | null | undefined = new Date()): boolean {
@@ -77,6 +79,20 @@ export function computeFare(
   opts: { weekend?: boolean; mode?: FareMode; pickup?: string | null; destination?: string | null; when?: Date | string | null } = {},
 ): FareResult {
   const weekend = opts.weekend ?? isWeekend(opts.when ?? new Date());
+
+  // Hodinová sazba (VIP limuzína): pevná cena za hodinu s nájezdem do X km.
+  const hourly = Number(t.hourly_rate ?? 0);
+  const inclKm = Number(t.included_km ?? 0) || 30;
+  if (hourly > 0 && (!opts.mode || opts.mode === "auto" || opts.mode === "hourly")) {
+    const hours = Math.max(1, Math.ceil((km || 0) / inclKm));
+    return {
+      price: round10(hourly * hours),
+      mode: "hourly",
+      weekend,
+      note: `${hourly} Kč/hod. (nájezd do ${inclKm} km)`,
+    };
+  }
+
   let mode: Exclude<FareMode, "auto">;
 
   if (!opts.mode || opts.mode === "auto") {
@@ -132,4 +148,5 @@ export const FARE_MODE_LABELS: Record<FareMode, string> = {
   short: "DO 5 KM",
   mikulov: "MIKULOV",
   hustopece: "HUSTOPEČE",
+  hourly: "HODINOVÝ",
 };
