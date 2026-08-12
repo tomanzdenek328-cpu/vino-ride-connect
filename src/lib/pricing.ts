@@ -162,7 +162,7 @@ export function computeFare(
     const extraKm = Math.max(0, dist - includedTotal);
     const price = hourly + (hours - 1) * nextHour + extraKm * extraKmRate;
     const parts = [`${hourly} Kč/1. hod. (do ${inclKm} km)`];
-    if (hours > 1) parts.push(`${hours - 1}× ${nextHour} Kč další hod.`);
+    if (hours > 1) parts.push(`${hours - 1}× ${nextHour} Kč další hod. (do ${nextInclKm} km)`];
     if (extraKm > 0) parts.push(`${Math.round(extraKm)} km × ${extraKmRate} Kč`);
     return {
       price: round10(price),
