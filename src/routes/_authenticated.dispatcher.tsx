@@ -696,6 +696,22 @@ function DispatcherPage() {
         </div>
       )}
 
+      {unseenCustomer.length > 0 && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-3 py-2 border-2 border-purple-400 bg-purple-950/90 backdrop-blur text-purple-100 text-xs font-bold blink">
+          🥂 NOVÁ OBJEDNÁVKA OD ZÁKAZNÍKA ({unseenCustomer.length})
+          <button
+            onClick={() => {
+              const o = orders.find((x) => x.id === unseenCustomer[0]);
+              if (o) setEditOrder(o);
+              else setUnseenCustomer([]);
+            }}
+            className="px-2 py-1 border border-purple-300 hover:bg-purple-300 hover:text-black"
+          >
+            ZOBRAZIT
+          </button>
+        </div>
+      )}
+
       {showForm && <NewOrderModal onClose={() => setShowForm(false)} userId={user!.id} />}
       {showDriverForm && <NewDriverModal onClose={() => setShowDriverForm(false)} onCreated={loadDrivers} />}
       {driverDetail && <DriverDetailModal driver={driverDetail} onClose={() => setDriverDetail(null)} onChanged={loadDrivers} />}
