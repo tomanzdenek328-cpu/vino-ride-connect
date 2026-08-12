@@ -676,6 +676,12 @@ function DriverPage() {
                   {" · "}👥 {o.passengers}
                   <VehicleBadge type={o.vehicle_type} />
                 </div>
+                {o.estimated_price != null && (
+                  <div className="text-sm font-bold text-purple-200 mt-1">
+                    💰 CENA: {Math.round(Number(o.estimated_price))} Kč
+                    {o.estimated_distance_km != null ? ` · ${Number(o.estimated_distance_km).toFixed(1)} km` : ""}
+                  </div>
+                )}
                 {o.notes && <div className="text-xs text-amber-warn mt-1">⚠ {o.notes}</div>}
                 <div className="text-[10px] mt-1">STAV: {STATUS_LABEL[o.status]}</div>
                 {!o.released ? (
