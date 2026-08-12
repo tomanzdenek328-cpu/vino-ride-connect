@@ -6,6 +6,14 @@ import { CustomerShell, CustomerCard } from "@/components/CustomerShell";
 import logo from "@/assets/logo.png";
 import { createCustomerOrder, estimateRide, getTariffs, trackOrder, type Tariff } from "@/lib/customer.functions";
 
+function formatDuration(min: number) {
+  const m = Math.max(0, Math.round(min));
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  const rest = m % 60;
+  return rest === 0 ? `${h} h` : `${h} h ${rest} min`;
+}
+
 export const Route = createFileRoute("/objednat")({
   head: () => ({
     meta: [
@@ -188,7 +196,7 @@ function OrderPage() {
             {!calc && est && (
               <>
                 <div className="text-[11px] text-muted-foreground mb-2">
-                  Trasa {est.km} km · cca {est.minutes} min {est.approx && "(odhad)"}
+                  Trasa {est.km} km · cca {formatDuration(est.minutes)} {est.approx && "(odhad)"}
                   {" · "}
                   <span className="text-primary">{est.weekend ? "víkendový tarif" : "týdenní tarif"}</span>
                 </div>
