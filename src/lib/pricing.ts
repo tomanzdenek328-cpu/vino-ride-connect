@@ -91,15 +91,12 @@ const NEARBY_VILLAGES = [
   "unanov",
 ];
 
-/**
- * Očistí adresu tak, aby zůstala jen obec – odstraní PSČ i název pošty za ním
- * ("Pavlov 123, 692 01 Mikulov" → "pavlov 123").
- */
+/** Očistí adresu – odstraní PSČ a stát, název obce i pošty zůstává. */
 function localityOf(addr: string) {
   let s = norm(addr);
-  s = s.replace(/\d{3}\s?\d{2}[^,]*/g, ""); // PSČ + název pošty
-  s = s.replace(/,\s*ceska republika|,\s*czechia|,\s*czech republic/g, "");
-  return s.trim();
+  s = s.replace(/\d{3}\s?\d{2}/g, " "); // PSČ
+  s = s.replace(/,\s*(ceska republika|cesko|czechia|czech republic)/g, "");
+  return s.replace(/\s+/g, " ").trim();
 }
 
 function isVillage(addr: string) {
