@@ -9,41 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SledovatRouteImport } from './routes/sledovat'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as QrRouteImport } from './routes/qr'
-import { Route as ObjednatRouteImport } from './routes/objednat'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as InstallRouteImport } from './routes/install'
-import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as JizdaCodeRouteImport } from './routes/jizda.$code'
-import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated.driver'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as InstallRouteImport } from './routes/install'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ObjednatRouteImport } from './routes/objednat'
+import { Route as QrRouteImport } from './routes/qr'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SledovatRouteImport } from './routes/sledovat'
 import { Route as AuthenticatedDispatcherRouteImport } from './routes/_authenticated.dispatcher'
+import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated.driver'
+import { Route as JizdaCodeRouteImport } from './routes/jizda.$code'
 
-const SledovatRoute = SledovatRouteImport.update({
-  id: '/sledovat',
-  path: '/sledovat',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const QrRoute = QrRouteImport.update({
-  id: '/qr',
-  path: '/qr',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ObjednatRoute = ObjednatRouteImport.update({
-  id: '/objednat',
-  path: '/objednat',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InstallRoute = InstallRouteImport.update({
@@ -51,29 +35,45 @@ const InstallRoute = InstallRouteImport.update({
   path: '/install',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRoute = AuthenticatedRouteImport.update({
-  id: '/_authenticated',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ObjednatRoute = ObjednatRouteImport.update({
+  id: '/objednat',
+  path: '/objednat',
   getParentRoute: () => rootRouteImport,
 } as any)
-const JizdaCodeRoute = JizdaCodeRouteImport.update({
-  id: '/jizda/$code',
-  path: '/jizda/$code',
+const QrRoute = QrRouteImport.update({
+  id: '/qr',
+  path: '/qr',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SledovatRoute = SledovatRouteImport.update({
+  id: '/sledovat',
+  path: '/sledovat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedDispatcherRoute = AuthenticatedDispatcherRouteImport.update({
+  id: '/dispatcher',
+  path: '/dispatcher',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedDriverRoute = AuthenticatedDriverRouteImport.update({
   id: '/driver',
   path: '/driver',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedDispatcherRoute = AuthenticatedDispatcherRouteImport.update({
-  id: '/dispatcher',
-  path: '/dispatcher',
-  getParentRoute: () => AuthenticatedRoute,
+const JizdaCodeRoute = JizdaCodeRouteImport.update({
+  id: '/jizda/$code',
+  path: '/jizda/$code',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -168,46 +168,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sledovat': {
-      id: '/sledovat'
-      path: '/sledovat'
-      fullPath: '/sledovat'
-      preLoaderRoute: typeof SledovatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/qr': {
-      id: '/qr'
-      path: '/qr'
-      fullPath: '/qr'
-      preLoaderRoute: typeof QrRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/objednat': {
-      id: '/objednat'
-      path: '/objednat'
-      fullPath: '/objednat'
-      preLoaderRoute: typeof ObjednatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/install': {
-      id: '/install'
-      path: '/install'
-      fullPath: '/install'
-      preLoaderRoute: typeof InstallRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -217,19 +182,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/install': {
+      id: '/install'
+      path: '/install'
+      fullPath: '/install'
+      preLoaderRoute: typeof InstallRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/jizda/$code': {
-      id: '/jizda/$code'
-      path: '/jizda/$code'
-      fullPath: '/jizda/$code'
-      preLoaderRoute: typeof JizdaCodeRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/objednat': {
+      id: '/objednat'
+      path: '/objednat'
+      fullPath: '/objednat'
+      preLoaderRoute: typeof ObjednatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qr': {
+      id: '/qr'
+      path: '/qr'
+      fullPath: '/qr'
+      preLoaderRoute: typeof QrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sledovat': {
+      id: '/sledovat'
+      path: '/sledovat'
+      fullPath: '/sledovat'
+      preLoaderRoute: typeof SledovatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/dispatcher': {
+      id: '/_authenticated/dispatcher'
+      path: '/dispatcher'
+      fullPath: '/dispatcher'
+      preLoaderRoute: typeof AuthenticatedDispatcherRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/driver': {
       id: '/_authenticated/driver'
@@ -238,12 +238,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDriverRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/dispatcher': {
-      id: '/_authenticated/dispatcher'
-      path: '/dispatcher'
-      fullPath: '/dispatcher'
-      preLoaderRoute: typeof AuthenticatedDispatcherRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/jizda/$code': {
+      id: '/jizda/$code'
+      path: '/jizda/$code'
+      fullPath: '/jizda/$code'
+      preLoaderRoute: typeof JizdaCodeRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
