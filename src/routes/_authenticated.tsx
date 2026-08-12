@@ -1,4 +1,5 @@
-import { createFileRoute, Outlet, Navigate, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import appBg from "@/assets/app-bg.png.asset.json";
 
@@ -9,15 +10,25 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthLayout() {
   const { user, loading } = useAuth();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const redirected = useRef(false);
   const isDriver = pathname.startsWith("/driver");
-  if (loading) {
+
+  // Jednorázové přesměrování na login – opakované <Navigate> zacyklí router.
+  useEffect(() => {
+    if (redirected.current || loading || user) return;
+    redirected.current = true;
+    navigate({ to: "/login", replace: true });
+  }, [loading, user, navigate]);
+
+  if (loading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-primary font-display text-2xl">▸ AUTH<span className="blink">_</span></div>
       </div>
     );
   }
-  if (!user) return <Navigate to="/login" />;
+
   return (
     <div className="relative min-h-screen">
       <div

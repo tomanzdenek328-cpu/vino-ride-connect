@@ -1,4 +1,5 @@
-import { createFileRoute, Navigate, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import logo from "@/assets/logo.png";
 
@@ -8,8 +9,22 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { user, role, loading } = useAuth();
+  const navigate = useNavigate();
+  const redirected = useRef(false);
 
-  if (loading) {
+  // Přesměrování provedeme jen jednou, jinak router zacyklí (Maximum update depth).
+  useEffect(() => {
+    if (redirected.current || loading || !user) return;
+    if (role === "dispatcher") {
+      redirected.current = true;
+      navigate({ to: "/dispatcher", replace: true });
+    } else if (role === "driver") {
+      redirected.current = true;
+      navigate({ to: "/driver", replace: true });
+    }
+  }, [loading, user, role, navigate]);
+
+  if (loading || user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-primary glow-text font-display text-3xl">
@@ -18,15 +33,7 @@ function Index() {
       </div>
     );
   }
-  if (user) {
-    if (role === "dispatcher") return <Navigate to="/dispatcher" />;
-    if (role === "driver") return <Navigate to="/driver" />;
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-primary">Načítám roli...</div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6">
