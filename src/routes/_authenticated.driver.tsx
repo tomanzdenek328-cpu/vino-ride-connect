@@ -52,6 +52,10 @@ interface Order {
   released: boolean;
   priority: boolean;
   vehicle_type: string | null;
+  source?: string | null;
+  estimated_price?: number | null;
+  estimated_distance_km?: number | null;
+  driver_arrived_at?: string | null;
   created_at: string;
 }
 
