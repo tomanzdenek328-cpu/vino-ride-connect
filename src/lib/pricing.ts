@@ -29,6 +29,7 @@ export interface TariffFull {
   included_km?: number;
   hourly_next_hour?: number;
   hourly_extra_km?: number;
+  hourly_next_km?: number;
 }
 
 export type FareMode = "auto" | "km" | "short" | "mikulov" | "hustopece" | "hourly";
