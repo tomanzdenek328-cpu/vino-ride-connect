@@ -484,6 +484,16 @@ function DriverPage() {
     if (status === "accepted") await setBusyAuto(true);
   };
 
+  /** Řidič je na místě vyzvednutí – zákazníkovi se v aplikaci zobrazí "Váš řidič dorazil". */
+  const markArrived = async (id: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ driver_arrived_at: new Date().toISOString() } as any)
+      .eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("▸ ZÁKAZNÍK INFORMOVÁN: JSTE NA MÍSTĚ");
+  };
+
   const acceptPending = async (id: string) => {
     if (!user) return;
     const { data, error } = await supabase.from("orders")
