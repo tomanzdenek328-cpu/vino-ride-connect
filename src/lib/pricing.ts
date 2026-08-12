@@ -151,12 +151,14 @@ export function computeFare(
   const inclKm = Number(t.included_km ?? 0) || 30;
   const nextHour = Number(t.hourly_next_hour ?? 0) || hourly;
   const extraKmRate = Number(t.hourly_extra_km ?? 0);
+  const nextInclKm = Number(t.hourly_next_km ?? 0) || 15;
   if (hourly > 0 && (!opts.mode || opts.mode === "auto" || opts.mode === "hourly")) {
     const dist = km || 0;
     const mins = Number(opts.minutes ?? 0);
     // Počet započatých hodin podle délky jízdy (navigace), min. 1 hodina.
     const hours = Math.max(1, Math.ceil(mins > 0 ? mins / 60 : dist / 50));
-    const includedTotal = inclKm * hours;
+    // První hodina = included_km (30), každá další = hourly_next_km (15).
+    const includedTotal = inclKm + (hours - 1) * nextInclKm;
     const extraKm = Math.max(0, dist - includedTotal);
     const price = hourly + (hours - 1) * nextHour + extraKm * extraKmRate;
     const parts = [`${hourly} Kč/1. hod. (do ${inclKm} km)`];
