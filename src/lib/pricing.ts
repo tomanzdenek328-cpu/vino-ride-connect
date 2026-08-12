@@ -35,7 +35,7 @@ export interface TariffFull {
 export type FareMode = "auto" | "km" | "short" | "mikulov" | "hustopece" | "hourly";
 
 export const TARIFF_COLUMNS =
-  "vehicle_type,label,base_fare,per_km,capacity,weekend_base_fare,weekend_per_km,short_km_limit,short_base_fare,short_per_km,short_base_fare_weekend,short_per_km_weekend,mikulov_flat,mikulov_flat_weekend,hustopece_flat,hustopece_flat_weekend,hourly_rate,included_km,hourly_next_hour,hourly_extra_km";
+  "vehicle_type,label,base_fare,per_km,capacity,weekend_base_fare,weekend_per_km,short_km_limit,short_base_fare,short_per_km,short_base_fare_weekend,short_per_km_weekend,mikulov_flat,mikulov_flat_weekend,hustopece_flat,hustopece_flat_weekend,hourly_rate,included_km,hourly_next_hour,hourly_extra_km,hourly_next_km";
 
 /** Víkend = pátek od 18:00, sobota nebo neděle (čas v Praze). */
 export function isWeekend(when: Date | string | null | undefined = new Date()): boolean {
