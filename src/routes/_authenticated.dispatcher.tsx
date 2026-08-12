@@ -93,6 +93,35 @@ const STATUS_LABEL: Record<string, string> = {
 const HIDDEN_DRIVER_ID = "5ab5bc1d-a16e-4bfe-862e-61ecf8c0b2fb";
 const ALLOWED_DISPATCHER_ID = "b7636c0d-5323-4bb4-b394-44f5736d6e0d";
 
+/** Hlasité cinkání skleniček (Web Audio) – upozornění na zákaznickou objednávku. */
+function playGlassClink() {
+  try {
+    const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const master = ctx.createGain();
+    master.gain.value = 1;
+    master.connect(ctx.destination);
+    [0, 0.18, 0.36, 0.6, 0.78].forEach((t, i) => {
+      [1, 2.7, 5.3].forEach((mult, h) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = (i % 2 === 0 ? 1180 : 1460) * mult;
+        const start = ctx.currentTime + t;
+        const peak = 0.9 / (h + 1);
+        g.gain.setValueAtTime(0.0001, start);
+        g.gain.exponentialRampToValueAtTime(peak, start + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.0001, start + 0.45);
+        osc.connect(g).connect(master);
+        osc.start(start);
+        osc.stop(start + 0.5);
+      });
+    });
+    setTimeout(() => ctx.close().catch(() => {}), 2000);
+  } catch {}
+}
+
 function DispatcherPage() {
   const { user, role, loading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -108,6 +137,8 @@ function DispatcherPage() {
   const [driverDetail, setDriverDetail] = useState<Driver | null>(null);
   const [archiveOrderDetail, setArchiveOrderDetail] = useState<Order | null>(null);
   const [editOrder, setEditOrder] = useState<Order | null>(null);
+  // ID zákaznických objednávek, které dispečer ještě nezobrazil (cinká, dokud je nezobrazí).
+  const [unseenCustomer, setUnseenCustomer] = useState<string[]>([]);
   const [chatOpen, setChatOpen] = useState(false);
   const [activeChatThread, setActiveChatThread] = useState<string | null>(null);
   const chatNotif = useChatNotifications({
@@ -200,26 +231,21 @@ function DispatcherPage() {
       }
     } catch {}
     showLocalNotification(title, body);
-    try {
-      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
-      if (Ctx) {
-        const ctx = new Ctx();
-        [0, 0.35, 0.7].forEach((t, i) => {
-          const osc = ctx.createOscillator();
-          const g = ctx.createGain();
-          osc.type = "sine";
-          osc.frequency.value = i === 1 ? 1320 : 990;
-          g.gain.setValueAtTime(0.0001, ctx.currentTime + t);
-          g.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + t + 0.02);
-          g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.3);
-          osc.connect(g).connect(ctx.destination);
-          osc.start(ctx.currentTime + t);
-          osc.stop(ctx.currentTime + t + 0.32);
-        });
-        setTimeout(() => ctx.close().catch(() => {}), 1500);
-      }
-    } catch {}
+    setUnseenCustomer((prev) => (prev.includes(o.id) ? prev : [...prev, o.id]));
+    playGlassClink();
   };
+
+  // Cinkání skleniček se opakuje, dokud dispečer objednávku nezobrazí.
+  useEffect(() => {
+    if (unseenCustomer.length === 0) return;
+    const id = window.setInterval(() => playGlassClink(), 3500);
+    return () => window.clearInterval(id);
+  }, [unseenCustomer.length]);
+
+  // Otevření detailu zakázky = "zobrazeno" → ztlumit cinkání.
+  useEffect(() => {
+    if (editOrder) setUnseenCustomer((prev) => prev.filter((id) => id !== editOrder.id));
+  }, [editOrder]);
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -667,6 +693,22 @@ function DispatcherPage() {
 
             ))}
           </div>
+        </div>
+      )}
+
+      {unseenCustomer.length > 0 && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-3 py-2 border-2 border-purple-400 bg-purple-950/90 backdrop-blur text-purple-100 text-xs font-bold blink">
+          🥂 NOVÁ OBJEDNÁVKA OD ZÁKAZNÍKA ({unseenCustomer.length})
+          <button
+            onClick={() => {
+              const o = orders.find((x) => x.id === unseenCustomer[0]);
+              if (o) setEditOrder(o);
+              else setUnseenCustomer([]);
+            }}
+            className="px-2 py-1 border border-purple-300 hover:bg-purple-300 hover:text-black"
+          >
+            ZOBRAZIT
+          </button>
         </div>
       )}
 
