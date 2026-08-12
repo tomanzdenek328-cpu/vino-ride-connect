@@ -50,7 +50,30 @@ interface Order {
   assigned_driver_ids: string[] | null;
   released: boolean;
   priority: boolean;
+  vehicle_type: string | null;
   created_at: string;
+}
+
+/** Zvýrazněný štítek typu vozidla u zakázky (Tesla, limuzína, dodávka…). */
+function VehicleBadge({ type }: { type: string | null }) {
+  if (!type) return null;
+  const map: Record<string, { text: string; cls: string }> = {
+    vip_tesla: { text: "⚡ VIP TESLA", cls: "border-cyan-300 text-cyan-200 bg-cyan-400/15" },
+    tesla: { text: "⚡ VIP TESLA", cls: "border-cyan-300 text-cyan-200 bg-cyan-400/15" },
+    vip_limuzina: { text: "🖤 LIMUZÍNA", cls: "border-purple-300 text-purple-200 bg-purple-400/15" },
+    limo: { text: "🖤 LIMUZÍNA", cls: "border-purple-300 text-purple-200 bg-purple-400/15" },
+    dodavka: { text: "🚐 DODÁVKA", cls: "border-amber-300 text-amber-200 bg-amber-400/15" },
+    van: { text: "🚐 DODÁVKA", cls: "border-amber-300 text-amber-200 bg-amber-400/15" },
+    osobni: { text: "🚗 OSOBNÍ", cls: "border-neutral-300 text-neutral-100 bg-neutral-200/10" },
+    car: { text: "🚗 OSOBNÍ", cls: "border-neutral-300 text-neutral-100 bg-neutral-200/10" },
+  };
+  const v = map[type];
+  if (!v) return null;
+  return (
+    <span className={`inline-block ml-1 align-middle px-1.5 py-0.5 border text-[10px] font-bold tracking-wide ${v.cls}`}>
+      {v.text}
+    </span>
+  );
 }
 
 // Sort by scheduled time ascending (earliest first); fall back to created_at.
@@ -629,6 +652,7 @@ function DriverPage() {
                 <div className="text-sm text-primary mt-1.5 font-medium">
                   {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                   {" · "}👥 {o.passengers}
+                  <VehicleBadge type={o.vehicle_type} />
                 </div>
                 {o.notes && <div className="text-xs text-amber-warn mt-1">⚠ {o.notes}</div>}
                 <div className="text-[10px] mt-1">STAV: {STATUS_LABEL[o.status]}</div>
@@ -709,6 +733,7 @@ function DriverPage() {
               <div className={`text-xs mt-1 font-medium ${o.released ? "text-foreground/90" : "text-neutral-200"}`}>
                 {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                 {" · "}👥 {o.passengers}
+                <VehicleBadge type={o.vehicle_type} />
               </div>
               {o.notes && <div className="text-xs text-amber-warn mt-1">⚠ {o.notes}</div>}
               {o.released ? (
