@@ -108,6 +108,8 @@ function DispatcherPage() {
   const [driverDetail, setDriverDetail] = useState<Driver | null>(null);
   const [archiveOrderDetail, setArchiveOrderDetail] = useState<Order | null>(null);
   const [editOrder, setEditOrder] = useState<Order | null>(null);
+  // ID zákaznických objednávek, které dispečer ještě nezobrazil (cinká, dokud je nezobrazí).
+  const [unseenCustomer, setUnseenCustomer] = useState<string[]>([]);
   const [chatOpen, setChatOpen] = useState(false);
   const [activeChatThread, setActiveChatThread] = useState<string | null>(null);
   const chatNotif = useChatNotifications({
