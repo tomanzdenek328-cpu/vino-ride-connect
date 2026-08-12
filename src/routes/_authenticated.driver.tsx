@@ -733,6 +733,7 @@ function DriverPage() {
               <div className={`text-xs mt-1 font-medium ${o.released ? "text-foreground/90" : "text-neutral-200"}`}>
                 {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                 {" · "}👥 {o.passengers}
+                <VehicleBadge type={o.vehicle_type} />
               </div>
               {o.notes && <div className="text-xs text-amber-warn mt-1">⚠ {o.notes}</div>}
               {o.released ? (
