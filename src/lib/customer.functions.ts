@@ -224,7 +224,7 @@ export const trackOrder = createServerFn({ method: "POST" })
     const { data: order } = await supabaseAdmin
       .from("orders")
       .select(
-        "id,status,approval,pickup_address,pickup_lat,pickup_lng,destination,customer_name,scheduled_time,estimated_price,estimated_distance_km,assigned_driver_id,created_at",
+        "id,status,approval,pickup_address,pickup_lat,pickup_lng,destination,customer_name,scheduled_time,estimated_price,estimated_distance_km,assigned_driver_id,driver_arrived_at,created_at",
       )
       .eq("tracking_code", data.code.toUpperCase())
       .maybeSingle();
