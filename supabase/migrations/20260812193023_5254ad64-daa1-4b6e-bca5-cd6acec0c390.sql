@@ -1,0 +1,1 @@
+ALTER TABLE public.tariffs ADD COLUMN IF NOT EXISTS hourly_next_km numeric NOT NULL DEFAULT 15;

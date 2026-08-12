@@ -359,6 +359,7 @@ export type Database = {
           created_at: string
           hourly_extra_km: number
           hourly_next_hour: number
+          hourly_next_km: number
           hourly_rate: number
           hustopece_flat: number
           hustopece_flat_weekend: number
@@ -385,6 +386,7 @@ export type Database = {
           created_at?: string
           hourly_extra_km?: number
           hourly_next_hour?: number
+          hourly_next_km?: number
           hourly_rate?: number
           hustopece_flat?: number
           hustopece_flat_weekend?: number
@@ -411,6 +413,7 @@ export type Database = {
           created_at?: string
           hourly_extra_km?: number
           hourly_next_hour?: number
+          hourly_next_km?: number
           hourly_rate?: number
           hustopece_flat?: number
           hustopece_flat_weekend?: number
