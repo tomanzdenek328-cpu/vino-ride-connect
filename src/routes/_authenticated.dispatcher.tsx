@@ -484,13 +484,15 @@ function DispatcherPage() {
                               className="h-3.5 w-auto shrink-0 object-contain drop-shadow" />
                             LIMUZÍNA
                           </span>
+                        ) : o.vehicle_type === "vip_tesla" || o.vehicle_type === "tesla" ? (
+                          <span className="inline-block ml-1 align-middle px-1.5 py-0.5 border border-cyan-300 text-cyan-200 bg-cyan-400/15 text-[10px] font-bold tracking-wide">
+                            ⚡ VIP TESLA
+                          </span>
                         ) : (
                           ` · ${
                             o.vehicle_type === "van" || o.vehicle_type === "dodavka"
                               ? "🚐 DODÁVKA"
-                              : o.vehicle_type === "vip_tesla"
-                                ? "⚡ VIP TESLA"
-                                : "🚗 OSOBNÍ"
+                              : "🚗 OSOBNÍ"
                           }`
                         )
                       ) : ""}
