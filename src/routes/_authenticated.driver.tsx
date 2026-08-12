@@ -652,6 +652,7 @@ function DriverPage() {
                 <div className="text-sm text-primary mt-1.5 font-medium">
                   {o.scheduled_time ? `⏱ ${new Date(o.scheduled_time).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : "⏱ HNED"}
                   {" · "}👥 {o.passengers}
+                  <VehicleBadge type={o.vehicle_type} />
                 </div>
                 {o.notes && <div className="text-xs text-amber-warn mt-1">⚠ {o.notes}</div>}
                 <div className="text-[10px] mt-1">STAV: {STATUS_LABEL[o.status]}</div>
