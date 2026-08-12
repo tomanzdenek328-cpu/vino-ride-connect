@@ -202,26 +202,21 @@ function DispatcherPage() {
       }
     } catch {}
     showLocalNotification(title, body);
-    try {
-      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
-      if (Ctx) {
-        const ctx = new Ctx();
-        [0, 0.35, 0.7].forEach((t, i) => {
-          const osc = ctx.createOscillator();
-          const g = ctx.createGain();
-          osc.type = "sine";
-          osc.frequency.value = i === 1 ? 1320 : 990;
-          g.gain.setValueAtTime(0.0001, ctx.currentTime + t);
-          g.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + t + 0.02);
-          g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.3);
-          osc.connect(g).connect(ctx.destination);
-          osc.start(ctx.currentTime + t);
-          osc.stop(ctx.currentTime + t + 0.32);
-        });
-        setTimeout(() => ctx.close().catch(() => {}), 1500);
-      }
-    } catch {}
+    setUnseenCustomer((prev) => (prev.includes(o.id) ? prev : [...prev, o.id]));
+    playGlassClink();
   };
+
+  // Cinkání skleniček se opakuje, dokud dispečer objednávku nezobrazí.
+  useEffect(() => {
+    if (unseenCustomer.length === 0) return;
+    const id = window.setInterval(() => playGlassClink(), 3500);
+    return () => window.clearInterval(id);
+  }, [unseenCustomer.length]);
+
+  // Otevření detailu zakázky = "zobrazeno" → ztlumit cinkání.
+  useEffect(() => {
+    if (editOrder) setUnseenCustomer((prev) => prev.filter((id) => id !== editOrder.id));
+  }, [editOrder]);
 
   useEffect(() => {
     const loadOrders = async () => {
