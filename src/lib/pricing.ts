@@ -56,15 +56,71 @@ function norm(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-/** Vrátí smluvní zónu, pokud jsou start i cíl ve stejném městě. */
+/** Vesnice, které mají poštu Mikulov / Hustopeče, ale smluvní jízdné se na ně NEvztahuje. */
+const NEARBY_VILLAGES = [
+  "pavlov",
+  "klentnice",
+  "bavory",
+  "perna",
+  "dolni vestonice",
+  "horni vestonice",
+  "milovice",
+  "sedlec",
+  "brod nad dyji",
+  "novy prerov",
+  "drnholec",
+  "dobre pole",
+  "brezi",
+  "jevisovka",
+  "usti",
+  "strachotin",
+  "popice",
+  "starovice",
+  "starovicky",
+  "velke nemcice",
+  "usobrno",
+  "kurdejov",
+  "horni bojanovice",
+  "nikolcice",
+  "diváky",
+  "divaky",
+  "borkovany",
+  "krumvir",
+  "sakvice",
+  "presenkovice",
+  "unanov",
+];
+
+/**
+ * Očistí adresu tak, aby zůstala jen obec – odstraní PSČ i název pošty za ním
+ * ("Pavlov 123, 692 01 Mikulov" → "pavlov 123").
+ */
+function localityOf(addr: string) {
+  let s = norm(addr);
+  s = s.replace(/\d{3}\s?\d{2}[^,]*/g, ""); // PSČ + název pošty
+  s = s.replace(/,\s*ceska republika|,\s*czechia|,\s*czech republic/g, "");
+  return s.trim();
+}
+
+function isVillage(addr: string) {
+  const s = localityOf(addr);
+  return NEARBY_VILLAGES.some((v) => s.includes(v));
+}
+
+/** Vrátí smluvní zónu, pokud jsou start i cíl uvnitř samotného města (ne okolní vesnice). */
 export function detectZone(pickup?: string | null, destination?: string | null): "mikulov" | "hustopece" | null {
-  const a = norm(pickup ?? "");
-  const b = norm(destination ?? "");
+  const rawA = pickup ?? "";
+  const rawB = destination ?? "";
+  if (!rawA || !rawB) return null;
+  if (isVillage(rawA) || isVillage(rawB)) return null;
+  const a = localityOf(rawA);
+  const b = localityOf(rawB);
   if (!a || !b) return null;
   if (a.includes("mikulov") && b.includes("mikulov")) return "mikulov";
   if (a.includes("hustopec") && b.includes("hustopec")) return "hustopece";
   return null;
 }
+
 
 export interface FareResult {
   price: number;
