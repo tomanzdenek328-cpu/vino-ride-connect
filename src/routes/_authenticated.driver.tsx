@@ -55,26 +55,33 @@ interface Order {
   created_at: string;
 }
 
-/** Zvýrazněný štítek typu vozidla u zakázky (Tesla, limuzína, dodávka…). */
+/** Zvýrazněný štítek typu vozidla u zakázky — stejný styl jako u dispečera. */
 function VehicleBadge({ type }: { type: string | null }) {
   if (!type) return null;
-  const map: Record<string, { text: string; cls: string }> = {
-    vip_tesla: { text: "⚡ VIP TESLA", cls: "border-cyan-300 text-cyan-200 bg-cyan-400/15" },
-    tesla: { text: "⚡ VIP TESLA", cls: "border-cyan-300 text-cyan-200 bg-cyan-400/15" },
-    vip_limuzina: { text: "🖤 LIMUZÍNA", cls: "border-purple-300 text-purple-200 bg-purple-400/15" },
-    limo: { text: "🖤 LIMUZÍNA", cls: "border-purple-300 text-purple-200 bg-purple-400/15" },
-    dodavka: { text: "🚐 DODÁVKA", cls: "border-amber-300 text-amber-200 bg-amber-400/15" },
-    van: { text: "🚐 DODÁVKA", cls: "border-amber-300 text-amber-200 bg-amber-400/15" },
-    osobni: { text: "🚗 OSOBNÍ", cls: "border-neutral-300 text-neutral-100 bg-neutral-200/10" },
-    car: { text: "🚗 OSOBNÍ", cls: "border-neutral-300 text-neutral-100 bg-neutral-200/10" },
-  };
-  const v = map[type];
-  if (!v) return null;
-  return (
-    <span className={`inline-block ml-1 align-middle px-1.5 py-0.5 border text-[10px] font-bold tracking-wide ${v.cls}`}>
-      {v.text}
-    </span>
-  );
+  if (type === "limo" || type === "vip_limuzina") {
+    return (
+      <span className="inline-flex items-center gap-1 align-middle">
+        {" · "}
+        <img src={limoSide} alt="Limuzína" loading="lazy" width={1024} height={512}
+          className="h-3.5 w-auto shrink-0 object-contain drop-shadow" />
+        LIMUZÍNA
+      </span>
+    );
+  }
+  if (type === "vip_tesla" || type === "tesla") {
+    return (
+      <span className="inline-block ml-1 align-middle px-1.5 py-0.5 border border-cyan-300 text-cyan-200 bg-cyan-400/15 text-[10px] font-bold tracking-wide">
+        ⚡ VIP TESLA
+      </span>
+    );
+  }
+  if (type === "van" || type === "dodavka") {
+    return <span className="ml-1 align-middle"> · 🚐 DODÁVKA</span>;
+  }
+  if (type === "osobni" || type === "car") {
+    return <span className="ml-1 align-middle"> · 🚗 OSOBNÍ</span>;
+  }
+  return null;
 }
 
 // Sort by scheduled time ascending (earliest first); fall back to created_at.
