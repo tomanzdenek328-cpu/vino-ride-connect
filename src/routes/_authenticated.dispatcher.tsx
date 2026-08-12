@@ -93,6 +93,35 @@ const STATUS_LABEL: Record<string, string> = {
 const HIDDEN_DRIVER_ID = "5ab5bc1d-a16e-4bfe-862e-61ecf8c0b2fb";
 const ALLOWED_DISPATCHER_ID = "b7636c0d-5323-4bb4-b394-44f5736d6e0d";
 
+/** Hlasité cinkání skleniček (Web Audio) – upozornění na zákaznickou objednávku. */
+function playGlassClink() {
+  try {
+    const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const master = ctx.createGain();
+    master.gain.value = 1;
+    master.connect(ctx.destination);
+    [0, 0.18, 0.36, 0.6, 0.78].forEach((t, i) => {
+      [1, 2.7, 5.3].forEach((mult, h) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = (i % 2 === 0 ? 1180 : 1460) * mult;
+        const start = ctx.currentTime + t;
+        const peak = 0.9 / (h + 1);
+        g.gain.setValueAtTime(0.0001, start);
+        g.gain.exponentialRampToValueAtTime(peak, start + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.0001, start + 0.45);
+        osc.connect(g).connect(master);
+        osc.start(start);
+        osc.stop(start + 0.5);
+      });
+    });
+    setTimeout(() => ctx.close().catch(() => {}), 2000);
+  } catch {}
+}
+
 function DispatcherPage() {
   const { user, role, loading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
