@@ -146,6 +146,9 @@ function TrackPage() {
   const carPosition = livePos ?? (d?.lat != null && d?.lng != null ? { lat: d.lat, lng: d.lng } : null);
   const liveEta = approximateEtaMinutes(carPosition, pickupPosition);
   let st = STATUS[o.status] ?? { label: o.status, color: "text-muted-foreground" };
+  if (o.driver_arrived_at && (o.status === "accepted" || o.status === "assigned")) {
+    st = { label: "🚕 VÁŠ ŘIDIČ DORAZIL", color: "text-primary" };
+  }
   if (o.approval === "rejected" || o.status === "cancelled") {
     st = { label: "MOMENTÁLNĚ NEJSOU K DISPOZICI VOLNÁ AUTA", color: "text-destructive" };
   } else if (o.approval === "pending") {
