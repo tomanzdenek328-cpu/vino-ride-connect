@@ -715,6 +715,13 @@ function DriverPage() {
                       {(o.status === "accepted" || o.status === "assigned") && (
                         <button onClick={() => setOrderStatus(o.id, "in_progress")} className="border border-amber-warn text-amber-warn px-3 py-1 text-xs">▸ JEDU</button>
                       )}
+                      {(o.status === "accepted" || o.status === "assigned") && (
+                        o.driver_arrived_at ? (
+                          <span className="border border-primary text-primary px-3 py-1 text-xs font-bold">✓ NA MÍSTĚ</span>
+                        ) : (
+                          <button onClick={() => markArrived(o.id)} className="border-2 border-blue-400 text-blue-200 bg-blue-500/20 px-3 py-1 text-xs font-bold">📍 JSEM NA MÍSTĚ</button>
+                        )
+                      )}
                       {(o.status === "accepted" || o.status === "in_progress" || o.status === "assigned") && (
                         <button onClick={() => setCompleting(o)} className="border border-primary px-3 py-1 text-xs bg-primary text-primary-foreground">▸ DOKONČIT</button>
                       )}
