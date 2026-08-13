@@ -1530,11 +1530,13 @@ function OrderEditModal({ order, onClose }: { order: Order; onClose: () => void 
   const [vehicleType, setVehicleType] = useState<"car" | "van" | "limo">((order.vehicle_type as any) || "car");
   const [customerPhone, setCustomerPhone] = useState(order.customer_phone ?? "");
   const [notes, setNotes] = useState(order.notes ?? "");
+  const [price, setPrice] = useState(order.estimated_price != null ? String(Math.round(Number(order.estimated_price))) : "");
   const [saving, setSaving] = useState(false);
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    const parsedPrice = parseFloat(price.replace(",", "."));
     const { error } = await supabase.from("orders").update({
       pickup_address: pickup,
       pickup_lat: pickupCoords.lat ?? null,
@@ -1547,7 +1549,9 @@ function OrderEditModal({ order, onClose }: { order: Order; onClose: () => void 
       vehicle_type: vehicleType,
       customer_phone: customerPhone || null,
       notes: notes || null,
+      estimated_price: price.trim() && isFinite(parsedPrice) ? parsedPrice : null,
     }).eq("id", order.id);
+
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("▸ ZAKÁZKA UPRAVENA");
