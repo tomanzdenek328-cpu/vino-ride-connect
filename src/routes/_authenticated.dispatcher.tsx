@@ -756,25 +756,34 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const estimateFn = useServerFn(estimateRide);
 
   const [km, setKm] = useState<number | null>(null);
-  const [, setCalcBusy] = useState(false);
+  const [est, setEst] = useState<any>(null);
+  const [calcBusy, setCalcBusy] = useState(false);
+  const [priceOverride, setPriceOverride] = useState("");
 
+  const autoPrice: number | null =
+    est?.options?.find((o: any) => o.vehicle_type === TARIFF_KEY[vehicleType])?.price ?? null;
+  const parsedOverride = parseFloat(priceOverride.replace(",", "."));
+  const finalPrice: number | null =
+    priceOverride.trim() && isFinite(parsedOverride) ? parsedOverride : autoPrice;
 
   // Vzdálenost po silnici, jakmile jsou známé obě adresy.
   useEffect(() => {
-    if (pickupCoords.lat == null || destCoords.lat == null) { setKm(null); return; }
+    if (pickupCoords.lat == null || destCoords.lat == null) { setKm(null); setEst(null); return; }
     let cancelled = false;
     setCalcBusy(true);
     estimateFn({
       data: {
         pickup: { address: pickup, lat: pickupCoords.lat, lng: pickupCoords.lng! },
         destination: { address: destination, lat: destCoords.lat, lng: destCoords.lng! },
+        when: when === "later" && scheduledTime ? new Date(scheduledTime).toISOString() : null,
       },
     })
-      .then((r: any) => { if (!cancelled) setKm(r?.km ?? null); })
+      .then((r: any) => { if (!cancelled) { setKm(r?.km ?? null); setEst(r ?? null); } })
       .catch(() => {})
       .finally(() => { if (!cancelled) setCalcBusy(false); });
     return () => { cancelled = true; };
-  }, [pickupCoords.lat, pickupCoords.lng, destCoords.lat, destCoords.lng, estimateFn]);
+  }, [pickupCoords.lat, pickupCoords.lng, destCoords.lat, destCoords.lng, when, scheduledTime, estimateFn]);
+
 
 
 
