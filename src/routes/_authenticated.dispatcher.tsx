@@ -903,9 +903,32 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
           <div className="text-[10px] text-muted-foreground mt-1">Max. 30 osob</div>
         </div>
 
-
-
-
+        <div className="border border-primary/40 p-2 bg-primary/5">
+          <div className="text-[10px] text-muted-foreground mb-1">CENA (stejný výpočet jako v aplikaci pro zákazníka)</div>
+          {calcBusy ? (
+            <div className="text-xs text-muted-foreground">▸ POČÍTÁM CENU...</div>
+          ) : autoPrice != null ? (
+            <div className="text-primary font-display text-lg">
+              💰 {Math.round(autoPrice)} Kč
+              {km != null && <span className="text-[11px] text-muted-foreground"> · {km.toFixed(1)} km</span>}
+              {est?.weekend && <span className="text-[11px] text-amber-warn"> · VÍKEND</span>}
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground">Zadej adresu vyzvednutí i cíl (výběr z našeptávače).</div>
+          )}
+          {est?.options?.find((o: any) => o.vehicle_type === TARIFF_KEY[vehicleType])?.fare_note && (
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              {est.options.find((o: any) => o.vehicle_type === TARIFF_KEY[vehicleType]).fare_note}
+            </div>
+          )}
+          <input
+            type="number" inputMode="decimal" min={0} step={10}
+            value={priceOverride}
+            onChange={(e) => setPriceOverride(e.target.value)}
+            placeholder="Vlastní cena (Kč) – nepovinné"
+            className="mt-2 w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm"
+          />
+        </div>
 
 
         <div>
