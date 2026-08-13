@@ -47,7 +47,16 @@ interface Order {
   estimated_price?: number | null;
   estimated_distance_km?: number | null;
   approval?: string | null;
+  driver_arrived_at?: string | null;
 }
+
+/** Mapování typu auta v dispečinku na tarif v ceníku. */
+const TARIFF_KEY: Record<"car" | "van" | "limo", string> = {
+  car: "osobni",
+  van: "dodavka",
+  limo: "vip_limuzina",
+};
+
 
 // Sort by scheduled time ascending (earliest first); fall back to created_at.
 function sortByTimeAsc(a: Order, b: Order): number {
