@@ -47,7 +47,16 @@ interface Order {
   estimated_price?: number | null;
   estimated_distance_km?: number | null;
   approval?: string | null;
+  driver_arrived_at?: string | null;
 }
+
+/** Mapování typu auta v dispečinku na tarif v ceníku. */
+const TARIFF_KEY: Record<"car" | "van" | "limo", string> = {
+  car: "osobni",
+  van: "dodavka",
+  limo: "vip_limuzina",
+};
+
 
 // Sort by scheduled time ascending (earliest first); fall back to created_at.
 function sortByTimeAsc(a: Order, b: Order): number {
@@ -527,10 +536,18 @@ function DispatcherPage() {
                       <div className="text-sm font-bold text-purple-300 mt-0.5">
                         💰 {Math.round(Number(o.estimated_price))} Kč
                         {o.estimated_distance_km != null ? ` · ${Number(o.estimated_distance_km).toFixed(1)} km` : ""}
-                        <span className="text-[10px] text-muted-foreground"> (odhad zákazník)</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {o.source === "customer" ? " (odhad zákazník)" : " (odhad)"}
+                        </span>
+                      </div>
+                    )}
+                    {o.driver_arrived_at && o.status !== "completed" && o.status !== "cancelled" && (
+                      <div className="mt-1 inline-block text-[11px] font-bold px-2 py-0.5 border-2 border-blue-400 text-blue-200 bg-blue-500/20 blink">
+                        🚕 ŘIDIČ JE U ZÁKAZNÍKA · {new Date(o.driver_arrived_at).toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}
                       </div>
                     )}
                     {o.notes && <div className="text-xs text-amber-warn truncate">⚠ {o.notes}</div>}
+
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     {o.priority && (
@@ -756,25 +773,34 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   const estimateFn = useServerFn(estimateRide);
 
   const [km, setKm] = useState<number | null>(null);
-  const [, setCalcBusy] = useState(false);
+  const [est, setEst] = useState<any>(null);
+  const [calcBusy, setCalcBusy] = useState(false);
+  const [priceOverride, setPriceOverride] = useState("");
 
+  const autoPrice: number | null =
+    est?.options?.find((o: any) => o.vehicle_type === TARIFF_KEY[vehicleType])?.price ?? null;
+  const parsedOverride = parseFloat(priceOverride.replace(",", "."));
+  const finalPrice: number | null =
+    priceOverride.trim() && isFinite(parsedOverride) ? parsedOverride : autoPrice;
 
   // Vzdálenost po silnici, jakmile jsou známé obě adresy.
   useEffect(() => {
-    if (pickupCoords.lat == null || destCoords.lat == null) { setKm(null); return; }
+    if (pickupCoords.lat == null || destCoords.lat == null) { setKm(null); setEst(null); return; }
     let cancelled = false;
     setCalcBusy(true);
     estimateFn({
       data: {
         pickup: { address: pickup, lat: pickupCoords.lat, lng: pickupCoords.lng! },
         destination: { address: destination, lat: destCoords.lat, lng: destCoords.lng! },
+        when: when === "later" && scheduledTime ? new Date(scheduledTime).toISOString() : null,
       },
     })
-      .then((r: any) => { if (!cancelled) setKm(r?.km ?? null); })
+      .then((r: any) => { if (!cancelled) { setKm(r?.km ?? null); setEst(r ?? null); } })
       .catch(() => {})
       .finally(() => { if (!cancelled) setCalcBusy(false); });
     return () => { cancelled = true; };
-  }, [pickupCoords.lat, pickupCoords.lng, destCoords.lat, destCoords.lng, estimateFn]);
+  }, [pickupCoords.lat, pickupCoords.lng, destCoords.lat, destCoords.lng, when, scheduledTime, estimateFn]);
+
 
 
 
@@ -794,7 +820,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
       passengers,
       vehicle_type: vehicleType,
       notes: notes || null,
-      estimated_price: null,
+      estimated_price: finalPrice ?? null,
       estimated_distance_km: km ?? null,
 
 
@@ -885,9 +911,32 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
           <div className="text-[10px] text-muted-foreground mt-1">Max. 30 osob</div>
         </div>
 
-
-
-
+        <div className="border border-primary/40 p-2 bg-primary/5">
+          <div className="text-[10px] text-muted-foreground mb-1">CENA (stejný výpočet jako v aplikaci pro zákazníka)</div>
+          {calcBusy ? (
+            <div className="text-xs text-muted-foreground">▸ POČÍTÁM CENU...</div>
+          ) : autoPrice != null ? (
+            <div className="text-primary font-display text-lg">
+              💰 {Math.round(autoPrice)} Kč
+              {km != null && <span className="text-[11px] text-muted-foreground"> · {km.toFixed(1)} km</span>}
+              {est?.weekend && <span className="text-[11px] text-amber-warn"> · VÍKEND</span>}
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground">Zadej adresu vyzvednutí i cíl (výběr z našeptávače).</div>
+          )}
+          {est?.options?.find((o: any) => o.vehicle_type === TARIFF_KEY[vehicleType])?.fare_note && (
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              {est.options.find((o: any) => o.vehicle_type === TARIFF_KEY[vehicleType]).fare_note}
+            </div>
+          )}
+          <input
+            type="number" inputMode="decimal" min={0} step={10}
+            value={priceOverride}
+            onChange={(e) => setPriceOverride(e.target.value)}
+            placeholder="Vlastní cena (Kč) – nepovinné"
+            className="mt-2 w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm"
+          />
+        </div>
 
 
         <div>
@@ -1481,11 +1530,13 @@ function OrderEditModal({ order, onClose }: { order: Order; onClose: () => void 
   const [vehicleType, setVehicleType] = useState<"car" | "van" | "limo">((order.vehicle_type as any) || "car");
   const [customerPhone, setCustomerPhone] = useState(order.customer_phone ?? "");
   const [notes, setNotes] = useState(order.notes ?? "");
+  const [price, setPrice] = useState(order.estimated_price != null ? String(Math.round(Number(order.estimated_price))) : "");
   const [saving, setSaving] = useState(false);
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    const parsedPrice = parseFloat(price.replace(",", "."));
     const { error } = await supabase.from("orders").update({
       pickup_address: pickup,
       pickup_lat: pickupCoords.lat ?? null,
@@ -1498,7 +1549,9 @@ function OrderEditModal({ order, onClose }: { order: Order; onClose: () => void 
       vehicle_type: vehicleType,
       customer_phone: customerPhone || null,
       notes: notes || null,
+      estimated_price: price.trim() && isFinite(parsedPrice) ? parsedPrice : null,
     }).eq("id", order.id);
+
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("▸ ZAKÁZKA UPRAVENA");
@@ -1525,6 +1578,25 @@ function OrderEditModal({ order, onClose }: { order: Order; onClose: () => void 
           STATUS: <span className="text-primary">{STATUS_LABEL[order.status]}</span>
           {" · "}VYTVOŘENO: <span className="text-primary">{new Date(order.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}</span>
         </div>
+
+        {order.driver_arrived_at && (
+          <div className="text-[11px] font-bold px-2 py-1 border-2 border-blue-400 text-blue-200 bg-blue-500/20">
+            🚕 ŘIDIČ JE U ZÁKAZNÍKA · {new Date(order.driver_arrived_at).toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}
+          </div>
+        )}
+
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">CENA (Kč) – lze upravit</div>
+          <input
+            type="number" inputMode="decimal" min={0} step={10}
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder="např. 450"
+            className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm"
+          />
+        </div>
+
+
 
         <AddressAutocomplete
           label="ODKUD (adresa vyzvednutí) *"
