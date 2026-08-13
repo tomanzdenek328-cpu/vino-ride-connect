@@ -684,6 +684,10 @@ function DriverPage() {
                 )}
                 {o.notes && <div className="text-xs text-amber-warn mt-1">⚠ {o.notes}</div>}
                 <div className="text-[10px] mt-1">STAV: {STATUS_LABEL[o.status]}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">
+                  🕒 VYTVOŘENO: {new Date(o.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
+                </div>
+
                 {!o.released ? (
                   <div className="mt-2 w-full border border-amber-warn text-amber-warn py-2 text-xs text-center font-bold">
                     🔒 ČEKÁ NA UVOLNĚNÍ DISPEČEREM
@@ -777,6 +781,10 @@ function DriverPage() {
                 </div>
               )}
               {o.notes && <div className="text-xs text-amber-warn mt-1">⚠ {o.notes}</div>}
+              <div className="text-[10px] text-muted-foreground mt-0.5">
+                🕒 VYTVOŘENO: {new Date(o.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
+              </div>
+
               {o.released ? (
                 <button onClick={() => acceptPending(o.id)} disabled={!online}
                   className="mt-2 w-full border-2 border-amber-warn bg-amber-warn/15 text-amber-warn font-bold py-2 text-sm hover:bg-amber-warn hover:text-black disabled:opacity-40">
