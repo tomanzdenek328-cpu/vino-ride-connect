@@ -536,10 +536,18 @@ function DispatcherPage() {
                       <div className="text-sm font-bold text-purple-300 mt-0.5">
                         💰 {Math.round(Number(o.estimated_price))} Kč
                         {o.estimated_distance_km != null ? ` · ${Number(o.estimated_distance_km).toFixed(1)} km` : ""}
-                        <span className="text-[10px] text-muted-foreground"> (odhad zákazník)</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {o.source === "customer" ? " (odhad zákazník)" : " (odhad)"}
+                        </span>
+                      </div>
+                    )}
+                    {o.driver_arrived_at && o.status !== "completed" && o.status !== "cancelled" && (
+                      <div className="mt-1 inline-block text-[11px] font-bold px-2 py-0.5 border-2 border-blue-400 text-blue-200 bg-blue-500/20 blink">
+                        🚕 ŘIDIČ JE U ZÁKAZNÍKA · {new Date(o.driver_arrived_at).toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}
                       </div>
                     )}
                     {o.notes && <div className="text-xs text-amber-warn truncate">⚠ {o.notes}</div>}
+
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     {o.priority && (
