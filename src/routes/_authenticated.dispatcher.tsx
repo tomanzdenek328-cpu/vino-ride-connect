@@ -547,6 +547,10 @@ function DispatcherPage() {
                       </div>
                     )}
                     {o.notes && <div className="text-xs text-amber-warn truncate">⚠ {o.notes}</div>}
+                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                      🕒 VYTVOŘENO: {new Date(o.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}
+                    </div>
+
 
                   </div>
                   <div className="flex flex-col items-end gap-1">
