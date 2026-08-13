@@ -1579,6 +1579,25 @@ function OrderEditModal({ order, onClose }: { order: Order; onClose: () => void 
           {" · "}VYTVOŘENO: <span className="text-primary">{new Date(order.created_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}</span>
         </div>
 
+        {order.driver_arrived_at && (
+          <div className="text-[11px] font-bold px-2 py-1 border-2 border-blue-400 text-blue-200 bg-blue-500/20">
+            🚕 ŘIDIČ JE U ZÁKAZNÍKA · {new Date(order.driver_arrived_at).toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" })}
+          </div>
+        )}
+
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">CENA (Kč) – lze upravit</div>
+          <input
+            type="number" inputMode="decimal" min={0} step={10}
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder="např. 450"
+            className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm"
+          />
+        </div>
+
+
+
         <AddressAutocomplete
           label="ODKUD (adresa vyzvednutí) *"
           value={pickup}
