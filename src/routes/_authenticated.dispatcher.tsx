@@ -15,6 +15,7 @@ import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array } from "@/lib/vapid";
 import { toast } from "sonner";
 import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, MessageSquare, Mail, FileText } from "lucide-react";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
+import { makeTrackingCode } from "@/lib/tracking";
 import { createVehicle, updateVehicle, deleteVehicle } from "@/lib/vehicles.functions";
 import logoVinneTaxi from "@/assets/logo-vinne-taxi-transparent.png";
 import limoSide from "@/assets/limo-side-black.png";
@@ -854,6 +855,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
       // Plánované zakázky se vytvářejí jako neuvolněné – dispečer je uvolní tlačítkem.
       released: when === "later" ? false : true,
       priority,
+      tracking_code: makeTrackingCode(),
     }).select("id").maybeSingle();
     setSubmitting(false);
     if (error) { toast.error(error.message); return; }
