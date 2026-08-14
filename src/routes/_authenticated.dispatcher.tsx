@@ -854,6 +854,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
       // Plánované zakázky se vytvářejí jako neuvolněné – dispečer je uvolní tlačítkem.
       released: when === "later" ? false : true,
       priority,
+      tracking_code: makeTrackingCode(),
     }).select("id").maybeSingle();
     setSubmitting(false);
     if (error) { toast.error(error.message); return; }
