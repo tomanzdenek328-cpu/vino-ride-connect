@@ -29,12 +29,17 @@ function pragueParts(date: Date) {
   };
 }
 
-/** Je daný okamžik mimo pracovní dobu (po–pá 02:00–10:00 pražského času)? */
+/** Je daný okamžik mimo pracovní dobu (po–pá 02:00–10:00, so+ne 05:30–10:00 pražského času)? */
 export function isOffHours(date: Date | string = new Date()): boolean {
   const d = typeof date === "string" ? new Date(date) : date;
-  const { weekday, hour } = pragueParts(d);
+  const { weekday, hour, minute } = pragueParts(d);
   const isWeekday = weekday >= 1 && weekday <= 5;
-  return isWeekday && hour >= 2 && hour < 10;
+  const isWeekend = weekday === 0 || weekday === 6;
+  const timeInMinutes = hour * 60 + minute;
+  const weekdayOff = isWeekday && hour >= 2 && hour < 10;
+  // víkend 05:30–10:00
+  const weekendOff = isWeekend && timeInMinutes >= 5 * 60 + 30 && timeInMinutes < 10 * 60;
+  return weekdayOff || weekendOff;
 }
 
 /** Objednávka předem: jiný kalendářní den a nejméně 8 hodin dopředu. */
