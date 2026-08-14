@@ -55,6 +55,8 @@ function OrderPage() {
   const create = useServerFn(createCustomerOrder);
   const tariffsFn = useServerFn(getTariffs);
   const track = useServerFn(trackOrder);
+  const ordersEnabledFn = useServerFn(getOrdersEnabled);
+  const [ordersEnabled, setOrdersEnabled] = useState<boolean | null>(null);
 
   const [pickup, setPickup] = useState<Point>({ address: "" });
   const [dest, setDest] = useState<Point>({ address: "" });
