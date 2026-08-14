@@ -56,6 +56,8 @@ interface Order {
   estimated_price?: number | null;
   estimated_distance_km?: number | null;
   driver_arrived_at?: string | null;
+  tracking_code?: string | null;
+
   created_at: string;
 }
 
