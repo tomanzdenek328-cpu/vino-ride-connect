@@ -1,7 +1,7 @@
 /**
  * Pracovní doba Vinné Taxi.
  *
- * Nepracovní doba: pondělí–pátek 02:00–10:00 (čas Praha).
+ * Nepracovní doba: pondělí–pátek 02:00–10:00, sobota a neděle 05:30–10:00 (čas Praha).
  * V této době nemáme volné auto pro okamžité jízdy.
  * Objednávky předem (jiný den a alespoň 8 hodin dopředu) se přijímají vždy.
  */
