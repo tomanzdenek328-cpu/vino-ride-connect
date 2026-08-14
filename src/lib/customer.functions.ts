@@ -162,6 +162,10 @@ export const createCustomerOrder = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => CreateSchema.parse(i))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { isOffHours, isAdvanceBooking } = await import("./hours");
+    const now = new Date();
+    const advance = isAdvanceBooking(data.scheduled_time ?? null, now);
+    const offHours = !advance && isOffHours(data.scheduled_time ?? now);
     const tracking_code = makeCode();
     const { data: row, error } = await supabaseAdmin
       .from("orders")
@@ -180,7 +184,7 @@ export const createCustomerOrder = createServerFn({ method: "POST" })
         scheduled_time: data.scheduled_time ?? null,
         status: "pending",
         released: false,
-        approval: "pending",
+        approval: advance ? "approved" : "pending",
         source: "customer",
         tracking_code,
         estimated_price: data.estimated_price ?? null,
@@ -189,6 +193,7 @@ export const createCustomerOrder = createServerFn({ method: "POST" })
       .select("id,tracking_code")
       .maybeSingle();
     if (error) throw new Error(error.message);
+
 
     // Upozornění dispečerům na novou zákaznickou objednávku.
     try {
