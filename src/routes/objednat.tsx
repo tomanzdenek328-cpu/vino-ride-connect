@@ -61,6 +61,8 @@ function OrderPage() {
   const [passengers, setPassengers] = useState(1);
   const [notes, setNotes] = useState("");
   const [when, setWhen] = useState("");
+  const [whenMode, setWhenMode] = useState<"now" | "later">("now");
+
   const [tariffs, setTariffs] = useState<Tariff[]>([]);
   const [vehicleType, setVehicleType] = useState("");
   const [est, setEst] = useState<Estimate | null>(null);
