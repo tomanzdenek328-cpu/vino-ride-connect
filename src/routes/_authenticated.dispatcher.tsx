@@ -385,6 +385,16 @@ function DispatcherPage() {
     else toast.success(approval === "approved" ? "▸ OBJEDNÁVKA POVOLENA" : "▸ OBJEDNÁVKA ODMÍTNUTA");
   };
 
+  const toggleCustomerOrders = async () => {
+    const next = !customerOrdersOn;
+    const { error } = await supabase
+      .from("app_settings")
+      .upsert({ key: "customer_orders", value: { enabled: next } } as any, { onConflict: "key" });
+    if (error) { toast.error(error.message); return; }
+    setCustomerOrdersOn(next);
+    toast.success(next ? "▸ PŘÍJEM OBJEDNÁVEK ZAPNUT" : "▸ PŘÍJEM OBJEDNÁVEK VYPNUT");
+  };
+
   const togglePriority = async (orderId: string, next: boolean) => {
     const { error } = await supabase.from("orders").update({ priority: next }).eq("id", orderId);
     if (error) toast.error(error.message); else toast.success(next ? "▸ OZNAČENO JAKO URGENTNÍ" : "▸ PRIORITA ZRUŠENA");
