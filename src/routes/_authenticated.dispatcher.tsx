@@ -614,14 +614,22 @@ function DispatcherPage() {
                   >
                     {o.priority ? "🚨 URGENT — ZRUŠIT" : "🚨 URGENT"}
                   </button>
-                  {!o.released && (
+                  {!o.released ? (
                     <button
                       onClick={() => releaseOrder(o.id)}
                       className="flex-1 border border-amber-warn text-amber-warn py-1.5 text-[11px] font-bold hover:bg-amber-warn hover:text-black"
                     >
                       🔓 UVOLNIT
                     </button>
+                  ) : (
+                    <button
+                      onClick={() => lockOrder(o.id)}
+                      className="flex-1 border border-amber-warn text-amber-warn py-1.5 text-[11px] font-bold hover:bg-amber-warn hover:text-black"
+                    >
+                      🔒 UZAMKNOUT
+                    </button>
                   )}
+
                 </div>
                 <MultiDriverPicker
                   drivers={drivers}
