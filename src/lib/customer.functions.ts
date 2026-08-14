@@ -219,7 +219,13 @@ export const createCustomerOrder = createServerFn({ method: "POST" })
       console.error("dispatcher notify failed", e);
     }
 
-    return { ok: true as const, tracking_code: row?.tracking_code ?? tracking_code };
+    return {
+      ok: true as const,
+      tracking_code: row?.tracking_code ?? tracking_code,
+      advance,
+      off_hours: offHours,
+    };
+
   });
 
 export const trackOrder = createServerFn({ method: "POST" })
