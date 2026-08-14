@@ -146,7 +146,7 @@ function OrderPage() {
           passengers,
           vehicle_type: vehicleType,
           notes: notes.trim() || null,
-          scheduled_time: when ? new Date(when).toISOString() : null,
+          scheduled_time: scheduledIso,
           estimated_price: chosen?.price ?? null,
           estimated_distance_km: est?.km ?? null,
         },
