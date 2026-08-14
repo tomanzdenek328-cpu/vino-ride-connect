@@ -99,6 +99,14 @@ export const getTariffs = createServerFn({ method: "GET" }).handler(async () => 
   return (data ?? []) as unknown as TariffFull[];
 });
 
+/** Přijímáme momentálně objednávky ze zákaznické aplikace? (přepíná dispečer) */
+export const getOrdersEnabled = createServerFn({ method: "GET" }).handler(async () => {
+  const sb = await serverClient();
+  const { data } = await sb.from("app_settings").select("value").eq("key", "customer_orders").maybeSingle();
+  const enabled = (data?.value as any)?.enabled;
+  return { enabled: enabled !== false };
+});
+
 const PointSchema = z.object({
   address: z.string().min(2).max(300),
   lat: z.number(),
