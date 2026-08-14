@@ -324,9 +324,15 @@ function OrderPage() {
 
         {error && <div className="text-xs text-destructive">{error}</div>}
 
+        {ordersEnabled === false && (
+          <div className="rounded-xl border border-destructive/50 bg-destructive/10 p-3 text-xs text-destructive">
+            Momentálně nemáme volná auta, zkuste to prosím později.
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={sending}
+          disabled={sending || ordersEnabled === false}
           className="w-full border border-primary text-primary py-3 font-bold tracking-widest glow hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
         >
           {sending ? "ODESÍLÁM…" : "▸ OBJEDNAT JÍZDU"}
