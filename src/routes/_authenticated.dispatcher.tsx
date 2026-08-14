@@ -900,8 +900,8 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
   };
 
   return (
-    <div className="fixed inset-0 bg-black/90 z-[2000] flex items-center justify-center p-4">
-      <form onSubmit={submit} className="bg-black border border-primary glow p-5 max-w-md w-full space-y-3">
+    <div className="fixed inset-0 bg-black/90 z-[2000] flex items-start sm:items-center justify-center p-4 overflow-y-auto">
+      <form onSubmit={submit} className="bg-black border border-primary glow p-5 max-w-md w-full space-y-3 my-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
         <div className="flex justify-between items-center">
           <h3 className="text-primary font-display text-lg">▸ NOVÁ ZAKÁZKA</h3>
           <button type="button" onClick={onClose} className="text-muted-foreground hover:text-primary"><X className="w-5 h-5" /></button>
