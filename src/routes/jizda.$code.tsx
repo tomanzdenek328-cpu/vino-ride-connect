@@ -151,6 +151,10 @@ function TrackPage() {
   }
   if (o.approval === "rejected" || o.status === "cancelled") {
     st = { label: "MOMENTÁLNĚ NEJSOU K DISPOZICI VOLNÁ AUTA", color: "text-destructive" };
+  } else if ((o as any).advance && o.status === "pending") {
+    st = { label: "✅ JÍZDA BYLA PŘIJATA", color: "text-primary" };
+  } else if ((o as any).off_hours && o.status === "pending") {
+    st = { label: "MOMENTÁLNĚ NEMÁME VOLNÉ AUTO", color: "text-destructive" };
   } else if (o.approval === "pending") {
     st = { label: "HLEDÁME ŘIDIČE…", color: "text-orange-400" };
   }
@@ -164,6 +168,18 @@ function TrackPage() {
       </div>
 
       <div className={`rounded-xl border border-primary/40 bg-background/80 backdrop-blur-md p-3 font-bold tracking-widest ${st.color}`}>{st.label}</div>
+
+      {o.status === "pending" && (o as any).advance && (
+        <div className="rounded-xl border border-primary/40 bg-primary/10 p-3 text-xs text-primary">
+          {ADVANCE_ACCEPTED_MESSAGE}
+        </div>
+      )}
+      {o.status === "pending" && (o as any).off_hours && (
+        <div className="rounded-xl border border-destructive/50 bg-destructive/10 p-3 text-xs text-destructive">
+          {OFF_HOURS_MESSAGE}
+        </div>
+      )}
+
 
       <div className="h-72 rounded-xl overflow-hidden border border-border">
         <ClientOnly fallback={<div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">Mapa…</div>}>
