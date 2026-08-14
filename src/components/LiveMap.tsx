@@ -58,6 +58,8 @@ interface Props {
   onOrderClick?: (id: string) => void;
   followDriverId?: string;
   showDriverList?: boolean;
+  /** Režim pro řidiče: vidí jen sám sebe a řidiče s aktivním SOS. */
+  selfOnlyDriverId?: string;
 }
 
 /** Přesune mapu pouze když se změní klíč (výběr řidiče), ne při každé aktualizaci polohy. */
