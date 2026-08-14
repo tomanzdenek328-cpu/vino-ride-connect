@@ -704,8 +704,16 @@ function DriverPage() {
                         </a>
                         <a
                           href={`sms:${o.customer_phone}?body=${encodeURIComponent(
-                            "Dobrý den, Váš řidič z Vinného Taxi je na cestě k vám.\n\nHello, your Vinné Taxi driver is on the way to you."
+                            "Dobrý den, Váš řidič z Vinného Taxi je na cestě k vám." +
+                              (o.tracking_code
+                                ? `\nJízdu můžete sledovat v aplikaci: https://vino-ride-connect.lovable.app/jizda/${o.tracking_code}`
+                                : "") +
+                              "\n\nHello, your Vinné Taxi driver is on the way to you." +
+                              (o.tracking_code
+                                ? `\nYou can track your ride: https://vino-ride-connect.lovable.app/jizda/${o.tracking_code}`
+                                : "")
                           )}`}
+
                           className="mt-2 w-full border border-primary text-primary py-2 text-sm flex items-center justify-center gap-2 hover:bg-primary hover:text-primary-foreground"
                         >
                           <MessageSquare className="w-4 h-4" /> POSLAT SMS ZÁKAZNÍKOVI
