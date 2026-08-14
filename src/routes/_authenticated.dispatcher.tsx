@@ -359,12 +359,18 @@ function DispatcherPage() {
     if (error) toast.error(error.message); else toast.success("▸ UVOLNĚNO PRO ŘIDIČE");
   };
 
-  const setApproval = async (orderId: string, approval: "approved" | "rejected") => {
+  const setApproval = async (
+    orderId: string,
+    approval: "approved" | "rejected",
+    scheduled?: string | null,
+  ) => {
+    // Předobjednávka (na později) zůstává zamčená a čeká na ruční uvolnění dispečerem.
+    const isScheduled = !!scheduled && new Date(scheduled).getTime() > Date.now();
     const { error } = await supabase
       .from("orders")
       .update(
         approval === "approved"
-          ? ({ approval: "approved", released: true } as any)
+          ? ({ approval: "approved", released: !isScheduled } as any)
           : ({ approval: "rejected", status: "cancelled" } as any),
       )
       .eq("id", orderId);
