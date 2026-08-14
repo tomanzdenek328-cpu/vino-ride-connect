@@ -308,15 +308,11 @@ function OrderPage() {
           </label>
         )}
 
-        {advanceOk ? (
+        {advanceOk && (
           <div className="border border-primary/40 bg-primary/10 p-2 text-[11px] text-primary">
             {ADVANCE_ACCEPTED_MESSAGE}
           </div>
-        ) : offHoursNow ? (
-          <div className="border border-destructive/50 bg-destructive/10 p-2 text-[11px] text-destructive">
-            {OFF_HOURS_MESSAGE}
-          </div>
-        ) : null}
+        )}
 
         <label className="block">
           <div className="text-[10px] text-muted-foreground mb-1">POZNÁMKA (nepovinné)</div>
