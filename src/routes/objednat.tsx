@@ -263,16 +263,52 @@ function OrderPage() {
               ))}
             </select>
           </label>
+          <div>
+            <div className="text-[10px] text-muted-foreground mb-1">KDY</div>
+            <div className="grid grid-cols-2 gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setWhenMode("now");
+                  setWhen("");
+                }}
+                className={`py-1.5 text-xs border ${whenMode === "now" ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground"}`}
+              >
+                HNED
+              </button>
+              <button
+                type="button"
+                onClick={() => setWhenMode("later")}
+                className={`py-1.5 text-xs border ${whenMode === "later" ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground"}`}
+              >
+                POZDĚJI
+              </button>
+            </div>
+          </div>
+        </div>
+        {whenMode === "later" && (
           <label className="block">
-            <div className="text-[10px] text-muted-foreground mb-1">ČAS (nepovinné)</div>
+            <div className="text-[10px] text-muted-foreground mb-1">DATUM A ČAS VYZVEDNUTÍ</div>
             <input
               type="datetime-local"
               value={when}
+              required
               onChange={(e) => setWhen(e.target.value)}
               className="w-full bg-input border border-primary/40 px-2 py-1.5 text-primary text-sm focus:border-primary focus:outline-none"
             />
           </label>
-        </div>
+        )}
+
+        {advanceOk ? (
+          <div className="border border-primary/40 bg-primary/10 p-2 text-[11px] text-primary">
+            {ADVANCE_ACCEPTED_MESSAGE}
+          </div>
+        ) : offHoursNow ? (
+          <div className="border border-destructive/50 bg-destructive/10 p-2 text-[11px] text-destructive">
+            {OFF_HOURS_MESSAGE}
+          </div>
+        ) : null}
+
         <label className="block">
           <div className="text-[10px] text-muted-foreground mb-1">POZNÁMKA (nepovinné)</div>
           <input
