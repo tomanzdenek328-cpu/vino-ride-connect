@@ -88,6 +88,20 @@ function OrderPage() {
   }, [track, navigate]);
 
   useEffect(() => {
+    let stop = false;
+    const check = () =>
+      ordersEnabledFn()
+        .then((r: any) => !stop && setOrdersEnabled(r?.enabled !== false))
+        .catch(() => {});
+    check();
+    const t = setInterval(check, 30000);
+    return () => {
+      stop = true;
+      clearInterval(t);
+    };
+  }, [ordersEnabledFn]);
+
+  useEffect(() => {
     tariffsFn()
       .then((t) => {
         setTariffs(t);
