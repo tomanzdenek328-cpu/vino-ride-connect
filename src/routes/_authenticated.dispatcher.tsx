@@ -359,12 +359,18 @@ function DispatcherPage() {
     if (error) toast.error(error.message); else toast.success("▸ UVOLNĚNO PRO ŘIDIČE");
   };
 
-  const setApproval = async (orderId: string, approval: "approved" | "rejected") => {
+  const setApproval = async (
+    orderId: string,
+    approval: "approved" | "rejected",
+    scheduled?: string | null,
+  ) => {
+    // Předobjednávka (na později) zůstává zamčená a čeká na ruční uvolnění dispečerem.
+    const isScheduled = !!scheduled && new Date(scheduled).getTime() > Date.now();
     const { error } = await supabase
       .from("orders")
       .update(
         approval === "approved"
-          ? ({ approval: "approved", released: true } as any)
+          ? ({ approval: "approved", released: !isScheduled } as any)
           : ({ approval: "rejected", status: "cancelled" } as any),
       )
       .eq("id", orderId);
@@ -572,7 +578,7 @@ function DispatcherPage() {
                 {needsApproval && (
                   <div className="mt-2 flex gap-2">
                     <button
-                      onClick={() => setApproval(o.id, "approved")}
+                      onClick={() => setApproval(o.id, "approved", o.scheduled_time)}
                       className="flex-1 border border-primary text-primary py-1.5 text-[11px] font-bold hover:bg-primary hover:text-primary-foreground"
                     >
                       ✔ POVOLIT

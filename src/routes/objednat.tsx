@@ -5,7 +5,7 @@ import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { CustomerShell, CustomerCard } from "@/components/CustomerShell";
 import logo from "@/assets/logo.png";
 import { createCustomerOrder, estimateRide, getTariffs, trackOrder, type Tariff } from "@/lib/customer.functions";
-import { ADVANCE_ACCEPTED_MESSAGE, OFF_HOURS_MESSAGE, isAdvanceBooking, isOffHours } from "@/lib/hours";
+import { ADVANCE_ACCEPTED_MESSAGE, isAdvanceBooking } from "@/lib/hours";
 
 
 function formatDuration(min: number) {
@@ -125,7 +125,6 @@ function OrderPage() {
 
   const scheduledIso = whenMode === "later" && when ? new Date(when).toISOString() : null;
   const advanceOk = isAdvanceBooking(scheduledIso);
-  const offHoursNow = !advanceOk && isOffHours(scheduledIso ?? new Date());
 
 
   const submit = async (e: React.FormEvent) => {
@@ -308,15 +307,11 @@ function OrderPage() {
           </label>
         )}
 
-        {advanceOk ? (
+        {advanceOk && (
           <div className="border border-primary/40 bg-primary/10 p-2 text-[11px] text-primary">
             {ADVANCE_ACCEPTED_MESSAGE}
           </div>
-        ) : offHoursNow ? (
-          <div className="border border-destructive/50 bg-destructive/10 p-2 text-[11px] text-destructive">
-            {OFF_HOURS_MESSAGE}
-          </div>
-        ) : null}
+        )}
 
         <label className="block">
           <div className="text-[10px] text-muted-foreground mb-1">POZNÁMKA (nepovinné)</div>
