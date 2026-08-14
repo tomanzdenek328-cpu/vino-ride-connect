@@ -654,7 +654,7 @@ function DriverPage() {
             </button>
           </div>
           <div className="flex-1 relative">
-            <LiveMap showOrders followDriverId={user?.id} />
+            <LiveMap showOrders followDriverId={user?.id} showDriverList={false} selfOnlyDriverId={user?.id} />
           </div>
         </div>
       )}
