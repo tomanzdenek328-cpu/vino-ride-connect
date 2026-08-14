@@ -257,6 +257,16 @@ function DispatcherPage() {
     if (editOrder) setUnseenCustomer((prev) => prev.filter((id) => id !== editOrder.id));
   }, [editOrder]);
 
+  const [customerOrdersOn, setCustomerOrdersOn] = useState(true);
+  useEffect(() => {
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "customer_orders")
+      .maybeSingle()
+      .then(({ data }: any) => setCustomerOrdersOn((data?.value as any)?.enabled !== false));
+  }, []);
+
   useEffect(() => {
     const loadOrders = async () => {
       const { data } = await supabase.from("orders").select("*");
