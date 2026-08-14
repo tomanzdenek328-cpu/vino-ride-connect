@@ -304,20 +304,30 @@ export const trackOrder = createServerFn({ method: "POST" })
 
     }
 
+    const { isOffHours, isAdvanceBooking } = await import("./hours");
+    const advance = isAdvanceBooking(order.scheduled_time, order.created_at);
+    const offHours = !advance && isOffHours(order.scheduled_time ?? new Date());
+
     return {
       found: true as const,
       order: {
         status: order.status,
+        approval: order.approval,
         pickup_address: order.pickup_address,
         pickup_lat: order.pickup_lat,
         pickup_lng: order.pickup_lng,
         destination: order.destination,
         scheduled_time: order.scheduled_time,
+        created_at: order.created_at,
+        driver_arrived_at: order.driver_arrived_at,
         estimated_price: order.estimated_price,
         estimated_distance_km: order.estimated_distance_km,
+        advance,
+        off_hours: offHours,
       },
       driver,
     };
+
   });
 
 /**
