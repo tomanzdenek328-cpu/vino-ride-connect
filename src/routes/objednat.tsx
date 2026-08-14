@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { CustomerShell, CustomerCard } from "@/components/CustomerShell";
 import logo from "@/assets/logo.png";
-import { createCustomerOrder, estimateRide, getTariffs, trackOrder, type Tariff } from "@/lib/customer.functions";
+import { createCustomerOrder, estimateRide, getOrdersEnabled, getTariffs, trackOrder, type Tariff } from "@/lib/customer.functions";
 import { ADVANCE_ACCEPTED_MESSAGE, isAdvanceBooking } from "@/lib/hours";
 
 
@@ -55,6 +55,8 @@ function OrderPage() {
   const create = useServerFn(createCustomerOrder);
   const tariffsFn = useServerFn(getTariffs);
   const track = useServerFn(trackOrder);
+  const ordersEnabledFn = useServerFn(getOrdersEnabled);
+  const [ordersEnabled, setOrdersEnabled] = useState<boolean | null>(null);
 
   const [pickup, setPickup] = useState<Point>({ address: "" });
   const [dest, setDest] = useState<Point>({ address: "" });
@@ -86,6 +88,20 @@ function OrderPage() {
       })
       .catch(() => {});
   }, [track, navigate]);
+
+  useEffect(() => {
+    let stop = false;
+    const check = () =>
+      ordersEnabledFn()
+        .then((r: any) => !stop && setOrdersEnabled(r?.enabled !== false))
+        .catch(() => {});
+    check();
+    const t = setInterval(check, 30000);
+    return () => {
+      stop = true;
+      clearInterval(t);
+    };
+  }, [ordersEnabledFn]);
 
   useEffect(() => {
     tariffsFn()
@@ -324,9 +340,15 @@ function OrderPage() {
 
         {error && <div className="text-xs text-destructive">{error}</div>}
 
+        {ordersEnabled === false && (
+          <div className="rounded-xl border border-destructive/50 bg-destructive/10 p-3 text-xs text-destructive">
+            Momentálně nemáme volná auta, zkuste to prosím později.
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={sending}
+          disabled={sending || ordersEnabled === false}
           className="w-full border border-primary text-primary py-3 font-bold tracking-widest glow hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
         >
           {sending ? "ODESÍLÁM…" : "▸ OBJEDNAT JÍZDU"}

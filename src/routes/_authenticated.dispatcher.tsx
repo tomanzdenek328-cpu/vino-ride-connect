@@ -257,6 +257,16 @@ function DispatcherPage() {
     if (editOrder) setUnseenCustomer((prev) => prev.filter((id) => id !== editOrder.id));
   }, [editOrder]);
 
+  const [customerOrdersOn, setCustomerOrdersOn] = useState(true);
+  useEffect(() => {
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "customer_orders")
+      .maybeSingle()
+      .then(({ data }: any) => setCustomerOrdersOn((data?.value as any)?.enabled !== false));
+  }, []);
+
   useEffect(() => {
     const loadOrders = async () => {
       const { data } = await supabase.from("orders").select("*");
@@ -385,6 +395,16 @@ function DispatcherPage() {
     else toast.success(approval === "approved" ? "▸ OBJEDNÁVKA POVOLENA" : "▸ OBJEDNÁVKA ODMÍTNUTA");
   };
 
+  const toggleCustomerOrders = async () => {
+    const next = !customerOrdersOn;
+    const { error } = await supabase
+      .from("app_settings")
+      .upsert({ key: "customer_orders", value: { enabled: next } } as any, { onConflict: "key" });
+    if (error) { toast.error(error.message); return; }
+    setCustomerOrdersOn(next);
+    toast.success(next ? "▸ PŘÍJEM OBJEDNÁVEK ZAPNUT" : "▸ PŘÍJEM OBJEDNÁVEK VYPNUT");
+  };
+
   const togglePriority = async (orderId: string, next: boolean) => {
     const { error } = await supabase.from("orders").update({ priority: next }).eq("id", orderId);
     if (error) toast.error(error.message); else toast.success(next ? "▸ OZNAČENO JAKO URGENTNÍ" : "▸ PRIORITA ZRUŠENA");
@@ -410,6 +430,17 @@ function DispatcherPage() {
             </button>
           </div>
           <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={toggleCustomerOrders}
+              className={`border px-3 py-2 text-sm flex items-center gap-1 ${
+                customerOrdersOn
+                  ? "border-primary text-primary"
+                  : "border-destructive text-destructive animate-pulse"
+              }`}
+              title="Příjem objednávek ze zákaznické aplikace"
+            >
+              {customerOrdersOn ? "🟢 PŘÍJEM ZAP" : "🔴 PŘÍJEM VYP"}
+            </button>
             <button onClick={() => setShowMap(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
               <MapIcon className="w-4 h-4" /> MAPA
             </button>

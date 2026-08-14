@@ -99,6 +99,14 @@ export const getTariffs = createServerFn({ method: "GET" }).handler(async () => 
   return (data ?? []) as unknown as TariffFull[];
 });
 
+/** Přijímáme momentálně objednávky ze zákaznické aplikace? (přepíná dispečer) */
+export const getOrdersEnabled = createServerFn({ method: "GET" }).handler(async () => {
+  const sb = await serverClient();
+  const { data } = await sb.from("app_settings").select("value").eq("key", "customer_orders").maybeSingle();
+  const enabled = (data?.value as any)?.enabled;
+  return { enabled: enabled !== false };
+});
+
 const PointSchema = z.object({
   address: z.string().min(2).max(300),
   lat: z.number(),
@@ -165,6 +173,17 @@ export const createCustomerOrder = createServerFn({ method: "POST" })
     const { isOffHours, isAdvanceBooking } = await import("./hours");
     const now = new Date();
     const advance = isAdvanceBooking(data.scheduled_time ?? null, now);
+
+    // Dispečer může dočasně vypnout příjem objednávek ze zákaznické aplikace.
+    const { data: setting } = await supabaseAdmin
+      .from("app_settings")
+      .select("value")
+      .eq("key", "customer_orders")
+      .maybeSingle();
+    if ((setting?.value as any)?.enabled === false) {
+      throw new Error("Momentálně nemáme volná auta, zkuste to prosím později.");
+    }
+
     const offHours = !advance && isOffHours(data.scheduled_time ?? now);
     const tracking_code = makeCode();
     const { data: row, error } = await supabaseAdmin
