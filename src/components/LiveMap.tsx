@@ -155,6 +155,24 @@ export function LiveMap({ center, showOrders = false, onOrderClick, followDriver
     return () => { supabase.removeChannel(ch); };
   }, [showOrders]);
 
+  // Řidiči navzájem polohu nevidí – výjimkou je aktivní SOS
+  useEffect(() => {
+    if (!selfOnlyDriverId) return;
+    const load = async () => {
+      const { data } = await supabase
+        .from("sos_alerts")
+        .select("driver_id")
+        .is("resolved_at", null);
+      setSosIds([...new Set((data ?? []).map((r: any) => r.driver_id))]);
+    };
+    load();
+    const ch = supabase
+      .channel("sos_map_rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "sos_alerts" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [selfOnlyDriverId]);
+
   // Výchozí střed mapy (nastaví se jen jednou při mountu MapContaineru)
   const initialCenter: [number, number] = center ?? geoCenter ?? [50.0755, 14.4378];
 
