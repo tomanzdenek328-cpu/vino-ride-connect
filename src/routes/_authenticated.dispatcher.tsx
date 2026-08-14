@@ -430,6 +430,17 @@ function DispatcherPage() {
             </button>
           </div>
           <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={toggleCustomerOrders}
+              className={`border px-3 py-2 text-sm flex items-center gap-1 ${
+                customerOrdersOn
+                  ? "border-primary text-primary"
+                  : "border-destructive text-destructive animate-pulse"
+              }`}
+              title="Příjem objednávek ze zákaznické aplikace"
+            >
+              {customerOrdersOn ? "🟢 PŘÍJEM ZAP" : "🔴 PŘÍJEM VYP"}
+            </button>
             <button onClick={() => setShowMap(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
               <MapIcon className="w-4 h-4" /> MAPA
             </button>
