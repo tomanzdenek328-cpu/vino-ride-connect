@@ -75,11 +75,12 @@ function FlyTo({ center, trigger }: { center: [number, number] | null; trigger: 
   return null;
 }
 
-export function LiveMap({ center, showOrders = false, onOrderClick, followDriverId, showDriverList = true }: Props) {
+export function LiveMap({ center, showOrders = false, onOrderClick, followDriverId, showDriverList = true, selfOnlyDriverId }: Props) {
   const [drivers, setDrivers] = useState<DriverLoc[]>([]);
   const [orders, setOrders] = useState<OrderMarker[]>([]);
   const [geoCenter, setGeoCenter] = useState<[number, number] | null>(null);
   const [selected, setSelected] = useState<string>("all");
+  const [sosIds, setSosIds] = useState<string[]>([]);
   const profilesRef = useRef<Record<string, { call_sign: string; full_name: string }>>({});
 
   // Try to center on the viewer's current position once at mount
