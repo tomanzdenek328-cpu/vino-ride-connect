@@ -121,6 +121,11 @@ function OrderPage() {
 
   const chosen = est?.options.find((o) => o.vehicle_type === vehicleType) ?? est?.options[0] ?? null;
 
+  const scheduledIso = whenMode === "later" && when ? new Date(when).toISOString() : null;
+  const advanceOk = isAdvanceBooking(scheduledIso);
+  const offHoursNow = !advanceOk && isOffHours(scheduledIso ?? new Date());
+
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
