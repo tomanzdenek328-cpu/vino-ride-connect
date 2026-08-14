@@ -5,6 +5,8 @@ import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { CustomerShell, CustomerCard } from "@/components/CustomerShell";
 import logo from "@/assets/logo.png";
 import { createCustomerOrder, estimateRide, getTariffs, trackOrder, type Tariff } from "@/lib/customer.functions";
+import { ADVANCE_ACCEPTED_MESSAGE, OFF_HOURS_MESSAGE, isAdvanceBooking, isOffHours } from "@/lib/hours";
+
 
 function formatDuration(min: number) {
   const m = Math.max(0, Math.round(min));
