@@ -162,6 +162,10 @@ export const createCustomerOrder = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => CreateSchema.parse(i))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { isOffHours, isAdvanceBooking } = await import("./hours");
+    const now = new Date();
+    const advance = isAdvanceBooking(data.scheduled_time ?? null, now);
+    const offHours = !advance && isOffHours(data.scheduled_time ?? now);
     const tracking_code = makeCode();
     const { data: row, error } = await supabaseAdmin
       .from("orders")
@@ -180,7 +184,7 @@ export const createCustomerOrder = createServerFn({ method: "POST" })
         scheduled_time: data.scheduled_time ?? null,
         status: "pending",
         released: false,
-        approval: "pending",
+        approval: advance ? "approved" : "pending",
         source: "customer",
         tracking_code,
         estimated_price: data.estimated_price ?? null,
@@ -189,6 +193,7 @@ export const createCustomerOrder = createServerFn({ method: "POST" })
       .select("id,tracking_code")
       .maybeSingle();
     if (error) throw new Error(error.message);
+
 
     // Upozornění dispečerům na novou zákaznickou objednávku.
     try {
@@ -214,7 +219,13 @@ export const createCustomerOrder = createServerFn({ method: "POST" })
       console.error("dispatcher notify failed", e);
     }
 
-    return { ok: true as const, tracking_code: row?.tracking_code ?? tracking_code };
+    return {
+      ok: true as const,
+      tracking_code: row?.tracking_code ?? tracking_code,
+      advance,
+      off_hours: offHours,
+    };
+
   });
 
 export const trackOrder = createServerFn({ method: "POST" })
@@ -293,20 +304,30 @@ export const trackOrder = createServerFn({ method: "POST" })
 
     }
 
+    const { isOffHours, isAdvanceBooking } = await import("./hours");
+    const advance = isAdvanceBooking(order.scheduled_time, order.created_at);
+    const offHours = !advance && isOffHours(order.scheduled_time ?? new Date());
+
     return {
       found: true as const,
       order: {
         status: order.status,
+        approval: order.approval,
         pickup_address: order.pickup_address,
         pickup_lat: order.pickup_lat,
         pickup_lng: order.pickup_lng,
         destination: order.destination,
         scheduled_time: order.scheduled_time,
+        created_at: order.created_at,
+        driver_arrived_at: order.driver_arrived_at,
         estimated_price: order.estimated_price,
         estimated_distance_km: order.estimated_distance_km,
+        advance,
+        off_hours: offHours,
       },
       driver,
     };
+
   });
 
 /**
