@@ -58,6 +58,8 @@ interface Props {
   onOrderClick?: (id: string) => void;
   followDriverId?: string;
   showDriverList?: boolean;
+  /** Režim pro řidiče: vidí jen sám sebe a řidiče s aktivním SOS. */
+  selfOnlyDriverId?: string;
 }
 
 /** Přesune mapu pouze když se změní klíč (výběr řidiče), ne při každé aktualizaci polohy. */
@@ -73,11 +75,12 @@ function FlyTo({ center, trigger }: { center: [number, number] | null; trigger: 
   return null;
 }
 
-export function LiveMap({ center, showOrders = false, onOrderClick, followDriverId, showDriverList = true }: Props) {
+export function LiveMap({ center, showOrders = false, onOrderClick, followDriverId, showDriverList = true, selfOnlyDriverId }: Props) {
   const [drivers, setDrivers] = useState<DriverLoc[]>([]);
   const [orders, setOrders] = useState<OrderMarker[]>([]);
   const [geoCenter, setGeoCenter] = useState<[number, number] | null>(null);
   const [selected, setSelected] = useState<string>("all");
+  const [sosIds, setSosIds] = useState<string[]>([]);
   const profilesRef = useRef<Record<string, { call_sign: string; full_name: string }>>({});
 
   // Try to center on the viewer's current position once at mount
@@ -152,6 +155,24 @@ export function LiveMap({ center, showOrders = false, onOrderClick, followDriver
     return () => { supabase.removeChannel(ch); };
   }, [showOrders]);
 
+  // Řidiči navzájem polohu nevidí – výjimkou je aktivní SOS
+  useEffect(() => {
+    if (!selfOnlyDriverId) return;
+    const load = async () => {
+      const { data } = await supabase
+        .from("sos_alerts")
+        .select("driver_id")
+        .is("resolved_at", null);
+      setSosIds([...new Set((data ?? []).map((r: any) => r.driver_id))]);
+    };
+    load();
+    const ch = supabase
+      .channel("sos_map_rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "sos_alerts" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [selfOnlyDriverId]);
+
   // Výchozí střed mapy (nastaví se jen jednou při mountu MapContaineru)
   const initialCenter: [number, number] = center ?? geoCenter ?? [50.0755, 14.4378];
 
@@ -165,7 +186,10 @@ export function LiveMap({ center, showOrders = false, onOrderClick, followDriver
       : center ?? null;
 
   // Zobrazujeme jen online řidiče (i obsazené), offline se nezobrazují
-  const onlineDrivers = drivers.filter((d) => d.online);
+  const allowed = selfOnlyDriverId
+    ? drivers.filter((d) => d.driver_id === selfOnlyDriverId || sosIds.includes(d.driver_id))
+    : drivers;
+  const onlineDrivers = allowed.filter((d) => d.online || sosIds.includes(d.driver_id));
   const sortedDrivers = [...onlineDrivers].sort(
     (a, b) =>
       (a.call_sign || "").localeCompare(b.call_sign || "", "cs") ||
