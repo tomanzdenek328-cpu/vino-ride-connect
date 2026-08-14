@@ -578,7 +578,7 @@ function DispatcherPage() {
                 {needsApproval && (
                   <div className="mt-2 flex gap-2">
                     <button
-                      onClick={() => setApproval(o.id, "approved")}
+                      onClick={() => setApproval(o.id, "approved", o.scheduled_time)}
                       className="flex-1 border border-primary text-primary py-1.5 text-[11px] font-bold hover:bg-primary hover:text-primary-foreground"
                     >
                       ✔ POVOLIT
