@@ -116,6 +116,64 @@ function TrackPage() {
     };
   }, [trackPos, code]);
 
+  // Upozornění zákazníkovi, že řidič dorazil na místo vyzvednutí.
+  const arrivedAt = state?.found ? state.order?.driver_arrived_at : null;
+  useEffect(() => {
+    if (!arrivedAt) return;
+    const key = `vt_arrived_${code}`;
+    try {
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, "1");
+    } catch {
+      /* ignore */
+    }
+
+    const title = "🚕 Váš řidič dorazil";
+    const body = "Řidič čeká na místě vyzvednutí. Your driver has arrived.";
+
+    const show = () => {
+      try {
+        if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+          new Notification(title, { body, icon: "/icon-192.png", tag: `arrived-${code}` });
+        }
+      } catch {
+        /* ignore */
+      }
+    };
+
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      Notification.requestPermission().then(show).catch(() => {});
+    } else {
+      show();
+    }
+
+    try {
+      navigator.vibrate?.([300, 120, 300, 120, 500]);
+    } catch {
+      /* ignore */
+    }
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      [0, 0.35, 0.7].forEach((offset) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime + offset);
+        gain.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + offset + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + offset + 0.28);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(ctx.currentTime + offset);
+        osc.stop(ctx.currentTime + offset + 0.3);
+      });
+      setTimeout(() => ctx.close().catch(() => {}), 1500);
+    } catch {
+      /* ignore */
+    }
+  }, [arrivedAt, code]);
+
+
+
 
 
   if (loading) {
@@ -170,6 +228,15 @@ function TrackPage() {
       </div>
 
       <div className={`rounded-xl border border-primary/40 bg-background/80 backdrop-blur-md p-3 font-bold tracking-widest ${st.color}`}>{st.label}</div>
+
+      {o.driver_arrived_at && !["completed", "cancelled"].includes(o.status) && (
+        <div className="rounded-xl border-2 border-primary bg-primary/15 p-3 text-sm text-primary font-bold animate-pulse">
+          🚕 ŘIDIČ JE NA MÍSTĚ VYZVEDNUTÍ – prosím vyjděte k vozu.
+          <div className="text-[11px] font-normal opacity-80 mt-1">Your driver has arrived at the pickup point.</div>
+        </div>
+      )}
+
+
 
       {o.status === "pending" && (o as any).advance && (
         <div className="rounded-xl border border-primary/40 bg-primary/10 p-3 text-xs text-primary">
