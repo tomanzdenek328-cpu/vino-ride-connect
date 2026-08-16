@@ -780,11 +780,7 @@ function DispatcherPage() {
             ✔ PŘIJMOUT
           </button>
           <button
-            onClick={() => {
-              const o = orders.find((x) => x.id === unseenCustomer[0]);
-              if (o) setEditOrder(o);
-              else setUnseenCustomer([]);
-            }}
+            onClick={() => setUnseenCustomer([])}
             className="px-2 py-1 border border-purple-300 hover:bg-purple-300 hover:text-black"
           >
             ZOBRAZIT
