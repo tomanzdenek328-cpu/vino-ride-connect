@@ -229,6 +229,15 @@ function TrackPage() {
 
       <div className={`rounded-xl border border-primary/40 bg-background/80 backdrop-blur-md p-3 font-bold tracking-widest ${st.color}`}>{st.label}</div>
 
+      {o.driver_arrived_at && !["completed", "cancelled"].includes(o.status) && (
+        <div className="rounded-xl border-2 border-primary bg-primary/15 p-3 text-sm text-primary font-bold animate-pulse">
+          🚕 ŘIDIČ JE NA MÍSTĚ VYZVEDNUTÍ – prosím vyjděte k vozu.
+          <div className="text-[11px] font-normal opacity-80 mt-1">Your driver has arrived at the pickup point.</div>
+        </div>
+      )}
+
+
+
       {o.status === "pending" && (o as any).advance && (
         <div className="rounded-xl border border-primary/40 bg-primary/10 p-3 text-xs text-primary">
           {ADVANCE_ACCEPTED_MESSAGE}
