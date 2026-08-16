@@ -773,6 +773,13 @@ function DispatcherPage() {
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-3 py-2 border-2 border-purple-400 bg-purple-950/90 backdrop-blur text-purple-100 text-xs font-bold blink">
           🥂 NOVÁ OBJEDNÁVKA OD ZÁKAZNÍKA ({unseenCustomer.length})
           <button
+            onClick={() => setUnseenCustomer([])}
+            title="Potvrdit upozornění (ztlumit zvuk)"
+            className="px-2 py-1 border-2 border-green-400 text-green-300 font-black hover:bg-green-400 hover:text-black"
+          >
+            ✔ PŘIJMOUT
+          </button>
+          <button
             onClick={() => {
               const o = orders.find((x) => x.id === unseenCustomer[0]);
               if (o) setEditOrder(o);
@@ -782,6 +789,7 @@ function DispatcherPage() {
           >
             ZOBRAZIT
           </button>
+
         </div>
       )}
 
