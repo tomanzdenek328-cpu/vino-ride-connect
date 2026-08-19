@@ -49,6 +49,8 @@ interface Order {
   estimated_distance_km?: number | null;
   approval?: string | null;
   driver_arrived_at?: string | null;
+  cancelled_by?: string | null;
+  cancelled_at?: string | null;
 }
 
 /** Mapování typu auta v dispečinku na tarif v ceníku. */
@@ -362,7 +364,11 @@ function DispatcherPage() {
 
 
   const cancelOrder = async (orderId: string) => {
-    await supabase.from("orders").update({ status: "cancelled" }).eq("id", orderId);
+    await supabase.from("orders").update({
+      status: "cancelled",
+      cancelled_by: user?.id ?? null,
+      cancelled_at: new Date().toISOString(),
+    } as any).eq("id", orderId);
   };
 
   const releaseOrder = async (orderId: string) => {
@@ -388,7 +394,7 @@ function DispatcherPage() {
       .update(
         approval === "approved"
           ? ({ approval: "approved", released: !isScheduled } as any)
-          : ({ approval: "rejected", status: "cancelled" } as any),
+          : ({ approval: "rejected", status: "cancelled", cancelled_by: user?.id ?? null, cancelled_at: new Date().toISOString() } as any),
       )
       .eq("id", orderId);
     if (error) toast.error(error.message);
