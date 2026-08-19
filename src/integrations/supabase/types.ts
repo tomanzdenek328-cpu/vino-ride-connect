@@ -162,6 +162,8 @@ export type Database = {
           approval: string
           assigned_driver_id: string | null
           assigned_driver_ids: string[]
+          cancelled_at: string | null
+          cancelled_by: string | null
           created_at: string
           created_by: string | null
           customer_name: string | null
@@ -191,6 +193,8 @@ export type Database = {
           approval?: string
           assigned_driver_id?: string | null
           assigned_driver_ids?: string[]
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           created_at?: string
           created_by?: string | null
           customer_name?: string | null
@@ -220,6 +224,8 @@ export type Database = {
           approval?: string
           assigned_driver_id?: string | null
           assigned_driver_ids?: string[]
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           created_at?: string
           created_by?: string | null
           customer_name?: string | null
