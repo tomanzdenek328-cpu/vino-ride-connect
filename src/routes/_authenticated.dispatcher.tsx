@@ -160,6 +160,8 @@ function DispatcherPage() {
     activeThread: activeChatThread,
   });
   const [walkieOpen, setWalkieOpen] = useState(false);
+  // Jména všech uživatelů (řidiči i dispečeři) pro archiv.
+  const [nameMap, setNameMap] = useState<Record<string, { full_name: string; call_sign: string }>>({});
 
   const savePushSubFn = useServerFn(saveDriverPushSubscription);
 
@@ -167,6 +169,12 @@ function DispatcherPage() {
     if (!user) return;
     supabase.from("profiles").select("call_sign").eq("id", user.id).maybeSingle()
       .then(({ data }) => { if (data?.call_sign) setCallSign(data.call_sign); });
+
+    supabase.from("profiles").select("id,full_name,call_sign").then(({ data }) => {
+      const m: Record<string, { full_name: string; call_sign: string }> = {};
+      (data ?? []).forEach((p: any) => { m[p.id] = { full_name: p.full_name, call_sign: p.call_sign }; });
+      setNameMap(m);
+    });
 
     // Nativní APK: push + lokální notifikace
     if (isNative()) {
@@ -740,6 +748,23 @@ function DispatcherPage() {
                     {o.estimated_price != null && (
                       <div className="text-sm font-bold text-purple-300 mt-0.5">💰 {Math.round(Number(o.estimated_price))} Kč</div>
                     )}
+                    {(() => {
+                      const drvId = o.assigned_driver_id ?? (o.assigned_driver_ids ?? [])[0] ?? null;
+                      const drv = drvId ? nameMap[drvId] : null;
+                      return (
+                        <div className="text-xs text-cyan-300 mt-0.5">
+                          🚖 ŘIDIČ: {drv ? `${drv.call_sign ? drv.call_sign + " · " : ""}${drv.full_name}` : (drvId ? "—" : "nepřidělen")}
+                        </div>
+                      );
+                    })()}
+                    {o.status === "cancelled" && (() => {
+                      const c = o.cancelled_by ? nameMap[o.cancelled_by] : null;
+                      return (
+                        <div className="text-xs text-destructive mt-0.5">
+                          ✖ ZRUŠIL: {c ? `${c.call_sign ? c.call_sign + " · " : ""}${c.full_name}` : "neznámý"}
+                        </div>
+                      );
+                    })()}
                     <div className="text-[10px] text-primary/60 mt-0.5">Klikni pro detail</div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
