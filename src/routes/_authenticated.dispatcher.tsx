@@ -1506,13 +1506,19 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
 function ArchiveOrderDetailModal({ order, onClose }: { order: Order; onClose: () => void }) {
   const [ride, setRide] = useState<any>(null);
   const [driver, setDriver] = useState<any>(null);
+  const [canceller, setCanceller] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
-      if (order.assigned_driver_id) {
-        const { data: d } = await supabase.from("profiles").select("full_name,call_sign").eq("id", order.assigned_driver_id).maybeSingle();
+      const drvId = order.assigned_driver_id ?? (order.assigned_driver_ids ?? [])[0] ?? null;
+      if (drvId) {
+        const { data: d } = await supabase.from("profiles").select("full_name,call_sign").eq("id", drvId).maybeSingle();
         setDriver(d);
+      }
+      if (order.cancelled_by) {
+        const { data: c } = await supabase.from("profiles").select("full_name,call_sign").eq("id", order.cancelled_by).maybeSingle();
+        setCanceller(c);
       }
       const { data: r } = await supabase.from("rides").select("*").eq("order_id", order.id).maybeSingle();
       setRide(r);
@@ -1583,7 +1589,16 @@ function ArchiveOrderDetailModal({ order, onClose }: { order: Order; onClose: ()
                 </div>
               </>
             ) : order.status === "cancelled" ? (
-              <div className="text-destructive text-xs">Zakázka byla zrušena — bez jízdy.</div>
+              <div className="space-y-1">
+                <div className="text-destructive text-xs">Zakázka byla zrušena — bez jízdy.</div>
+                <div>
+                  <div className="text-[10px] text-muted-foreground">ZRUŠIL</div>
+                  <div className="text-destructive">
+                    {canceller ? `${canceller.call_sign ? canceller.call_sign + " · " : ""}${canceller.full_name}` : "neznámý"}
+                    {order.cancelled_at ? ` · ${new Date(order.cancelled_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : ""}
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="text-muted-foreground text-xs">Jízda nebyla zaznamenána.</div>
             )}
