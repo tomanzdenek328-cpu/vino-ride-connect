@@ -49,6 +49,8 @@ interface Order {
   estimated_distance_km?: number | null;
   approval?: string | null;
   driver_arrived_at?: string | null;
+  cancelled_by?: string | null;
+  cancelled_at?: string | null;
 }
 
 /** Mapování typu auta v dispečinku na tarif v ceníku. */
@@ -158,6 +160,8 @@ function DispatcherPage() {
     activeThread: activeChatThread,
   });
   const [walkieOpen, setWalkieOpen] = useState(false);
+  // Jména všech uživatelů (řidiči i dispečeři) pro archiv.
+  const [nameMap, setNameMap] = useState<Record<string, { full_name: string; call_sign: string }>>({});
 
   const savePushSubFn = useServerFn(saveDriverPushSubscription);
 
@@ -165,6 +169,12 @@ function DispatcherPage() {
     if (!user) return;
     supabase.from("profiles").select("call_sign").eq("id", user.id).maybeSingle()
       .then(({ data }) => { if (data?.call_sign) setCallSign(data.call_sign); });
+
+    supabase.from("profiles").select("id,full_name,call_sign").then(({ data }) => {
+      const m: Record<string, { full_name: string; call_sign: string }> = {};
+      (data ?? []).forEach((p: any) => { m[p.id] = { full_name: p.full_name, call_sign: p.call_sign }; });
+      setNameMap(m);
+    });
 
     // Nativní APK: push + lokální notifikace
     if (isNative()) {
@@ -362,7 +372,11 @@ function DispatcherPage() {
 
 
   const cancelOrder = async (orderId: string) => {
-    await supabase.from("orders").update({ status: "cancelled" }).eq("id", orderId);
+    await supabase.from("orders").update({
+      status: "cancelled",
+      cancelled_by: user?.id ?? null,
+      cancelled_at: new Date().toISOString(),
+    } as any).eq("id", orderId);
   };
 
   const releaseOrder = async (orderId: string) => {
@@ -388,7 +402,7 @@ function DispatcherPage() {
       .update(
         approval === "approved"
           ? ({ approval: "approved", released: !isScheduled } as any)
-          : ({ approval: "rejected", status: "cancelled" } as any),
+          : ({ approval: "rejected", status: "cancelled", cancelled_by: user?.id ?? null, cancelled_at: new Date().toISOString() } as any),
       )
       .eq("id", orderId);
     if (error) toast.error(error.message);
@@ -734,6 +748,23 @@ function DispatcherPage() {
                     {o.estimated_price != null && (
                       <div className="text-sm font-bold text-purple-300 mt-0.5">💰 {Math.round(Number(o.estimated_price))} Kč</div>
                     )}
+                    {(() => {
+                      const drvId = o.assigned_driver_id ?? (o.assigned_driver_ids ?? [])[0] ?? null;
+                      const drv = drvId ? nameMap[drvId] : null;
+                      return (
+                        <div className="text-xs text-cyan-300 mt-0.5">
+                          🚖 ŘIDIČ: {drv ? `${drv.call_sign ? drv.call_sign + " · " : ""}${drv.full_name}` : (drvId ? "—" : "nepřidělen")}
+                        </div>
+                      );
+                    })()}
+                    {o.status === "cancelled" && (() => {
+                      const c = o.cancelled_by ? nameMap[o.cancelled_by] : null;
+                      return (
+                        <div className="text-xs text-destructive mt-0.5">
+                          ✖ ZRUŠIL: {c ? `${c.call_sign ? c.call_sign + " · " : ""}${c.full_name}` : "neznámý"}
+                        </div>
+                      );
+                    })()}
                     <div className="text-[10px] text-primary/60 mt-0.5">Klikni pro detail</div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
@@ -1475,13 +1506,19 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
 function ArchiveOrderDetailModal({ order, onClose }: { order: Order; onClose: () => void }) {
   const [ride, setRide] = useState<any>(null);
   const [driver, setDriver] = useState<any>(null);
+  const [canceller, setCanceller] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
-      if (order.assigned_driver_id) {
-        const { data: d } = await supabase.from("profiles").select("full_name,call_sign").eq("id", order.assigned_driver_id).maybeSingle();
+      const drvId = order.assigned_driver_id ?? (order.assigned_driver_ids ?? [])[0] ?? null;
+      if (drvId) {
+        const { data: d } = await supabase.from("profiles").select("full_name,call_sign").eq("id", drvId).maybeSingle();
         setDriver(d);
+      }
+      if (order.cancelled_by) {
+        const { data: c } = await supabase.from("profiles").select("full_name,call_sign").eq("id", order.cancelled_by).maybeSingle();
+        setCanceller(c);
       }
       const { data: r } = await supabase.from("rides").select("*").eq("order_id", order.id).maybeSingle();
       setRide(r);
@@ -1552,7 +1589,16 @@ function ArchiveOrderDetailModal({ order, onClose }: { order: Order; onClose: ()
                 </div>
               </>
             ) : order.status === "cancelled" ? (
-              <div className="text-destructive text-xs">Zakázka byla zrušena — bez jízdy.</div>
+              <div className="space-y-1">
+                <div className="text-destructive text-xs">Zakázka byla zrušena — bez jízdy.</div>
+                <div>
+                  <div className="text-[10px] text-muted-foreground">ZRUŠIL</div>
+                  <div className="text-destructive">
+                    {canceller ? `${canceller.call_sign ? canceller.call_sign + " · " : ""}${canceller.full_name}` : "neznámý"}
+                    {order.cancelled_at ? ` · ${new Date(order.cancelled_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" })}` : ""}
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="text-muted-foreground text-xs">Jízda nebyla zaznamenána.</div>
             )}
