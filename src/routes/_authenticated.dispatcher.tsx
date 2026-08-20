@@ -718,10 +718,20 @@ function DispatcherPage() {
                   if (archived.length === 0) { toast.message("Archiv je prázdný"); return; }
                   if (!confirm(`Opravdu vymazat ${archived.length} jízd z archivu? Tuto akci nelze vrátit.`)) return;
                   const ids = archived.map(o => o.id);
-                  const { error } = await supabase.from("orders").delete().in("id", ids);
-                  if (error) { toast.error(error.message); return; }
-                  toast.success("▸ ARCHIV VYMAZÁN");
+                  let deleted = 0;
+                  for (let i = 0; i < ids.length; i += 25) {
+                    const chunk = ids.slice(i, i + 25);
+                    const { error } = await supabase.from("orders").delete().in("id", chunk);
+                    if (error) {
+                      toast.error(`Chyba mazání (${deleted}/${ids.length}): ${error.message}`);
+                      return;
+                    }
+                    deleted += chunk.length;
+                  }
+                  setOrders(prev => prev.filter(o => !ids.includes(o.id)));
+                  toast.success(`▸ ARCHIV VYMAZÁN (${deleted})`);
                 }}
+
                 className="bg-blue-600 hover:bg-blue-500 text-white border border-blue-400 px-3 py-1 text-xs flex items-center gap-1"
               >
                 <Trash2 className="w-3 h-3" /> VYMAZAT ARCHIV
