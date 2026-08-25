@@ -5,7 +5,8 @@
 // Web = no-op (prohlížeč do Bluetooth nesmí), funkční jen v Android APK.
 import { isNative } from "@/lib/native";
 
-export type BleDevice = { deviceId: string; name?: string };
+export type BluetoothMode = "ble" | "serial";
+export type BleDevice = { deviceId: string; name?: string; mode: BluetoothMode; address?: string };
 
 export type LogLine = {
   at: string;
@@ -16,6 +17,11 @@ export type LogLine = {
 async function ble() {
   const mod = await import("@capacitor-community/bluetooth-le");
   return mod.BleClient;
+}
+
+async function bluetoothSerial() {
+  const mod = await import("@e-is/capacitor-bluetooth-serial");
+  return mod.BluetoothSerial;
 }
 
 export function bluetoothAvailable() {
@@ -37,19 +43,64 @@ export function asciiOf(v: DataView) {
   return s;
 }
 
-/** Vyhledá Bluetooth zařízení v okolí (BLE). */
+export function hexOfText(value: string) {
+  return Array.from(value)
+    .map((ch) => ch.charCodeAt(0).toString(16).padStart(2, "0").slice(-2).toUpperCase())
+    .join(" ");
+}
+
+export function asciiOfText(value: string) {
+  return Array.from(value)
+    .map((ch) => {
+      const code = ch.charCodeAt(0);
+      if (code === 10) return "\\n";
+      if (code === 13) return "\\r";
+      return code >= 32 && code < 127 ? ch : ".";
+    })
+    .join("");
+}
+
+/** Vyhledá Bluetooth zařízení v okolí: nejdřív klasické SPP, potom BLE. */
 export async function scanDevices(
   onFound: (d: BleDevice) => void,
-  seconds = 8,
+  seconds = 6,
+  log?: (line: Omit<LogLine, "at">) => void,
 ): Promise<void> {
+  const seen = new Set<string>();
+  const emit = (device: BleDevice) => {
+    const key = `${device.mode}:${device.address ?? device.deviceId}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    onFound(device);
+  };
+
+  try {
+    const Serial = await bluetoothSerial();
+    const state = await Serial.isEnabled().catch(() => ({ enabled: false }));
+    if (!state.enabled) await Serial.enable();
+    log?.({ kind: "info", text: "Hledám klasický Bluetooth/SPP (MPT5 ho často používá)…" });
+    const result = await Serial.scan();
+    for (const device of result.devices ?? []) {
+      const address = device.address || device.id;
+      if (!address) continue;
+      emit({
+        deviceId: address,
+        address,
+        name: device.name || "Klasické Bluetooth zařízení",
+        mode: "serial",
+      });
+    }
+    log?.({ kind: "info", text: `SPP hledání dokončeno: ${result.devices?.length ?? 0} zařízení.` });
+  } catch (e) {
+    log?.({ kind: "error", text: `SPP hledání selhalo: ${String(e)}` });
+  }
+
   const BleClient = await ble();
   await BleClient.initialize({ androidNeverForLocation: true });
-  const seen = new Set<string>();
+  log?.({ kind: "info", text: "Hledám BLE zařízení…" });
   await BleClient.requestLEScan({ allowDuplicates: false }, (result) => {
     const id = result.device.deviceId;
-    if (seen.has(id)) return;
-    seen.add(id);
-    onFound({ deviceId: id, name: result.device.name ?? result.localName ?? undefined });
+    emit({ deviceId: id, name: result.device.name ?? result.localName ?? "BLE zařízení", mode: "ble" });
   });
   await new Promise((r) => setTimeout(r, seconds * 1000));
   try {
@@ -64,9 +115,13 @@ export async function scanDevices(
  * Vrací funkci pro odpojení.
  */
 export async function connectAndListen(
-  deviceId: string,
+  device: BleDevice | string,
   log: (line: Omit<LogLine, "at">) => void,
 ): Promise<() => Promise<void>> {
+  if (typeof device !== "string" && device.mode === "serial") {
+    return connectSerialAndListen(device, log);
+  }
+  const deviceId = typeof device === "string" ? device : device.deviceId;
   const BleClient = await ble();
   await BleClient.initialize({ androidNeverForLocation: true });
   await BleClient.connect(deviceId, () => log({ kind: "error", text: "Zařízení se odpojilo" }));
@@ -104,6 +159,58 @@ export async function connectAndListen(
   return async () => {
     try {
       await BleClient.disconnect(deviceId);
+    } catch {
+      /* ignore */
+    }
+  };
+}
+
+async function connectSerialAndListen(
+  device: BleDevice,
+  log: (line: Omit<LogLine, "at">) => void,
+): Promise<() => Promise<void>> {
+  const address = device.address ?? device.deviceId;
+  const Serial = await bluetoothSerial();
+  const state = await Serial.isEnabled().catch(() => ({ enabled: false }));
+  if (!state.enabled) await Serial.enable();
+
+  try {
+    await Serial.disconnect({ address });
+  } catch {
+    /* ignore previous state */
+  }
+
+  try {
+    await Serial.connect({ address });
+  } catch (secureError) {
+    log({ kind: "info", text: `Běžné SPP připojení selhalo, zkouším nešifrované: ${String(secureError)}` });
+    await Serial.connectInsecure({ address });
+  }
+
+  log({ kind: "info", text: `Připojeno přes klasický Bluetooth/SPP k ${device.name ?? address}` });
+  log({ kind: "info", text: "Odposlouchávám data – ukončete zkušební jízdu na taxametru a pošlete záznam." });
+
+  let reading = false;
+  const poll = window.setInterval(async () => {
+    if (reading) return;
+    reading = true;
+    try {
+      const result = await Serial.read({ address });
+      const value = result.value ?? "";
+      if (value.length > 0) {
+        log({ kind: "data", text: `SPP | ${hexOfText(value)} | ${asciiOfText(value)}` });
+      }
+    } catch (e) {
+      log({ kind: "error", text: `Čtení SPP selhalo: ${String(e)}` });
+    } finally {
+      reading = false;
+    }
+  }, 450);
+
+  return async () => {
+    window.clearInterval(poll);
+    try {
+      await Serial.disconnect({ address });
     } catch {
       /* ignore */
     }
