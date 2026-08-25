@@ -86,6 +86,20 @@ export function asciiOfText(value: string) {
     .join("");
 }
 
+type SerialDevice = {
+  name?: string;
+  id?: string;
+  address?: string;
+};
+
+type SerialScanResult = {
+  devices?: SerialDevice[];
+};
+
+type BluetoothSerialRuntime = Awaited<ReturnType<typeof bluetoothSerial>> & {
+  pairedDevices?: () => Promise<SerialScanResult>;
+};
+
 function timeoutError(message: string) {
   return new Error(`${message} Taxametr může být obsazený jinou aplikací, nebo nepovolil SPP spojení.`);
 }
@@ -119,6 +133,55 @@ export async function scanDevices(
 
   let BleClient: Awaited<ReturnType<typeof ble>> | null = null;
 
+  if (nativePluginAvailable("BluetoothSerial")) {
+    try {
+      const Serial = (await bluetoothSerial()) as BluetoothSerialRuntime;
+      const state = await Serial.isEnabled().catch(() => ({ enabled: false }));
+      if (!state.enabled) await Serial.enable();
+
+      if (Serial.pairedDevices) {
+        log?.({ kind: "info", text: "Načítám spárovaná Bluetooth/SPP zařízení z Androidu…" });
+        const paired = await Serial.pairedDevices();
+        const devices = paired.devices ?? [];
+        for (const device of devices) {
+          const address = device.address || device.id;
+          if (!address) continue;
+          emit({
+            deviceId: address,
+            address,
+            name: device.name || "Spárované Bluetooth zařízení",
+            mode: "serial",
+            source: "paired",
+          });
+        }
+        log?.({ kind: "info", text: `Spárovaná SPP zařízení: ${devices.length}. Pokud je mezi nimi MPT5, klepněte na něj.` });
+        if (devices.length > 0) {
+          log?.({ kind: "info", text: "Hledání zastaveno, aby Bluetooth nebyl obsazený při připojování." });
+          return;
+        }
+      }
+
+      log?.({ kind: "info", text: "Hledám viditelná klasická Bluetooth/SPP zařízení…" });
+      const result = await Serial.scan();
+      for (const device of result.devices ?? []) {
+        const address = device.address || device.id;
+        if (!address) continue;
+        emit({
+          deviceId: address,
+          address,
+          name: device.name || "Klasické Bluetooth zařízení",
+          mode: "serial",
+          source: "scan",
+        });
+      }
+      log?.({ kind: "info", text: `SPP hledání dokončeno: ${result.devices?.length ?? 0} zařízení.` });
+    } catch (e) {
+      log?.({ kind: "error", text: `SPP hledání selhalo: ${String(e)}` });
+    }
+  } else {
+    log?.({ kind: "error", text: explainMissingPlugin("BluetoothSerial") });
+  }
+
   if (nativePluginAvailable("BluetoothLe")) {
     try {
       BleClient = await ble();
@@ -147,32 +210,6 @@ export async function scanDevices(
   } else {
     log?.({ kind: "error", text: explainMissingPlugin("BluetoothLe") });
     log?.({ kind: "info", text: "Spárovaná zařízení z Androidu nepůjde načíst, ale zkusím klasické Bluetooth/SPP hledání." });
-  }
-
-  if (nativePluginAvailable("BluetoothSerial")) {
-    try {
-      const Serial = await bluetoothSerial();
-      const state = await Serial.isEnabled().catch(() => ({ enabled: false }));
-      if (!state.enabled) await Serial.enable();
-      log?.({ kind: "info", text: "Hledám viditelná klasická Bluetooth/SPP zařízení…" });
-      const result = await Serial.scan();
-      for (const device of result.devices ?? []) {
-        const address = device.address || device.id;
-        if (!address) continue;
-        emit({
-          deviceId: address,
-          address,
-          name: device.name || "Klasické Bluetooth zařízení",
-          mode: "serial",
-          source: "scan",
-        });
-      }
-      log?.({ kind: "info", text: `SPP hledání dokončeno: ${result.devices?.length ?? 0} zařízení.` });
-    } catch (e) {
-      log?.({ kind: "error", text: `SPP hledání selhalo: ${String(e)}` });
-    }
-  } else {
-    log?.({ kind: "error", text: explainMissingPlugin("BluetoothSerial") });
   }
 
   if (BleClient) {
@@ -279,7 +316,7 @@ async function connectSerialAndListen(
 
   try {
     log({ kind: "info", text: "Zkouším nešifrované SPP spojení – to často používají taxametry MPT5…" });
-    await withTimeout(Serial.connectInsecure({ address }), 12000, "Nešifrované připojení se do 12 sekund neotevřelo.");
+    await withTimeout(Serial.connectInsecure({ address }), 25000, "Nešifrované připojení se do 25 sekund neotevřelo.");
   } catch (insecureError) {
     log({ kind: "error", text: `Nešifrované SPP nevyšlo: ${String(insecureError)}` });
     try {
@@ -288,7 +325,7 @@ async function connectSerialAndListen(
       /* ignore failed cleanup */
     }
     log({ kind: "info", text: "Zkouším běžné zabezpečené SPP spojení…" });
-    await withTimeout(Serial.connect({ address }), 12000, "Běžné připojení se do 12 sekund neotevřelo.");
+    await withTimeout(Serial.connect({ address }), 25000, "Běžné připojení se do 25 sekund neotevřelo.");
   }
 
   log({ kind: "info", text: `Připojeno přes klasický Bluetooth/SPP k ${device.name ?? address}` });
