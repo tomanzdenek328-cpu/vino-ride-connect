@@ -32,6 +32,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Patch Bluetooth serial plugin
+        run: node scripts/patch-bluetooth-serial.mjs
+
       - name: Prepare webDir (dist/)
         run: |
           # Capacitor používá server.url (načítá web z https://vino-ride-connect.lovable.app),

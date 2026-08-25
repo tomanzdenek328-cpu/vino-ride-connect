@@ -33,6 +33,7 @@ function TaximeterDiagnosticsPage() {
   const [lines, setLines] = useState<LogLine[]>([]);
   const [manualAddress, setManualAddress] = useState("");
   const disconnectRef = useRef<null | (() => Promise<void>)>(null);
+  const connectSeqRef = useRef(0);
   const native = bluetoothAvailable();
 
   const log = (line: Omit<LogLine, "at">) =>
@@ -65,17 +66,20 @@ function TaximeterDiagnosticsPage() {
 
   const connect = async (d: BleDevice) => {
     if (connectingId) return;
+    const seq = connectSeqRef.current + 1;
+    connectSeqRef.current = seq;
     setScanning(false);
     setConnectingId(d.deviceId);
     try {
       await disconnectRef.current?.();
       disconnectRef.current = await connectAndListen(d, log);
+      if (connectSeqRef.current !== seq) return;
       setConnectedId(d.deviceId);
     } catch (e) {
       log({ kind: "error", text: `Připojení selhalo: ${String(e)}` });
       toast.error("Připojení k zařízení selhalo");
     } finally {
-      setConnectingId(null);
+      if (connectSeqRef.current === seq) setConnectingId(null);
     }
   };
 
@@ -89,9 +93,11 @@ function TaximeterDiagnosticsPage() {
   };
 
   const disconnect = async () => {
+    connectSeqRef.current += 1;
     await disconnectRef.current?.();
     disconnectRef.current = null;
     setConnectedId(null);
+    setConnectingId(null);
     log({ kind: "info", text: "Odpojeno." });
   };
 
@@ -166,9 +172,9 @@ function TaximeterDiagnosticsPage() {
         >
           <Bluetooth className="w-4 h-4" /> {scanning ? "HLEDÁM…" : "HLEDAT ZAŘÍZENÍ"}
         </button>
-        {connectedId && (
+        {(connectedId || connectingId) && (
           <button onClick={disconnect} className="border-2 border-red-500 text-red-400 px-4 py-2.5 text-sm font-bold hover:bg-red-500/10">
-            ODPOJIT
+            {connectingId ? "ZRUŠIT" : "ODPOJIT"}
           </button>
         )}
         <button onClick={copyLog} className="border-2 border-primary/60 px-4 py-2.5 text-sm inline-flex items-center gap-2 hover:bg-primary/10">
@@ -198,6 +204,9 @@ function TaximeterDiagnosticsPage() {
               PŘIPOJIT
             </button>
           </div>
+          <p className="text-[10px] text-amber-warn leading-relaxed">
+            Pokud BT-MPT5 zůstane na „PŘIPOJUJI“, ukončete Taxi Panel 2 úplně z posledních aplikací, taxametr v Androidu odpojte a zkuste znovu.
+          </p>
           <p className="text-[10px] text-muted-foreground leading-relaxed">
             Adresu najdete v Android nastavení u spárovaného taxametru. Použijte ji, pokud se zařízení nezobrazí v seznamu.
           </p>
