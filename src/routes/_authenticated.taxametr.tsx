@@ -44,9 +44,13 @@ function TaximeterDiagnosticsPage() {
   const startScan = async () => {
     setScanning(true);
     setDevices([]);
-    log({ kind: "info", text: "Hledám zařízení (8 s)…" });
+      log({ kind: "info", text: "Hledám zařízení: nejdřív klasický Bluetooth/SPP, potom BLE…" });
     try {
-      await scanDevices((d) => setDevices((prev) => (prev.some((p) => p.deviceId === d.deviceId) ? prev : [...prev, d])));
+      await scanDevices(
+        (d) => setDevices((prev) => (prev.some((p) => p.mode === d.mode && p.deviceId === d.deviceId) ? prev : [...prev, d])),
+        6,
+        log,
+      );
       log({ kind: "info", text: "Hledání dokončeno." });
     } catch (e) {
       log({ kind: "error", text: `Hledání selhalo: ${String(e)}` });
@@ -59,7 +63,7 @@ function TaximeterDiagnosticsPage() {
   const connect = async (d: BleDevice) => {
     try {
       await disconnectRef.current?.();
-      disconnectRef.current = await connectAndListen(d.deviceId, log);
+      disconnectRef.current = await connectAndListen(d, log);
       setConnectedId(d.deviceId);
     } catch (e) {
       log({ kind: "error", text: `Připojení selhalo: ${String(e)}` });
@@ -117,9 +121,16 @@ function TaximeterDiagnosticsPage() {
         </div>
       )}
 
+      {native && (
+        <div className="border-2 border-amber-warn/70 bg-amber-warn/10 p-3 text-xs text-amber-warn leading-relaxed">
+          Pokud se taxametr neukázal, nejdřív ho v nastavení telefonu spárujte s Androidem.
+          Pak vypněte Taxi Panel 2, aby taxametr nedržel obsazené Bluetooth připojení, a zkuste hledání znovu.
+        </div>
+      )}
+
       <div className="border-2 border-primary/40 p-3 text-xs text-muted-foreground leading-relaxed">
-        <b className="text-primary">Postup:</b> 1) V Taxi Panel 2 se od taxametru odpojte (nesmí být obsazený).
-        2) Zapněte taxametr. 3) Dejte <b>HLEDAT ZAŘÍZENÍ</b> a vyberte taxametr.
+        <b className="text-primary">Postup:</b> 1) V Android nastavení spárujte taxametr, pokud ještě spárovaný není.
+        2) V Taxi Panel 2 se od taxametru odpojte (nesmí být obsazený). 3) Dejte <b>HLEDAT ZAŘÍZENÍ</b> a vyberte taxametr.
         4) Projeďte krátkou zkušební jízdu a na konci ji na taxametru <b>ukončete</b>.
         5) Pošlete mi záznam přes <b>SDÍLET</b>.
       </div>
@@ -156,7 +167,9 @@ function TaximeterDiagnosticsPage() {
               <li key={d.deviceId} className="flex items-center justify-between gap-2 px-3 py-2 border-b border-primary/10 last:border-b-0">
                 <span className="text-sm">
                   <span className="font-bold">{d.name || "(bez názvu)"}</span>
-                  <span className="block text-[10px] text-muted-foreground">{d.deviceId}</span>
+                  <span className="block text-[10px] text-muted-foreground">
+                    {d.mode === "serial" ? "KLASICKÝ BLUETOOTH/SPP" : "BLE"} · {d.deviceId}
+                  </span>
                 </span>
                 <button
                   onClick={() => connect(d)}

@@ -14,6 +14,7 @@
         "@capacitor/local-notifications": "^8.0.0",
         "@capacitor/push-notifications": "^8.1.1",
         "@cloudflare/vite-plugin": "^1.25.5",
+        "@e-is/capacitor-bluetooth-serial": "^6.0.3",
         "@hookform/resolvers": "^5.2.2",
         "@radix-ui/react-accordion": "^1.2.12",
         "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -173,6 +174,8 @@
     "@cspotcode/source-map-support": ["@cspotcode/source-map-support@0.8.1", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.9" } }, "sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw=="],
 
     "@date-fns/tz": ["@date-fns/tz@1.4.1", "", {}, "sha512-P5LUNhtbj6YfI3iJjw5EL9eUAG6OitD0W3fWQcpQjDRc/QIsL0tRNuO1PcDvPccWL1fSTXXdE1ds+l95DV/OFA=="],
+
+    "@e-is/capacitor-bluetooth-serial": ["@e-is/capacitor-bluetooth-serial@6.0.3", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@e-is/capacitor-bluetooth-serial/-/capacitor-bluetooth-serial-6.0.3.tgz", {}, "sha512-YmoM9M2wkl5kvxFUlF39+bErSWCOkIyI7mVJfOxA2trC8acxKJKKMMulGc978R2QoiccQRhqVqpPPfVF30ZPBw=="],
 
     "@emnapi/core": ["@emnapi/core@1.10.0", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.1", "tslib": "^2.4.0" } }, "sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw=="],
 
