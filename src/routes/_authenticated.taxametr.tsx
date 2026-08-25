@@ -44,7 +44,7 @@ function TaximeterDiagnosticsPage() {
   const startScan = async () => {
     setScanning(true);
     setDevices([]);
-      log({ kind: "info", text: "Hledám zařízení: nejdřív klasický Bluetooth/SPP, potom BLE…" });
+      log({ kind: "info", text: "Hledám zařízení: nejdřív spárovaná v Androidu, potom klasický Bluetooth/SPP a BLE…" });
     try {
       await scanDevices(
         (d) => setDevices((prev) => (prev.some((p) => p.mode === d.mode && p.deviceId === d.deviceId) ? prev : [...prev, d])),
@@ -123,14 +123,14 @@ function TaximeterDiagnosticsPage() {
 
       {native && (
         <div className="border-2 border-amber-warn/70 bg-amber-warn/10 p-3 text-xs text-amber-warn leading-relaxed">
-          Pokud se taxametr neukázal, nejdřív ho v nastavení telefonu spárujte s Androidem.
-          Pak vypněte Taxi Panel 2, aby taxametr nedržel obsazené Bluetooth připojení, a zkuste hledání znovu.
+          Když je taxametr už připojený v Androidu, měl by se nově ukázat jako spárované zařízení.
+          Před připojením v této aplikaci vypněte Taxi Panel 2, aby nedržel Bluetooth port obsazený.
         </div>
       )}
 
       <div className="border-2 border-primary/40 p-3 text-xs text-muted-foreground leading-relaxed">
         <b className="text-primary">Postup:</b> 1) V Android nastavení spárujte taxametr, pokud ještě spárovaný není.
-        2) V Taxi Panel 2 se od taxametru odpojte (nesmí být obsazený). 3) Dejte <b>HLEDAT ZAŘÍZENÍ</b> a vyberte taxametr.
+        2) V Taxi Panel 2 se od taxametru odpojte (nesmí být obsazený). 3) Dejte <b>HLEDAT ZAŘÍZENÍ</b> a vyberte MPT5 ze spárovaných zařízení.
         4) Projeďte krátkou zkušební jízdu a na konci ji na taxametru <b>ukončete</b>.
         5) Pošlete mi záznam přes <b>SDÍLET</b>.
       </div>
@@ -168,7 +168,7 @@ function TaximeterDiagnosticsPage() {
                 <span className="text-sm">
                   <span className="font-bold">{d.name || "(bez názvu)"}</span>
                   <span className="block text-[10px] text-muted-foreground">
-                    {d.mode === "serial" ? "KLASICKÝ BLUETOOTH/SPP" : "BLE"} · {d.deviceId}
+                    {d.source === "paired" ? "SPÁROVANÉ V ANDROIDU" : d.mode === "serial" ? "KLASICKÝ BLUETOOTH/SPP" : "BLE"} · {d.deviceId}
                   </span>
                 </span>
                 <button
