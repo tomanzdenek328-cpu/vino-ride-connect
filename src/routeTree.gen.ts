@@ -19,6 +19,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SledovatRouteImport } from './routes/sledovat'
 import { Route as AuthenticatedDispatcherRouteImport } from './routes/_authenticated.dispatcher'
 import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated.driver'
+import { Route as AuthenticatedTaxametrRouteImport } from './routes/_authenticated.taxametr'
 import { Route as JizdaCodeRouteImport } from './routes/jizda.$code'
 
 const IndexRoute = IndexRouteImport.update({
@@ -70,6 +71,11 @@ const AuthenticatedDriverRoute = AuthenticatedDriverRouteImport.update({
   path: '/driver',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedTaxametrRoute = AuthenticatedTaxametrRouteImport.update({
+  id: '/taxametr',
+  path: '/taxametr',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const JizdaCodeRoute = JizdaCodeRouteImport.update({
   id: '/jizda/$code',
   path: '/jizda/$code',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/sledovat': typeof SledovatRoute
   '/dispatcher': typeof AuthenticatedDispatcherRoute
   '/driver': typeof AuthenticatedDriverRoute
+  '/taxametr': typeof AuthenticatedTaxametrRoute
   '/jizda/$code': typeof JizdaCodeRoute
 }
 export interface FileRoutesByTo {
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/sledovat': typeof SledovatRoute
   '/dispatcher': typeof AuthenticatedDispatcherRoute
   '/driver': typeof AuthenticatedDriverRoute
+  '/taxametr': typeof AuthenticatedTaxametrRoute
   '/jizda/$code': typeof JizdaCodeRoute
 }
 export interface FileRoutesById {
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/sledovat': typeof SledovatRoute
   '/_authenticated/dispatcher': typeof AuthenticatedDispatcherRoute
   '/_authenticated/driver': typeof AuthenticatedDriverRoute
+  '/_authenticated/taxametr': typeof AuthenticatedTaxametrRoute
   '/jizda/$code': typeof JizdaCodeRoute
 }
 export interface FileRouteTypes {
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/sledovat'
     | '/dispatcher'
     | '/driver'
+    | '/taxametr'
     | '/jizda/$code'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/sledovat'
     | '/dispatcher'
     | '/driver'
+    | '/taxametr'
     | '/jizda/$code'
   id:
     | '__root__'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/sledovat'
     | '/_authenticated/dispatcher'
     | '/_authenticated/driver'
+    | '/_authenticated/taxametr'
     | '/jizda/$code'
   fileRoutesById: FileRoutesById
 }
@@ -238,6 +250,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDriverRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/taxametr': {
+      id: '/_authenticated/taxametr'
+      path: '/taxametr'
+      fullPath: '/taxametr'
+      preLoaderRoute: typeof AuthenticatedTaxametrRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/jizda/$code': {
       id: '/jizda/$code'
       path: '/jizda/$code'
@@ -251,11 +270,13 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedDispatcherRoute: typeof AuthenticatedDispatcherRoute
   AuthenticatedDriverRoute: typeof AuthenticatedDriverRoute
+  AuthenticatedTaxametrRoute: typeof AuthenticatedTaxametrRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDispatcherRoute: AuthenticatedDispatcherRoute,
   AuthenticatedDriverRoute: AuthenticatedDriverRoute,
+  AuthenticatedTaxametrRoute: AuthenticatedTaxametrRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

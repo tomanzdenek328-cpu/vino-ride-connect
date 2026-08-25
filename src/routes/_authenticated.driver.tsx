@@ -567,6 +567,13 @@ function DriverPage() {
           <button onClick={() => supabase.auth.signOut()} className="mt-1 border-2 border-primary px-5 py-2.5 text-sm hover:bg-primary/10 inline-flex items-center gap-2">
             <LogOut className="w-5 h-5" /> ODHLÁSIT
           </button>
+          <Link
+            to="/taxametr"
+            className="ml-2 mt-1 border-2 border-primary/60 px-4 py-2 text-sm font-bold inline-flex items-center gap-2 hover:bg-primary/10"
+            title="Diagnostika taxametru přes Bluetooth"
+          >
+            <Bluetooth className="w-5 h-5" /> TAXAMETR
+          </Link>
           <button
             onClick={() => user && triggerSOS(user.id, vehicleId)}
             className="ml-2 mt-1 border-2 border-primary px-4 py-2 text-sm font-bold inline-flex items-center gap-2 bg-black hover:bg-primary/10"
