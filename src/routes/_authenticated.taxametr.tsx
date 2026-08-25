@@ -28,6 +28,7 @@ export const Route = createFileRoute("/_authenticated/taxametr")({
 function TaximeterDiagnosticsPage() {
   const [devices, setDevices] = useState<BleDevice[]>([]);
   const [scanning, setScanning] = useState(false);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
   const [connectedId, setConnectedId] = useState<string | null>(null);
   const [lines, setLines] = useState<LogLine[]>([]);
   const [manualAddress, setManualAddress] = useState("");
@@ -63,6 +64,9 @@ function TaximeterDiagnosticsPage() {
   };
 
   const connect = async (d: BleDevice) => {
+    if (connectingId) return;
+    setScanning(false);
+    setConnectingId(d.deviceId);
     try {
       await disconnectRef.current?.();
       disconnectRef.current = await connectAndListen(d, log);
@@ -70,6 +74,8 @@ function TaximeterDiagnosticsPage() {
     } catch (e) {
       log({ kind: "error", text: `Připojení selhalo: ${String(e)}` });
       toast.error("Připojení k zařízení selhalo");
+    } finally {
+      setConnectingId(null);
     }
   };
 
@@ -202,22 +208,34 @@ function TaximeterDiagnosticsPage() {
         <div className="border-2 border-primary/40">
           <div className="px-3 py-2 text-xs text-primary border-b border-primary/30">NALEZENÁ ZAŘÍZENÍ</div>
           <ul>
-            {devices.map((d) => (
-              <li key={d.deviceId} className="flex items-center justify-between gap-2 px-3 py-2 border-b border-primary/10 last:border-b-0">
-                <span className="text-sm">
+            {devices.map((d) => {
+              const isConnecting = connectingId === d.deviceId;
+              const isConnected = connectedId === d.deviceId;
+              return (
+              <li
+                key={d.deviceId}
+                onClick={() => connect(d)}
+                className="flex items-center justify-between gap-3 px-3 py-3 border-b border-primary/10 last:border-b-0 cursor-pointer active:bg-primary/15 hover:bg-primary/10"
+              >
+                <span className="text-sm min-w-0 flex-1">
                   <span className="font-bold">{d.name || "(bez názvu)"}</span>
                   <span className="block text-[10px] text-muted-foreground">
                     {d.source === "manual" ? "RUČNĚ ZADANÉ" : d.source === "paired" ? "SPÁROVANÉ V ANDROIDU" : d.mode === "serial" ? "KLASICKÝ BLUETOOTH/SPP" : "BLE"} · {d.deviceId}
                   </span>
                 </span>
                 <button
-                  onClick={() => connect(d)}
-                  className={`border-2 px-3 py-1.5 text-xs font-bold ${connectedId === d.deviceId ? "border-green-500 text-green-400" : "border-primary hover:bg-primary/10"}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void connect(d);
+                  }}
+                  disabled={Boolean(connectingId)}
+                  className={`shrink-0 border-2 px-4 py-3 text-xs font-bold disabled:opacity-60 ${isConnected ? "border-green-500 text-green-400" : "border-primary hover:bg-primary/10"}`}
                 >
-                  {connectedId === d.deviceId ? "PŘIPOJENO" : "PŘIPOJIT"}
+                  {isConnected ? "PŘIPOJENO" : isConnecting ? "PŘIPOJUJI…" : "PŘIPOJIT"}
                 </button>
               </li>
-            ))}
+              );
+            })}
           </ul>
         </div>
       )}
