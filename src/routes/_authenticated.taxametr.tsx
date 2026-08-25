@@ -5,6 +5,7 @@ import { ArrowLeft, Bluetooth, Radio, Copy, Share2, Trash2 } from "lucide-react"
 import {
   bluetoothAvailable,
   connectAndListen,
+  manualSerialDevice,
   scanDevices,
   type BleDevice,
   type LogLine,
@@ -29,6 +30,7 @@ function TaximeterDiagnosticsPage() {
   const [scanning, setScanning] = useState(false);
   const [connectedId, setConnectedId] = useState<string | null>(null);
   const [lines, setLines] = useState<LogLine[]>([]);
+  const [manualAddress, setManualAddress] = useState("");
   const disconnectRef = useRef<null | (() => Promise<void>)>(null);
   const native = bluetoothAvailable();
 
@@ -44,7 +46,7 @@ function TaximeterDiagnosticsPage() {
   const startScan = async () => {
     setScanning(true);
     setDevices([]);
-      log({ kind: "info", text: "Hledám zařízení: nejdřív spárovaná v Androidu, potom klasický Bluetooth/SPP a BLE…" });
+    log({ kind: "info", text: "Hledám zařízení: nejdřív spárovaná v Androidu, potom klasický Bluetooth/SPP a BLE…" });
     try {
       await scanDevices(
         (d) => setDevices((prev) => (prev.some((p) => p.mode === d.mode && p.deviceId === d.deviceId) ? prev : [...prev, d])),
@@ -69,6 +71,15 @@ function TaximeterDiagnosticsPage() {
       log({ kind: "error", text: `Připojení selhalo: ${String(e)}` });
       toast.error("Připojení k zařízení selhalo");
     }
+  };
+
+  const connectManual = async () => {
+    const clean = manualAddress.trim();
+    if (!/^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.test(clean)) {
+      toast.error("Zadejte Bluetooth adresu ve tvaru 00:11:22:33:44:55");
+      return;
+    }
+    await connect(manualSerialDevice(clean));
   };
 
   const disconnect = async () => {
@@ -128,6 +139,12 @@ function TaximeterDiagnosticsPage() {
         </div>
       )}
 
+      {native && lines.some((line) => line.text.includes("není v této APK nainstalovaný")) && (
+        <div className="border-2 border-red-500/70 bg-red-500/10 p-3 text-xs text-red-300 leading-relaxed">
+          Tato nainstalovaná APK ještě neobsahuje Bluetooth diagnostický modul. Po této úpravě je potřeba vygenerovat a nainstalovat nové APK.
+        </div>
+      )}
+
       <div className="border-2 border-primary/40 p-3 text-xs text-muted-foreground leading-relaxed">
         <b className="text-primary">Postup:</b> 1) V Android nastavení spárujte taxametr, pokud ještě spárovaný není.
         2) V Taxi Panel 2 se od taxametru odpojte (nesmí být obsazený). 3) Dejte <b>HLEDAT ZAŘÍZENÍ</b> a vyberte MPT5 ze spárovaných zařízení.
@@ -159,6 +176,28 @@ function TaximeterDiagnosticsPage() {
         </button>
       </div>
 
+      {native && (
+        <div className="border-2 border-primary/40 p-3 space-y-2">
+          <div className="text-xs text-primary font-bold">RUČNÍ PŘIPOJENÍ PODLE BLUETOOTH ADRESY</div>
+          <div className="flex flex-wrap gap-2">
+            <input
+              value={manualAddress}
+              onChange={(e) => setManualAddress(e.target.value)}
+              placeholder="např. 00:11:22:33:44:55"
+              className="min-w-0 flex-1 border-2 border-primary/40 bg-background/70 px-3 py-2 text-sm outline-none focus:border-primary"
+              inputMode="text"
+              autoCapitalize="characters"
+            />
+            <button onClick={connectManual} className="border-2 border-primary px-4 py-2 text-sm font-bold hover:bg-primary/10">
+              PŘIPOJIT
+            </button>
+          </div>
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            Adresu najdete v Android nastavení u spárovaného taxametru. Použijte ji, pokud se zařízení nezobrazí v seznamu.
+          </p>
+        </div>
+      )}
+
       {devices.length > 0 && (
         <div className="border-2 border-primary/40">
           <div className="px-3 py-2 text-xs text-primary border-b border-primary/30">NALEZENÁ ZAŘÍZENÍ</div>
@@ -168,7 +207,7 @@ function TaximeterDiagnosticsPage() {
                 <span className="text-sm">
                   <span className="font-bold">{d.name || "(bez názvu)"}</span>
                   <span className="block text-[10px] text-muted-foreground">
-                    {d.source === "paired" ? "SPÁROVANÉ V ANDROIDU" : d.mode === "serial" ? "KLASICKÝ BLUETOOTH/SPP" : "BLE"} · {d.deviceId}
+                    {d.source === "manual" ? "RUČNĚ ZADANÉ" : d.source === "paired" ? "SPÁROVANÉ V ANDROIDU" : d.mode === "serial" ? "KLASICKÝ BLUETOOTH/SPP" : "BLE"} · {d.deviceId}
                   </span>
                 </span>
                 <button
