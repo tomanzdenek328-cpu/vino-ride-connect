@@ -91,7 +91,7 @@ function timeoutError(message: string) {
 }
 
 async function withTimeout<T>(task: Promise<T>, milliseconds: number, message: string): Promise<T> {
-  let timer: ReturnType<typeof window.setTimeout> | undefined;
+  let timer: number | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = window.setTimeout(() => reject(timeoutError(message)), milliseconds);
   });
