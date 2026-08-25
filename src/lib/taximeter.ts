@@ -86,6 +86,23 @@ export function asciiOfText(value: string) {
     .join("");
 }
 
+function timeoutError(message: string) {
+  return new Error(`${message} Taxametr může být obsazený jinou aplikací, nebo nepovolil SPP spojení.`);
+}
+
+async function withTimeout<T>(task: Promise<T>, milliseconds: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof window.setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = window.setTimeout(() => reject(timeoutError(message)), milliseconds);
+  });
+  task.catch(() => undefined);
+  try {
+    return await Promise.race([task, timeout]);
+  } finally {
+    if (timer !== undefined) window.clearTimeout(timer);
+  }
+}
+
 /** Vyhledá Bluetooth zařízení: nejdřív spárovaná v Androidu; když žádná nenajde, pokračuje SPP/BLE skenem. */
 export async function scanDevices(
   onFound: (d: BleDevice) => void,
@@ -261,10 +278,17 @@ async function connectSerialAndListen(
   log({ kind: "info", text: `Připojuji k ${device.name ?? address} (${address})…` });
 
   try {
-    await Serial.connect({ address });
-  } catch (secureError) {
-    log({ kind: "info", text: `Běžné SPP připojení selhalo, zkouším nešifrované: ${String(secureError)}` });
-    await Serial.connectInsecure({ address });
+    log({ kind: "info", text: "Zkouším nešifrované SPP spojení – to často používají taxametry MPT5…" });
+    await withTimeout(Serial.connectInsecure({ address }), 12000, "Nešifrované připojení se do 12 sekund neotevřelo.");
+  } catch (insecureError) {
+    log({ kind: "error", text: `Nešifrované SPP nevyšlo: ${String(insecureError)}` });
+    try {
+      await Serial.disconnect({ address });
+    } catch {
+      /* ignore failed cleanup */
+    }
+    log({ kind: "info", text: "Zkouším běžné zabezpečené SPP spojení…" });
+    await withTimeout(Serial.connect({ address }), 12000, "Běžné připojení se do 12 sekund neotevřelo.");
   }
 
   log({ kind: "info", text: `Připojeno přes klasický Bluetooth/SPP k ${device.name ?? address}` });
