@@ -6,7 +6,13 @@
 import { isNative } from "@/lib/native";
 
 export type BluetoothMode = "ble" | "serial";
-export type BleDevice = { deviceId: string; name?: string; mode: BluetoothMode; address?: string };
+export type BleDevice = {
+  deviceId: string;
+  name?: string;
+  mode: BluetoothMode;
+  address?: string;
+  source?: "paired" | "scan";
+};
 
 export type LogLine = {
   at: string;
@@ -60,7 +66,7 @@ export function asciiOfText(value: string) {
     .join("");
 }
 
-/** Vyhledá Bluetooth zařízení v okolí: nejdřív klasické SPP, potom BLE. */
+/** Vyhledá Bluetooth zařízení: nejdřív spárovaná v Androidu, potom klasické SPP a BLE sken. */
 export async function scanDevices(
   onFound: (d: BleDevice) => void,
   seconds = 6,
@@ -74,11 +80,31 @@ export async function scanDevices(
     onFound(device);
   };
 
+  const BleClient = await ble();
+  await BleClient.initialize({ androidNeverForLocation: true });
+
+  try {
+    log?.({ kind: "info", text: "Načítám spárovaná Bluetooth zařízení z Androidu…" });
+    const bonded = await BleClient.getBondedDevices();
+    for (const device of bonded) {
+      emit({
+        deviceId: device.deviceId,
+        address: device.deviceId,
+        name: device.name || "Spárované Bluetooth zařízení",
+        mode: "serial",
+        source: "paired",
+      });
+    }
+    log?.({ kind: "info", text: `Spárovaná zařízení: ${bonded.length}. Pokud je mezi nimi MPT5, klikněte PŘIPOJIT.` });
+  } catch (e) {
+    log?.({ kind: "error", text: `Načtení spárovaných zařízení selhalo: ${String(e)}` });
+  }
+
   try {
     const Serial = await bluetoothSerial();
     const state = await Serial.isEnabled().catch(() => ({ enabled: false }));
     if (!state.enabled) await Serial.enable();
-    log?.({ kind: "info", text: "Hledám klasický Bluetooth/SPP (MPT5 ho často používá)…" });
+    log?.({ kind: "info", text: "Hledám viditelná klasická Bluetooth/SPP zařízení…" });
     const result = await Serial.scan();
     for (const device of result.devices ?? []) {
       const address = device.address || device.id;
@@ -88,6 +114,7 @@ export async function scanDevices(
         address,
         name: device.name || "Klasické Bluetooth zařízení",
         mode: "serial",
+        source: "scan",
       });
     }
     log?.({ kind: "info", text: `SPP hledání dokončeno: ${result.devices?.length ?? 0} zařízení.` });
@@ -95,18 +122,25 @@ export async function scanDevices(
     log?.({ kind: "error", text: `SPP hledání selhalo: ${String(e)}` });
   }
 
-  const BleClient = await ble();
-  await BleClient.initialize({ androidNeverForLocation: true });
-  log?.({ kind: "info", text: "Hledám BLE zařízení…" });
-  await BleClient.requestLEScan({ allowDuplicates: false }, (result) => {
-    const id = result.device.deviceId;
-    emit({ deviceId: id, name: result.device.name ?? result.localName ?? "BLE zařízení", mode: "ble" });
-  });
-  await new Promise((r) => setTimeout(r, seconds * 1000));
   try {
-    await BleClient.stopLEScan();
-  } catch {
-    /* ignore */
+    const locationEnabled = await BleClient.isLocationEnabled().catch(() => true);
+    if (!locationEnabled) {
+      log?.({ kind: "error", text: "Android má vypnuté služby polohy. U některých telefonů bez toho Bluetooth sken nic nenajde." });
+    }
+    log?.({ kind: "info", text: "Hledám BLE zařízení…" });
+    await BleClient.requestLEScan({ allowDuplicates: false, allowExtendedAdvertising: true, scanMode: 2 }, (result) => {
+      const id = result.device.deviceId;
+      emit({ deviceId: id, name: result.device.name ?? result.localName ?? "BLE zařízení", mode: "ble", source: "scan" });
+    });
+    await new Promise((r) => setTimeout(r, seconds * 1000));
+  } catch (e) {
+    log?.({ kind: "error", text: `BLE hledání selhalo: ${String(e)}` });
+  } finally {
+    try {
+      await BleClient.stopLEScan();
+    } catch {
+      /* ignore */
+    }
   }
 }
 
