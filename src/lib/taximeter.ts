@@ -86,7 +86,7 @@ export function asciiOfText(value: string) {
     .join("");
 }
 
-/** Vyhledá Bluetooth zařízení: nejdřív spárovaná v Androidu, potom klasické SPP a BLE sken. */
+/** Vyhledá Bluetooth zařízení: nejdřív spárovaná v Androidu; když žádná nenajde, pokračuje SPP/BLE skenem. */
 export async function scanDevices(
   onFound: (d: BleDevice) => void,
   seconds = 6,
@@ -117,7 +117,11 @@ export async function scanDevices(
           source: "paired",
         });
       }
-      log?.({ kind: "info", text: `Spárovaná zařízení: ${bonded.length}. Pokud je mezi nimi MPT5, klikněte PŘIPOJIT.` });
+      log?.({ kind: "info", text: `Spárovaná zařízení: ${bonded.length}. Pokud je mezi nimi MPT5, klepněte na jeho řádek nebo PŘIPOJIT.` });
+      if (bonded.length > 0) {
+        log?.({ kind: "info", text: "Hledání zastaveno, aby Bluetooth nebyl obsazený při připojování." });
+        return;
+      }
     } catch (e) {
       BleClient = null;
       log?.({ kind: "error", text: `Načtení spárovaných zařízení selhalo: ${String(e)}` });
@@ -253,6 +257,8 @@ async function connectSerialAndListen(
   } catch {
     /* ignore previous state */
   }
+
+  log({ kind: "info", text: `Připojuji k ${device.name ?? address} (${address})…` });
 
   try {
     await Serial.connect({ address });
