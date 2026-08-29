@@ -321,7 +321,7 @@ function DriverPage() {
   const loadRides = async () => {
     if (!user) return;
     const { data } = await supabase.from("rides")
-      .select("id,amount,payment_method,pickup_address,destination,completed_at")
+      .select("id,amount,payment_method,pickup_address,destination,completed_at,plate")
       .eq("driver_id", user.id)
       .order("completed_at", { ascending: false });
     setRides((data ?? []) as Ride[]);
@@ -519,6 +519,7 @@ function DriverPage() {
       payment_method: method,
       pickup_address: o.pickup_address,
       destination: o.destination,
+      plate: vehicles.find(v => v.id === vehicleId)?.plate ?? null,
     });
     if (insErr) { toast.error(insErr.message); return; }
     const { error: updErr } = await supabase.from("orders").update({ status: "completed" }).eq("id", o.id);

@@ -1210,7 +1210,7 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
     setLoading(true);
     Promise.all([
       supabase.from("rides")
-        .select("id,driver_id,amount,payment_method,pickup_address,destination,completed_at")
+        .select("id,driver_id,amount,payment_method,pickup_address,destination,completed_at,plate")
         .eq("driver_id", driver.id)
         .order("completed_at", { ascending: false }),
       supabase.from("cash_payouts")
@@ -1417,7 +1417,7 @@ function DriverDetailModal({ driver, onClose, onChanged }: { driver: Driver; onC
                 rides.forEach((r, i) => {
                   const dt = new Date(r.completed_at).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" });
                   const route = `${r.pickup_address ?? "—"}${r.destination ? " → " + r.destination : ""}`;
-                  lines.push(`${i + 1}. ${dt} · ${Number(r.amount).toFixed(0)} Kč ${PM_SHORT(r.payment_method)} · ${route}`);
+                  lines.push(`${i + 1}. ${dt} · ${Number(r.amount).toFixed(0)} Kč ${PM_SHORT(r.payment_method)} · SPZ: ${r.plate || "—"} · ${route}`);
                 });
                 if (payouts.length) {
                   lines.push("");
