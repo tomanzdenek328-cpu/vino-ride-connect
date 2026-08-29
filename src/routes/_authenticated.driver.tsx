@@ -831,7 +831,7 @@ function DriverPage() {
       )}
 
       {showRides && user && (
-        <RidesModal rides={rides} payouts={payouts} totals={totals} userId={user.id} onAdded={loadRides} onPayoutsChanged={loadPayouts} onClose={() => setShowRides(false)} />
+        <RidesModal rides={rides} payouts={payouts} totals={totals} userId={user.id} currentPlate={vehicles.find((v) => v.id === vehicleId)?.plate ?? null} onAdded={loadRides} onPayoutsChanged={loadPayouts} onClose={() => setShowRides(false)} />
       )}
 
       {user && <WalkieTalkie userId={user.id} callSign={callSign} open={walkieOpen} onClose={() => setWalkieOpen(false)} />}
@@ -920,11 +920,12 @@ function CompleteRideModal({ order, onClose, onSubmit }: {
 }
 
 
-function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged, onClose }: {
+function RidesModal({ rides, payouts, totals, userId, currentPlate, onAdded, onPayoutsChanged, onClose }: {
   rides: Ride[];
   payouts: Payout[];
   totals: { cash: number; card: number; invoice: number; total: number; count: number; payoutsTotal: number };
   userId: string;
+  currentPlate: string | null;
   onAdded: () => void | Promise<void>;
   onPayoutsChanged: () => void | Promise<void>;
   onClose: () => void;
@@ -980,6 +981,7 @@ function RidesModal({ rides, payouts, totals, userId, onAdded, onPayoutsChanged,
       payment_method: method,
       pickup_address: pickup || null,
       destination: destination || null,
+      plate: currentPlate ?? null,
     });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
