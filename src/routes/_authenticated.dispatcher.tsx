@@ -86,6 +86,7 @@ interface Ride {
   pickup_address: string | null;
   destination: string | null;
   completed_at: string;
+  plate?: string | null;
 }
 
 const PM_LABEL = (m: string) => m === "cash" ? "HOTOVĚ" : m === "card" ? "KARTOU" : "FAKTURA/QR";
