@@ -321,6 +321,7 @@ export type Database = {
           order_id: string | null
           payment_method: string
           pickup_address: string | null
+          plate: string | null
         }
         Insert: {
           amount: number
@@ -332,6 +333,7 @@ export type Database = {
           order_id?: string | null
           payment_method: string
           pickup_address?: string | null
+          plate?: string | null
         }
         Update: {
           amount?: number
@@ -343,6 +345,7 @@ export type Database = {
           order_id?: string | null
           payment_method?: string
           pickup_address?: string | null
+          plate?: string | null
         }
         Relationships: []
       }
