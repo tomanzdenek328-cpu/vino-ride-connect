@@ -141,6 +141,7 @@ function DispatcherPage() {
   const [archivedOrders, setArchivedOrders] = useState<Order[]>([]);
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [driversRefresh, setDriversRefresh] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [showDriverForm, setShowDriverForm] = useState(false);
   const [showMap, setShowMap] = useState(false);
@@ -352,7 +353,7 @@ function DispatcherPage() {
       document.removeEventListener("visibilitychange", refresh);
       supabase.removeChannel(ch);
     };
-  }, [user?.id]);
+  }, [user?.id, driversRefresh]);
 
   useEffect(() => {
     if (!showArchive) return;
@@ -905,8 +906,8 @@ function DispatcherPage() {
       )}
 
       {showForm && <NewOrderModal onClose={() => setShowForm(false)} userId={user!.id} />}
-      {showDriverForm && <NewDriverModal onClose={() => setShowDriverForm(false)} onCreated={loadDrivers} />}
-      {driverDetail && <DriverDetailModal driver={driverDetail} onClose={() => setDriverDetail(null)} onChanged={loadDrivers} />}
+      {showDriverForm && <NewDriverModal onClose={() => setShowDriverForm(false)} onCreated={() => setDriversRefresh((value) => value + 1)} />}
+      {driverDetail && <DriverDetailModal driver={driverDetail} onClose={() => setDriverDetail(null)} onChanged={() => setDriversRefresh((value) => value + 1)} />}
       {archiveOrderDetail && <ArchiveOrderDetailModal order={archiveOrderDetail} onClose={() => setArchiveOrderDetail(null)} />}
       {editOrder && <OrderEditModal order={editOrder} onClose={() => setEditOrder(null)} />}
       {showVehicles && <VehiclesModal onClose={() => setShowVehicles(false)} />}
