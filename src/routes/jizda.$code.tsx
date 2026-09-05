@@ -189,7 +189,11 @@ function TrackPage() {
       <CustomerShell>
         <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6">
         <div className="text-destructive">Objednávku s kódem {code} jsme nenašli.</div>
-        <Link to="/objednat" className="border border-primary bg-background/80 text-primary px-6 py-2">
+        <Link
+          to="/objednat"
+          search={{ nova: false }}
+          className="border border-primary bg-background/80 text-primary px-6 py-2"
+        >
           ▸ NOVÁ OBJEDNÁVKA
         </Link>
         </div>
