@@ -309,7 +309,11 @@ function TrackPage() {
 
 
       <div className="text-center">
-        <Link to="/objednat" className="text-[11px] text-foreground/80 underline">
+        <Link
+          to="/objednat"
+          search={{ nova: true }}
+          className="text-[11px] text-foreground/80 underline"
+        >
           Objednat další jízdu
         </Link>
       </div>
