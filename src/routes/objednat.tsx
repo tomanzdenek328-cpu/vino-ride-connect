@@ -17,6 +17,9 @@ function formatDuration(min: number) {
 }
 
 export const Route = createFileRoute("/objednat")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    nova: search.nova === true || search.nova === "1",
+  }),
   head: () => ({
     meta: [
       { title: "Objednat taxi – Vinné Taxi" },
@@ -51,6 +54,7 @@ const ACTIVE = ["pending", "assigned", "accepted", "in_progress"];
 
 function OrderPage() {
   const navigate = useNavigate();
+  const { nova } = Route.useSearch();
   const estimate = useServerFn(estimateRide);
   const create = useServerFn(createCustomerOrder);
   const tariffsFn = useServerFn(getTariffs);
@@ -76,6 +80,8 @@ function OrderPage() {
 
   // Pokud má zákazník rozjetou jízdu, otevřeme ji rovnou – bez zadávání kódu.
   useEffect(() => {
+    // Odkaz „Objednat další jízdu“ musí vždy ponechat zákazníka v novém formuláři.
+    if (nova) return;
     const saved = typeof window !== "undefined" ? localStorage.getItem("vt_ride_code") : null;
     if (!saved) return;
     track({ data: { code: saved } })
@@ -87,7 +93,7 @@ function OrderPage() {
         }
       })
       .catch(() => {});
-  }, [track, navigate]);
+  }, [track, navigate, nova]);
 
   useEffect(() => {
     let stop = false;
