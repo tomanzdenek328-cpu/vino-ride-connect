@@ -123,7 +123,13 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <Outlet />
       <InstallBanner />
-      <Toaster theme="dark" position="top-center" toastOptions={{
+      <Toaster
+        theme="dark"
+        position="top-center"
+        closeButton
+        duration={4500}
+        visibleToasts={3}
+        toastOptions={{
         style: {
           background: "rgba(10,13,10,0.95)",
           border: "1px solid color-mix(in oklab, var(--color-primary) 35%, transparent)",
@@ -132,7 +138,8 @@ function RootComponent() {
           borderRadius: "14px",
           backdropFilter: "blur(12px)",
         },
-      }} />
+        }}
+      />
     </QueryClientProvider>
   );
 }

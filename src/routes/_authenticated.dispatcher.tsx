@@ -138,6 +138,8 @@ function playGlassClink() {
 function DispatcherPage() {
   const { user, role, loading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [archivedOrders, setArchivedOrders] = useState<Order[]>([]);
+  const [archiveLoading, setArchiveLoading] = useState(false);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [showDriverForm, setShowDriverForm] = useState(false);
@@ -214,38 +216,12 @@ function DispatcherPage() {
     })();
   }, [user, savePushSubFn]);
 
-  const loadDrivers = async () => {
-    const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "driver");
-    let ids = (roles ?? []).map((r: any) => r.user_id);
-    if (user?.id !== ALLOWED_DISPATCHER_ID) ids = ids.filter((id: string) => id !== HIDDEN_DRIVER_ID);
-    if (!ids.length) { setDrivers([]); return; }
-    const [{ data: profs }, { data: locs }, { data: vehs }] = await Promise.all([
-      supabase.from("profiles").select("id,full_name,call_sign").in("id", ids),
-      supabase.from("driver_locations").select("driver_id,online,busy,vehicle_id").in("driver_id", ids),
-      supabase.from("vehicles").select("id,car_type,plate"),
-    ]);
-    const vehMap: Record<string, string> = {};
-    (vehs ?? []).forEach((v: any) => { vehMap[v.id] = v.car_type || v.plate || ""; });
-    const locMap: Record<string, { online: boolean; busy: boolean; vehicle_id: string | null }> = {};
-    (locs ?? []).forEach((l: any) => { locMap[l.driver_id] = { online: l.online, busy: !!l.busy, vehicle_id: l.vehicle_id }; });
-    setDrivers((profs ?? []).map((p: any) => ({
-      id: p.id, full_name: p.full_name, call_sign: p.call_sign,
-      online: !!locMap[p.id]?.online,
-      busy: !!locMap[p.id]?.busy,
-      car_type: (locMap[p.id]?.vehicle_id && vehMap[locMap[p.id]!.vehicle_id!]) || "",
-    })).sort((a, b) =>
-      (a.call_sign || "").localeCompare(b.call_sign || "", "cs") ||
-      (a.full_name || "").localeCompare(b.full_name || "", "cs") ||
-      a.id.localeCompare(b.id)
-    ));
-  };
-
   // Zvukový signál + notifikace na novou zákaznickou objednávku.
   const seenCustomerRef = useRef<Set<string> | null>(null);
   const alertCustomerOrder = (o: Order) => {
     const title = "🧾 OBJEDNÁVKA OD ZÁKAZNÍKA";
     const body = `${o.pickup_address}${o.destination ? ` → ${o.destination}` : ""}`;
-    toast.success(title, { description: body, duration: 20000 });
+    toast.success(title, { description: body, duration: 6000 });
     try {
       if ("Notification" in window && Notification.permission === "granted") {
         new Notification(title, { body });
@@ -279,8 +255,22 @@ function DispatcherPage() {
   }, []);
 
   useEffect(() => {
+    let disposed = false;
+    let loadingOrders = false;
+    let loadingDrivers = false;
+
     const loadOrders = async () => {
-      const { data } = await supabase.from("orders").select("*");
+      if (loadingOrders) return;
+      loadingOrders = true;
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .in("status", ["pending", "assigned", "accepted", "in_progress"]);
+      loadingOrders = false;
+      if (disposed || error) {
+        if (error) console.error("Načtení zakázek selhalo", error);
+        return;
+      }
       const rows = (data ?? []) as Order[];
       const customerIds = rows.filter((o) => o.source === "customer").map((o) => o.id);
       if (seenCustomerRef.current === null) {
@@ -292,17 +282,98 @@ function DispatcherPage() {
       }
       setOrders(rows);
     };
-    loadOrders(); loadDrivers();
 
-    // Automatická aktualizace každých 5 sekund
-    const poll = window.setInterval(() => { loadOrders(); loadDrivers(); }, 5000);
+    const loadDrivers = async () => {
+      if (loadingDrivers) return;
+      loadingDrivers = true;
+      const { data: roles, error: rolesError } = await supabase
+        .from("user_roles").select("user_id").eq("role", "driver");
+      if (rolesError) {
+        loadingDrivers = false;
+        console.error("Načtení řidičů selhalo", rolesError);
+        return;
+      }
+      let ids = (roles ?? []).map((r: any) => r.user_id);
+      if (user?.id !== ALLOWED_DISPATCHER_ID) ids = ids.filter((id: string) => id !== HIDDEN_DRIVER_ID);
+      if (!ids.length) {
+        loadingDrivers = false;
+        if (!disposed) setDrivers([]);
+        return;
+      }
+      const [profilesResult, locationsResult, vehiclesResult] = await Promise.all([
+        supabase.from("profiles").select("id,full_name,call_sign").in("id", ids),
+        supabase.from("driver_locations").select("driver_id,online,busy,vehicle_id").in("driver_id", ids),
+        supabase.from("vehicles").select("id,car_type,plate"),
+      ]);
+      loadingDrivers = false;
+      const queryError = profilesResult.error ?? locationsResult.error ?? vehiclesResult.error;
+      if (disposed || queryError) {
+        if (queryError) console.error("Načtení řidičů selhalo", queryError);
+        return;
+      }
+      const vehMap: Record<string, string> = {};
+      (vehiclesResult.data ?? []).forEach((v: any) => { vehMap[v.id] = v.car_type || v.plate || ""; });
+      const locMap: Record<string, { online: boolean; busy: boolean; vehicle_id: string | null }> = {};
+      (locationsResult.data ?? []).forEach((l: any) => {
+        locMap[l.driver_id] = { online: l.online, busy: !!l.busy, vehicle_id: l.vehicle_id };
+      });
+      setDrivers((profilesResult.data ?? []).map((p: any) => ({
+        id: p.id,
+        full_name: p.full_name,
+        call_sign: p.call_sign,
+        online: !!locMap[p.id]?.online,
+        busy: !!locMap[p.id]?.busy,
+        car_type: locMap[p.id]?.vehicle_id ? (vehMap[locMap[p.id]?.vehicle_id ?? ""] || "") : "",
+      })).sort((a, b) =>
+        (a.call_sign || "").localeCompare(b.call_sign || "", "cs") ||
+        (a.full_name || "").localeCompare(b.full_name || "", "cs") ||
+        a.id.localeCompare(b.id)
+      ));
+    };
+
+    const refresh = () => {
+      if (document.visibilityState !== "visible") return;
+      void loadOrders();
+      void loadDrivers();
+    };
+    refresh();
+
+    // Realtime zůstává hlavní; pojistná obnova neběží při skryté aplikaci.
+    const poll = window.setInterval(refresh, 15_000);
+    document.addEventListener("visibilitychange", refresh);
 
     const ch = supabase.channel("dispatch_rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => loadOrders())
       .on("postgres_changes", { event: "*", schema: "public", table: "driver_locations" }, () => loadDrivers())
       .subscribe();
-    return () => { window.clearInterval(poll); supabase.removeChannel(ch); };
-  }, []);
+    return () => {
+      disposed = true;
+      window.clearInterval(poll);
+      document.removeEventListener("visibilitychange", refresh);
+      supabase.removeChannel(ch);
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!showArchive) return;
+    let disposed = false;
+    setArchiveLoading(true);
+    supabase
+      .from("orders")
+      .select("*")
+      .in("status", ["completed", "cancelled"])
+      .order("created_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (disposed) return;
+        setArchiveLoading(false);
+        if (error) {
+          toast.error("Archiv se nepodařilo načíst");
+          return;
+        }
+        setArchivedOrders((data ?? []) as Order[]);
+      });
+    return () => { disposed = true; };
+  }, [showArchive]);
 
   // Upozornění: hodinu před plánovaným časem zakázky, která ještě není uvolněná.
   const notifiedRef = useRef<Set<string>>(new Set());
@@ -711,11 +782,11 @@ function DispatcherPage() {
       {showArchive && (
         <div className="fixed inset-0 z-[1800] bg-black flex flex-col">
           <div className="border-b border-primary/40 p-3 flex items-center justify-between gap-2">
-            <h2 className="font-display text-primary glow-text">▸ ARCHIV JÍZD ({orders.filter(o => o.status === "completed" || o.status === "cancelled").length})</h2>
+            <h2 className="font-display text-primary glow-text">▸ ARCHIV JÍZD ({archivedOrders.length})</h2>
             <div className="flex items-center gap-2">
               <button
                 onClick={async () => {
-                  const archived = orders.filter(o => o.status === "completed" || o.status === "cancelled");
+                  const archived = archivedOrders;
                   if (archived.length === 0) { toast.message("Archiv je prázdný"); return; }
                   if (!confirm(`Opravdu vymazat ${archived.length} jízd z archivu? Tuto akci nelze vrátit.`)) return;
                   const ids = archived.map(o => o.id);
@@ -729,7 +800,7 @@ function DispatcherPage() {
                     }
                     deleted += chunk.length;
                   }
-                  setOrders(prev => prev.filter(o => !ids.includes(o.id)));
+                  setArchivedOrders([]);
                   toast.success(`▸ ARCHIV VYMAZÁN (${deleted})`);
                 }}
 
@@ -744,9 +815,11 @@ function DispatcherPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {orders.filter(o => o.status === "completed" || o.status === "cancelled").length === 0 ? (
+            {archiveLoading ? (
+              <div className="p-6 text-center text-muted-foreground text-xs">Načítám archiv...</div>
+            ) : archivedOrders.length === 0 ? (
               <div className="p-6 text-center text-muted-foreground text-xs">Archiv je prázdný.</div>
-            ) : orders.filter(o => o.status === "completed" || o.status === "cancelled").map((o) => (
+            ) : archivedOrders.map((o) => (
               <div key={o.id} onClick={() => setArchiveOrderDetail(o)} className="border-b border-primary/20 p-3 text-sm cursor-pointer hover:bg-primary/5">
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
