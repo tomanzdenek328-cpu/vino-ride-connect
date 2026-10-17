@@ -1,6 +1,11 @@
 # Roadmap
 
-1. [ ] Zjistit, jakou chybu uživatel vidí (domovská stránka a přihlášení v náhledu fungují bez chyby — zeptat uživatele, kde přesně se chyba ukazuje).
-2. [ ] Odstranit zpoždění nových zakázek v nativní aplikaci (dispečer i řidič) — přidat realtime odběr (Supabase Realtime) na tabulku orders místo čekání na 15s interval; ponechat polling jako zálohu.
-3. [ ] Omezit zamrzání aplikace — dál zkontrolovat souběhy načítání a realtime/interval duplicity v driver i dispatcher view.
-4. [ ] Umělá inteligence — zodpovědět uživatele (ano, jde přidat) a zjistit, k čemu by měla sloužit (chat, vyhodnocování, rozpoznávání?).
+1. [x] Zpoždění nových zakázek — dispečink poll 15s→5s, řidič: guard proti souběhům + okamžité obnovení při návratu do popředí, jízdy/výběry 5s→15s. (Čeká publikace do APK.)
+2. [ ] Chyba v nativní APK — publikovaný web i náhled běží bez chyby; čekám na screenshot chyby od uživatele.
+3. [ ] Umělá inteligence (potvrzeno uživatelem):
+   - [ ] Hlasové zadávání zakázek (dikce → rozparsání adres/času do formuláře)
+   - [ ] Překladový pomocník řidič ↔ zákazník (vícejazyčný)
+   - [ ] Pomoc dispečerovi (nápověda, souhrny)
+   - [ ] Návrh vhodného kolegy-řidiče pro větší skupiny podle polohy a typu auta
+   - Pořadí budování nechám na uživateli (otázka položena).
+
