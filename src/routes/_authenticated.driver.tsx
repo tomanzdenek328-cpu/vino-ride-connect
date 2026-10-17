@@ -272,11 +272,20 @@ function DriverPage() {
 
   useEffect(() => {
     if (!user) return;
+    let inFlight = false;
     const load = async () => {
-      const { data } = await supabase.from("orders")
-        .select("*")
-        .or(`assigned_driver_id.eq.${user.id},status.eq.pending,assigned_driver_ids.cs.{${user.id}}`);
-      setOrders((data ?? []) as Order[]);
+      if (inFlight) return; // ochrana proti souběžnému načítání → žádné zamrzání
+      inFlight = true;
+      try {
+        const { data } = await supabase.from("orders")
+          .select("*")
+          .or(`assigned_driver_id.eq.${user.id},status.eq.pending,assigned_driver_ids.cs.{${user.id}}`);
+        if (data) setOrders(data as Order[]);
+      } catch (e) {
+        console.error("Načtení zakázek selhalo", e);
+      } finally {
+        inFlight = false;
+      }
     };
     load();
     // Inicializace nativních notifikací HNED (nezávisle na online stavu)
@@ -314,7 +323,18 @@ function DriverPage() {
       .subscribe();
     // Automatická aktualizace každých 5 sekund
     const poll = window.setInterval(() => { load(); }, 5000);
-    return () => { window.clearInterval(poll); supabase.removeChannel(ch); };
+    // Po návratu aplikace do popředí okamžitě stáhnout čerstvá data
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      window.clearInterval(poll);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+      supabase.removeChannel(ch);
+    };
   }, [user]);
 
 
@@ -339,7 +359,7 @@ function DriverPage() {
   useEffect(() => {
     loadRides(); loadPayouts();
     // Automatická aktualizace každých 5 sekund
-    const poll = window.setInterval(() => { loadRides(); loadPayouts(); }, 5000);
+    const poll = window.setInterval(() => { loadRides(); loadPayouts(); }, 15000);
     return () => window.clearInterval(poll);
   }, [user]);
 
