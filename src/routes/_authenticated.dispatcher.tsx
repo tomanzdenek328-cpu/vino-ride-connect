@@ -340,7 +340,7 @@ function DispatcherPage() {
     refresh();
 
     // Realtime zůstává hlavní; pojistná obnova neběží při skryté aplikaci.
-    const poll = window.setInterval(refresh, 15_000);
+    const poll = window.setInterval(refresh, 5_000);
     document.addEventListener("visibilitychange", refresh);
 
     const ch = supabase.channel("dispatch_rt")
