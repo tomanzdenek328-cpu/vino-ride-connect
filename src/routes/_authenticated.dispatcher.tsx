@@ -145,6 +145,7 @@ function DispatcherPage() {
   const [showForm, setShowForm] = useState(false);
   const [showDriverForm, setShowDriverForm] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [showTranslate, setShowTranslate] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
   const [showVehicles, setShowVehicles] = useState(false);
   const [showTariffs, setShowTariffs] = useState(false);
@@ -530,6 +531,9 @@ function DispatcherPage() {
             </button>
             <button onClick={() => setShowMap(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
               <MapIcon className="w-4 h-4" /> MAPA
+            </button>
+            <button onClick={() => setShowTranslate(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1" title="Překladač pro komunikaci se zákazníkem">
+              <Languages className="w-4 h-4" /> PŘEKLADAČ
             </button>
             <button onClick={() => setShowArchive(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
               <Archive className="w-4 h-4" /> ARCHIV
