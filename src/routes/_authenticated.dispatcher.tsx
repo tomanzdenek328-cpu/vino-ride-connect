@@ -13,7 +13,8 @@ import { notifyNewOrder, saveDriverPushSubscription } from "@/lib/push.functions
 import { initPushNotifications, initLocalNotifications, isNative, showLocalNotification } from "@/lib/native";
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array } from "@/lib/vapid";
 import { toast } from "sonner";
-import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, MessageSquare, Mail, FileText } from "lucide-react";
+import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, MessageSquare, Mail, FileText, Languages } from "lucide-react";
+import { TranslatePanel } from "@/components/TranslatePanel";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { makeTrackingCode } from "@/lib/tracking";
 import { createVehicle, updateVehicle, deleteVehicle } from "@/lib/vehicles.functions";
@@ -145,6 +146,7 @@ function DispatcherPage() {
   const [showForm, setShowForm] = useState(false);
   const [showDriverForm, setShowDriverForm] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [showTranslate, setShowTranslate] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
   const [showVehicles, setShowVehicles] = useState(false);
   const [showTariffs, setShowTariffs] = useState(false);
@@ -531,6 +533,9 @@ function DispatcherPage() {
             <button onClick={() => setShowMap(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
               <MapIcon className="w-4 h-4" /> MAPA
             </button>
+            <button onClick={() => setShowTranslate(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1" title="Překladač pro komunikaci se zákazníkem">
+              <Languages className="w-4 h-4" /> PŘEKLADAČ
+            </button>
             <button onClick={() => setShowArchive(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
               <Archive className="w-4 h-4" /> ARCHIV
             </button>
@@ -779,6 +784,8 @@ function DispatcherPage() {
           </div>
         </div>
       )}
+
+      {showTranslate && <TranslatePanel onClose={() => setShowTranslate(false)} />}
 
       {showArchive && (
         <div className="fixed inset-0 z-[1800] bg-black flex flex-col">
