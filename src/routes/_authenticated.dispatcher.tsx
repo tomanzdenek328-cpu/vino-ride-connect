@@ -13,7 +13,8 @@ import { notifyNewOrder, saveDriverPushSubscription } from "@/lib/push.functions
 import { initPushNotifications, initLocalNotifications, isNative, showLocalNotification } from "@/lib/native";
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array } from "@/lib/vapid";
 import { toast } from "sonner";
-import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, MessageSquare, Mail, FileText } from "lucide-react";
+import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, MessageSquare, Mail, FileText, Languages } from "lucide-react";
+import { TranslatePanel } from "@/components/TranslatePanel";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { makeTrackingCode } from "@/lib/tracking";
 import { createVehicle, updateVehicle, deleteVehicle } from "@/lib/vehicles.functions";
