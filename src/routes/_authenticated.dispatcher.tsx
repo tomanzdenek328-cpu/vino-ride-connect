@@ -785,6 +785,8 @@ function DispatcherPage() {
         </div>
       )}
 
+      {showTranslate && <TranslatePanel onClose={() => setShowTranslate(false)} />}
+
       {showArchive && (
         <div className="fixed inset-0 z-[1800] bg-black flex flex-col">
           <div className="border-b border-primary/40 p-3 flex items-center justify-between gap-2">
