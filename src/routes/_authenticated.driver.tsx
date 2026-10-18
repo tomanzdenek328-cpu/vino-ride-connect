@@ -634,6 +634,11 @@ function DriverPage() {
             className="border-2 border-primary px-4 py-2 text-sm font-bold flex items-center gap-2 hover:bg-primary/10">
             <MapIcon className="w-4 h-4" /> MAPA
           </button>
+          <button onClick={() => setShowTranslate(true)}
+            className="border-2 border-primary px-4 py-2 text-sm font-bold flex items-center gap-2 hover:bg-primary/10"
+            title="Překladač pro komunikaci se zákazníkem">
+            <Languages className="w-4 h-4" /> PŘEKLADAČ
+          </button>
         </div>
         <div className="mt-1 flex justify-center items-center gap-2 flex-wrap">
           <button onClick={() => setShowRides(true)}
@@ -855,6 +860,7 @@ function DriverPage() {
       {showRides && user && (
         <RidesModal rides={rides} payouts={payouts} totals={totals} userId={user.id} currentPlate={vehicles.find((v) => v.id === vehicleId)?.plate ?? null} onAdded={loadRides} onPayoutsChanged={loadPayouts} onClose={() => setShowRides(false)} />
       )}
+      {showTranslate && <TranslatePanel onClose={() => setShowTranslate(false)} />}
 
       {user && <WalkieTalkie userId={user.id} callSign={callSign} open={walkieOpen} onClose={() => setWalkieOpen(false)} />}
       {user && (
