@@ -84,6 +84,11 @@ jobs:
           fi
           cat "$MANIFEST"
 
+          if ! grep -q "android.permission.RECORD_AUDIO" "$MANIFEST"; then
+            awk '/<manifest /{print; print "<uses-permission android:name=\"android.permission.RECORD_AUDIO\" />"; next}1' "$MANIFEST" > "$MANIFEST.tmp"
+            mv "$MANIFEST.tmp" "$MANIFEST"
+          fi
+
       - name: Apply Google Services (Firebase) Gradle plugin
         run: |
           # Přidá classpath pro google-services plugin do project-level build.gradle

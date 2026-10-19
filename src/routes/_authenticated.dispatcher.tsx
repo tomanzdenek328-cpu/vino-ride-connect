@@ -15,6 +15,11 @@ import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array } from "@/lib/vapid";
 import { toast } from "sonner";
 import { LogOut, Plus, X, UserPlus, Map as MapIcon, Archive, Car, Trash2, MessageSquare, Mail, FileText, Languages } from "lucide-react";
 import { TranslatePanel } from "@/components/TranslatePanel";
+import { OrderDictation } from "@/components/OrderDictation";
+import { DriverSuggestions } from "@/components/DriverSuggestions";
+import { DispatcherAssistant } from "@/components/DispatcherAssistant";
+import { Button } from "@/components/ui/button";
+import { Sparkles } from "lucide-react";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { makeTrackingCode } from "@/lib/tracking";
 import { createVehicle, updateVehicle, deleteVehicle } from "@/lib/vehicles.functions";
@@ -25,6 +30,13 @@ import { estimateRide } from "@/lib/customer.functions";
 import { computeFare, isWeekend, FARE_MODE_LABELS, type FareMode, type TariffFull } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/dispatcher")({
+  head: () => ({ meta: [
+    { title: "Dispečink | Vinné Taxi" },
+    { name: "description", content: "Zakázky, řidiči a pomocník dispečera Vinné Taxi." },
+    { property: "og:title", content: "Dispečink | Vinné Taxi" },
+    { property: "og:description", content: "Zakázky, řidiči a pomocník dispečera Vinné Taxi." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: DispatcherPage,
 });
 
@@ -147,6 +159,7 @@ function DispatcherPage() {
   const [showDriverForm, setShowDriverForm] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [showTranslate, setShowTranslate] = useState(false);
+  const [showAssistant, setShowAssistant] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
   const [showVehicles, setShowVehicles] = useState(false);
   const [showTariffs, setShowTariffs] = useState(false);
@@ -539,6 +552,7 @@ function DispatcherPage() {
             <button onClick={() => setShowArchive(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
               <Archive className="w-4 h-4" /> ARCHIV
             </button>
+            <Button variant="outline" onClick={() => setShowAssistant(true)}><Sparkles /> POMOCNÍK</Button>
             <button onClick={() => setShowVehicles(true)} className="border border-primary/40 px-3 py-2 text-sm hover:border-primary flex items-center gap-1">
               <Car className="w-4 h-4" /> AUTA
             </button>
@@ -912,7 +926,8 @@ function DispatcherPage() {
         </div>
       )}
 
-      {showForm && <NewOrderModal onClose={() => setShowForm(false)} userId={user!.id} />}
+      {showAssistant && <DispatcherAssistant onClose={() => setShowAssistant(false)} />}
+      {showForm && user && <NewOrderModal onClose={() => setShowForm(false)} userId={user.id} />}
       {showDriverForm && <NewDriverModal onClose={() => setShowDriverForm(false)} onCreated={() => setDriversRefresh((value) => value + 1)} />}
       {driverDetail && <DriverDetailModal driver={driverDetail} onClose={() => setDriverDetail(null)} onChanged={() => setDriversRefresh((value) => value + 1)} />}
       {archiveOrderDetail && <ArchiveOrderDetailModal order={archiveOrderDetail} onClose={() => setArchiveOrderDetail(null)} />}
@@ -1033,6 +1048,16 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
           <h3 className="text-primary font-display text-lg">▸ NOVÁ ZAKÁZKA</h3>
           <button type="button" onClick={onClose} className="text-muted-foreground hover:text-primary"><X className="w-5 h-5" /></button>
         </div>
+        <OrderDictation onApply={(draft) => {
+          if (draft.pickup != null) { setPickup(draft.pickup); setPickupCoords({}); }
+          if (draft.destination != null) { setDestination(draft.destination); setDestCoords({}); }
+          if (draft.passengers != null) setPassengers(draft.passengers);
+          if (draft.vehicleType != null) setVehicleType(draft.vehicleType);
+          if (draft.phone != null) setCustomerPhone(draft.phone);
+          if (draft.notes != null) setNotes(draft.notes);
+          setWhen(draft.scheduledTime ? "later" : "now");
+          setScheduledTime(draft.scheduledTime ?? "");
+        }} />
         <AddressAutocomplete
           label="ODKUD (adresa vyzvednutí) *"
           value={pickup}
@@ -1094,6 +1119,7 @@ function NewOrderModal({ onClose, userId }: { onClose: () => void; userId: strin
           </div>
           <div className="text-[10px] text-muted-foreground mt-1">Max. 30 osob</div>
         </div>
+        <DriverSuggestions key={`${pickupCoords.lat}-${pickupCoords.lng}-${passengers}-${vehicleType}`} pickup={pickupCoords.lat != null && pickupCoords.lng != null ? {lat:pickupCoords.lat,lng:pickupCoords.lng} : null} passengers={passengers} vehicleType={vehicleType} />
 
         <div className="border border-primary/40 p-2 bg-primary/5">
           <div className="text-[10px] text-muted-foreground mb-1">CENA (stejný výpočet jako v aplikaci pro zákazníka)</div>
