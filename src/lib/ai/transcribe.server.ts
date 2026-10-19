@@ -27,7 +27,7 @@ export async function transcribe(
   if (options.language) form.append("language", options.language);
   return fetch(`${config.baseURL}/v1/audio/transcriptions`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${config.apiKey}` },
+    headers: { Authorization: `Bearer ${config.apiKey}`, 'X-Lovable-AIG-SDK': 'fetch' },
     body: form,
     ...(options.signal ? { signal: options.signal } : {}),
   });

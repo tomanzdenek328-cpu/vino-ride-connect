@@ -21,6 +21,7 @@ import { Route as AuthenticatedDispatcherRouteImport } from './routes/_authentic
 import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated.driver'
 import { Route as AuthenticatedTaxametrRouteImport } from './routes/_authenticated.taxametr'
 import { Route as JizdaCodeRouteImport } from './routes/jizda.$code'
+import { Route as ApiPublicDictationRouteImport } from './routes/api/public/dictation'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -81,6 +82,11 @@ const JizdaCodeRoute = JizdaCodeRouteImport.update({
   path: '/jizda/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDictationRoute = ApiPublicDictationRouteImport.update({
+  id: '/api/public/dictation',
+  path: '/api/public/dictation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/driver': typeof AuthenticatedDriverRoute
   '/taxametr': typeof AuthenticatedTaxametrRoute
   '/jizda/$code': typeof JizdaCodeRoute
+  '/api/public/dictation': typeof ApiPublicDictationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByTo {
   '/driver': typeof AuthenticatedDriverRoute
   '/taxametr': typeof AuthenticatedTaxametrRoute
   '/jizda/$code': typeof JizdaCodeRoute
+  '/api/public/dictation': typeof ApiPublicDictationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -122,6 +130,7 @@ export interface FileRoutesById {
   '/_authenticated/driver': typeof AuthenticatedDriverRoute
   '/_authenticated/taxametr': typeof AuthenticatedTaxametrRoute
   '/jizda/$code': typeof JizdaCodeRoute
+  '/api/public/dictation': typeof ApiPublicDictationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/driver'
     | '/taxametr'
     | '/jizda/$code'
+    | '/api/public/dictation'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/driver'
     | '/taxametr'
     | '/jizda/$code'
+    | '/api/public/dictation'
   id:
     | '__root__'
     | '/'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/_authenticated/driver'
     | '/_authenticated/taxametr'
     | '/jizda/$code'
+    | '/api/public/dictation'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -176,6 +188,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   SledovatRoute: typeof SledovatRoute
   JizdaCodeRoute: typeof JizdaCodeRoute
+  ApiPublicDictationRoute: typeof ApiPublicDictationRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -264,6 +277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JizdaCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/dictation': {
+      id: '/api/public/dictation'
+      path: '/api/public/dictation'
+      fullPath: '/api/public/dictation'
+      preLoaderRoute: typeof ApiPublicDictationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -293,6 +313,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   SledovatRoute: SledovatRoute,
   JizdaCodeRoute: JizdaCodeRoute,
+  ApiPublicDictationRoute: ApiPublicDictationRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
