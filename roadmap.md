@@ -5,7 +5,7 @@
 3. [ ] Chyba v nativní APK — publikovaný web i náhled běží bez chyby; čekám na screenshot chyby od uživatele.
 4. [ ] Umělá inteligence (uživatel chce všechny funkce postupně):
    - [x] Překladač řidič ↔ zákazník — `src/components/TranslatePanel.tsx`, `src/lib/translate.functions.ts`, `src/lib/ai/translate.server.ts` (Lovable AI, model openai/gpt-6-astra). Tlačítko PŘEKLADAČ v dispečinku i u řidiče; ověřeno v náhledu.
-   - [ ] Hlasové zadávání zakázek (dikce → rozparsání adres/času do formuláře)
+   - [ ] Hlasové zadávání zakázek (dikce → rozparsání adres/času do formuláře) — pokračování zadání, včetně doporučení řidičů a pomocníka.
    - [ ] Návrh vhodného kolegy-řidiče pro větší skupiny podle polohy a typu auta
    - [ ] Pomoc dispečerovi (nápověda, souhrny)
 
