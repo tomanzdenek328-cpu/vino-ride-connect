@@ -36,6 +36,14 @@ async function triggerSOS(driverId: string, vehicleId: string | null) {
 
 
 export const Route = createFileRoute("/_authenticated/driver")({
+  head: () => ({ meta: [
+    { title: "Řidič | Vinné Taxi" },
+    { name: "description", content: "Zakázky a jízdy řidiče Vinné Taxi." },
+    { property: "og:title", content: "Řidič | Vinné Taxi" },
+    { property: "og:description", content: "Zakázky a jízdy řidiče Vinné Taxi." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: DriverPage,
 });
 

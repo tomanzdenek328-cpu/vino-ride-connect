@@ -4,6 +4,14 @@ import { useAuth } from "@/hooks/use-auth";
 import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/")({
+  head: () => ({ meta: [
+    { title: "Vinné Taxi | Přístup do aplikace" },
+    { name: "description", content: "Přihlášení do aplikace Vinné Taxi pro řidiče a dispečink." },
+    { property: "og:title", content: "Vinné Taxi | Přístup do aplikace" },
+    { property: "og:description", content: "Přihlášení do aplikace Vinné Taxi pro řidiče a dispečink." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: Index,
 });
 

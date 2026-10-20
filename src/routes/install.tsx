@@ -13,6 +13,10 @@ export const Route = createFileRoute("/install")({
   head: () => ({
     meta: [
       { title: "Nainstalovat Vinné Taxi" },
+      { property: "og:title", content: "Nainstalovat Vinné Taxi" },
+      { property: "og:description", content: "Aplikace Vinné Taxi pro Android a iPhone." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       {
         name: "description",
         content:

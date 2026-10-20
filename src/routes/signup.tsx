@@ -4,6 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/signup")({
+  head: () => ({ meta: [
+    { title: "Registrace | Vinné Taxi" },
+    { name: "description", content: "Vytvoření účtu v aplikaci Vinné Taxi." },
+    { property: "og:title", content: "Registrace | Vinné Taxi" },
+    { property: "og:description", content: "Vytvoření účtu v aplikaci Vinné Taxi." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: SignupPage,
 });
 

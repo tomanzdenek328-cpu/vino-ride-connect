@@ -15,7 +15,7 @@ export const recommendDrivers = createServerFn({method:'POST'}).middleware([requ
   .handler(async ({data,context}) => {
     const {assertDispatcher,readDispatchContext} = await import('./dispatch/context.server');
     await assertDispatcher(context.supabase,context.userId);
-    const state = await readDispatchContext(context.supabase);
+    const state = await readDispatchContext(context.supabase, context.userId);
     const ranked = rankDrivers(state.candidates,data.pickup,data.vehicleType);
     let seats = 0;
     const selected = ranked.filter(c => {if (seats >= data.passengers) return false; seats += c.capacity; return true;});
@@ -26,7 +26,7 @@ export const askDispatcherAssistant = createServerFn({method:'POST'}).middleware
   .handler(async ({data,context}) => {
     const {assertDispatcher,readDispatchContext} = await import('./dispatch/context.server');
     await assertDispatcher(context.supabase,context.userId);
-    const state = await readDispatchContext(context.supabase);
+    const state = await readDispatchContext(context.supabase, context.userId);
     const {assistDispatcher} = await import('./ai/dispatch.server');
     return {answer:await assistDispatcher(data.question,state)};
   });

@@ -5,6 +5,14 @@ import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/login")({
+  head: () => ({ meta: [
+    { title: "Přihlášení | Vinné Taxi" },
+    { name: "description", content: "Přihlaste se ke svému účtu řidiče nebo dispečera Vinné Taxi." },
+    { property: "og:title", content: "Přihlášení | Vinné Taxi" },
+    { property: "og:description", content: "Přihlaste se ke svému účtu řidiče nebo dispečera Vinné Taxi." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: LoginPage,
 });
 
