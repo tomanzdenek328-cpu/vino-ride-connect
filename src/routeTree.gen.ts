@@ -24,6 +24,8 @@ import { Route as JizdaCodeRouteImport } from './routes/jizda.$code'
 import { Route as ApiPublicDictationRouteImport } from './routes/api/public/dictation'
 import { Route as ApiPublicTranslatorSpeechRouteImport } from './routes/api/public/translator-speech'
 import { Route as ApiPublicTranslatorTranscribeRouteImport } from './routes/api/public/translator-transcribe'
+import { Route as ApiPublicPartnerInboxRouteImport } from './routes/api/public/partner/inbox'
+import { Route as ApiPublicPartnerStatusRouteImport } from './routes/api/public/partner/status'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -101,6 +103,16 @@ const ApiPublicTranslatorTranscribeRoute =
     path: '/api/public/translator-transcribe',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPartnerInboxRoute = ApiPublicPartnerInboxRouteImport.update({
+  id: '/api/public/partner/inbox',
+  path: '/api/public/partner/inbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPartnerStatusRoute = ApiPublicPartnerStatusRouteImport.update({
+  id: '/api/public/partner/status',
+  path: '/api/public/partner/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -117,6 +129,8 @@ export interface FileRoutesByFullPath {
   '/api/public/dictation': typeof ApiPublicDictationRoute
   '/api/public/translator-speech': typeof ApiPublicTranslatorSpeechRoute
   '/api/public/translator-transcribe': typeof ApiPublicTranslatorTranscribeRoute
+  '/api/public/partner/inbox': typeof ApiPublicPartnerInboxRoute
+  '/api/public/partner/status': typeof ApiPublicPartnerStatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -133,6 +147,8 @@ export interface FileRoutesByTo {
   '/api/public/dictation': typeof ApiPublicDictationRoute
   '/api/public/translator-speech': typeof ApiPublicTranslatorSpeechRoute
   '/api/public/translator-transcribe': typeof ApiPublicTranslatorTranscribeRoute
+  '/api/public/partner/inbox': typeof ApiPublicPartnerInboxRoute
+  '/api/public/partner/status': typeof ApiPublicPartnerStatusRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -151,6 +167,8 @@ export interface FileRoutesById {
   '/api/public/dictation': typeof ApiPublicDictationRoute
   '/api/public/translator-speech': typeof ApiPublicTranslatorSpeechRoute
   '/api/public/translator-transcribe': typeof ApiPublicTranslatorTranscribeRoute
+  '/api/public/partner/inbox': typeof ApiPublicPartnerInboxRoute
+  '/api/public/partner/status': typeof ApiPublicPartnerStatusRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -169,6 +187,8 @@ export interface FileRouteTypes {
     | '/api/public/dictation'
     | '/api/public/translator-speech'
     | '/api/public/translator-transcribe'
+    | '/api/public/partner/inbox'
+    | '/api/public/partner/status'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -185,6 +205,8 @@ export interface FileRouteTypes {
     | '/api/public/dictation'
     | '/api/public/translator-speech'
     | '/api/public/translator-transcribe'
+    | '/api/public/partner/inbox'
+    | '/api/public/partner/status'
   id:
     | '__root__'
     | '/'
@@ -202,6 +224,8 @@ export interface FileRouteTypes {
     | '/api/public/dictation'
     | '/api/public/translator-speech'
     | '/api/public/translator-transcribe'
+    | '/api/public/partner/inbox'
+    | '/api/public/partner/status'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -217,6 +241,8 @@ export interface RootRouteChildren {
   ApiPublicDictationRoute: typeof ApiPublicDictationRoute
   ApiPublicTranslatorSpeechRoute: typeof ApiPublicTranslatorSpeechRoute
   ApiPublicTranslatorTranscribeRoute: typeof ApiPublicTranslatorTranscribeRoute
+  ApiPublicPartnerInboxRoute: typeof ApiPublicPartnerInboxRoute
+  ApiPublicPartnerStatusRoute: typeof ApiPublicPartnerStatusRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -326,6 +352,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTranslatorTranscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/partner/inbox': {
+      id: '/api/public/partner/inbox'
+      path: '/api/public/partner/inbox'
+      fullPath: '/api/public/partner/inbox'
+      preLoaderRoute: typeof ApiPublicPartnerInboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/partner/status': {
+      id: '/api/public/partner/status'
+      path: '/api/public/partner/status'
+      fullPath: '/api/public/partner/status'
+      preLoaderRoute: typeof ApiPublicPartnerStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -358,6 +398,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicDictationRoute: ApiPublicDictationRoute,
   ApiPublicTranslatorSpeechRoute: ApiPublicTranslatorSpeechRoute,
   ApiPublicTranslatorTranscribeRoute: ApiPublicTranslatorTranscribeRoute,
+  ApiPublicPartnerInboxRoute: ApiPublicPartnerInboxRoute,
+  ApiPublicPartnerStatusRoute: ApiPublicPartnerStatusRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -176,6 +176,11 @@ export type Database = {
           estimated_price: number | null
           id: string
           notes: string | null
+          partner_direction: string | null
+          partner_name: string | null
+          partner_remote_id: string | null
+          partner_remote_status: string | null
+          partner_state: string | null
           passengers: number
           pickup_address: string
           pickup_lat: number | null
@@ -207,6 +212,11 @@ export type Database = {
           estimated_price?: number | null
           id?: string
           notes?: string | null
+          partner_direction?: string | null
+          partner_name?: string | null
+          partner_remote_id?: string | null
+          partner_remote_status?: string | null
+          partner_state?: string | null
           passengers?: number
           pickup_address: string
           pickup_lat?: number | null
@@ -238,6 +248,11 @@ export type Database = {
           estimated_price?: number | null
           id?: string
           notes?: string | null
+          partner_direction?: string | null
+          partner_name?: string | null
+          partner_remote_id?: string | null
+          partner_remote_status?: string | null
+          partner_state?: string | null
           passengers?: number
           pickup_address?: string
           pickup_lat?: number | null

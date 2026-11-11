@@ -27,6 +27,7 @@ import logoVinneTaxi from "@/assets/logo-vinne-taxi-transparent.png";
 import limoSide from "@/assets/limo-side-black.png";
 import { SOSAlerts } from "@/components/SOSAlerts";
 import { estimateRide } from "@/lib/customer.functions";
+import { sendToPartner, recallFromPartner, respondPartnerOffer, syncPartnerOrders } from "@/lib/partner.functions";
 import { computeFare, isWeekend, FARE_MODE_LABELS, type FareMode, type TariffFull } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/dispatcher")({
@@ -64,6 +65,10 @@ interface Order {
   driver_arrived_at?: string | null;
   cancelled_by?: string | null;
   cancelled_at?: string | null;
+  partner_direction?: string | null;
+  partner_state?: string | null;
+  partner_remote_status?: string | null;
+  partner_name?: string | null;
 }
 
 /** Mapování typu auta v dispečinku na tarif v ceníku. */
@@ -442,6 +447,18 @@ function DispatcherPage() {
   }, [orders]);
 
 
+  const sendPartnerFn = useServerFn(sendToPartner);
+  const recallPartnerFn = useServerFn(recallFromPartner);
+  const respondPartnerFn = useServerFn(respondPartnerOffer);
+  const syncPartnerFn = useServerFn(syncPartnerOrders);
+  const hasOutgoing = orders.some((o) => o.partner_direction === "out" && (o.partner_state === "pending" || o.partner_state === "accepted") && o.status !== "completed" && o.status !== "cancelled");
+  useEffect(() => {
+    if (!hasOutgoing) return;
+    const run = () => { syncPartnerFn().catch(() => {}); };
+    run();
+    const id = window.setInterval(run, 20_000);
+    return () => window.clearInterval(id);
+  }, [hasOutgoing]);
 
   if (loading) return null;
   if (role && role !== "dispatcher") return <Navigate to="/driver" />;
@@ -465,6 +482,11 @@ function DispatcherPage() {
       cancelled_by: user?.id ?? null,
       cancelled_at: new Date().toISOString(),
     } as any).eq("id", orderId);
+  };
+
+  const partnerAction = async (fn: () => Promise<unknown>, ok: string) => {
+    try { await fn(); toast.success(ok); }
+    catch (e: any) { toast.error(e?.message || "Nepodařilo se spojit s partnerem."); }
   };
 
   const releaseOrder = async (orderId: string) => {
@@ -719,6 +741,35 @@ function DispatcherPage() {
                   </div>
                 </div>
 
+                {o.partner_direction === "in" && (
+                  <div className="mt-2 text-[11px] font-bold text-cyan-300">
+                    🤝 OD PARTNERA: {o.partner_name || "Partner"}
+                    {o.partner_state === "pending" && " · ČEKÁ NA PŘIJETÍ"}
+                  </div>
+                )}
+                {o.partner_direction === "in" && o.partner_state === "pending" && (
+                  <div className="mt-2 flex gap-2">
+                    <button onClick={() => partnerAction(() => respondPartnerFn({ data: { orderId: o.id, accept: true } }), "▸ ZAKÁZKA OD PARTNERA PŘIJATA")}
+                      className="flex-1 border border-primary text-primary py-1.5 text-[11px] font-bold hover:bg-primary hover:text-primary-foreground">✔ PŘIJMOUT</button>
+                    <button onClick={() => partnerAction(() => respondPartnerFn({ data: { orderId: o.id, accept: false } }), "▸ VRÁCENO PARTNEROVI")}
+                      className="flex-1 border border-destructive text-destructive py-1.5 text-[11px] font-bold hover:bg-destructive hover:text-white">✖ ODMÍTNOUT</button>
+                  </div>
+                )}
+                {o.partner_direction === "out" && (
+                  <div className="mt-2 text-[11px] font-bold text-cyan-300">
+                    🤝 U PARTNERA: {o.partner_state === "pending" ? "ČEKÁ NA PŘIJETÍ"
+                      : o.partner_state === "rejected" ? "ODMÍTNUTO – ZAKÁZKA JE ZPĚT U VÁS"
+                      : `PŘIJATO · ${STATUS_LABEL[o.partner_remote_status ?? ""] ?? o.partner_remote_status ?? ""}`}
+                  </div>
+                )}
+                {o.partner_direction !== "in" && (o.partner_direction !== "out" || o.partner_state === "rejected") && (
+                  <button onClick={() => partnerAction(() => sendPartnerFn({ data: { orderId: o.id } }), "▸ ODESLÁNO PARTNEROVI")}
+                    className="mt-2 w-full border border-cyan-400 text-cyan-300 py-1.5 text-[11px] font-bold hover:bg-cyan-400/20">🤝 PŘEPOSLAT PARTNEROVI</button>
+                )}
+                {o.partner_direction === "out" && (o.partner_state === "pending" || o.partner_state === "accepted") && (
+                  <button onClick={() => partnerAction(() => recallPartnerFn({ data: { orderId: o.id } }), "▸ ZAKÁZKA VZATA ZPĚT")}
+                    className="mt-2 w-full border border-cyan-400 text-cyan-300 py-1.5 text-[11px] font-bold hover:bg-cyan-400/20">↩ VZÍT ZPĚT OD PARTNERA</button>
+                )}
                 {needsApproval && (
                   <div className="mt-2 flex gap-2">
                     <button

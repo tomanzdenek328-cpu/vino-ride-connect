@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794429505806,
+      "tag": "0000_orders_partner_columns",
+      "breakpoints": true
+    }
+  ]
+}
