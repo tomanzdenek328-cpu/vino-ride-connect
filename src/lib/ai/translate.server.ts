@@ -25,7 +25,9 @@ export async function translateWithAi(opts: {
   if (!apiKey) throw new Error("AI není nakonfigurováno (chybí klíč).");
 
   const from = opts.sourceLang && opts.sourceLang.length > 0 ? opts.sourceLang : "češtiny";
-  const instructions = `${SYSTEM_PROMPT} Překládej z jazyka "${from}" do jazyka "${opts.targetLang}".`;
+  const instructions = from === 'auto'
+    ? `${SYSTEM_PROMPT} Automaticky rozpoznej jazyk zákazníkova textu a přelož jej vždy do češtiny. Pokud již je česky, ponech jej česky.`
+    : `${SYSTEM_PROMPT} Překládej z jazyka "${from}" do jazyka "${opts.targetLang}".`;
 
   const runIdFetch = createLovableAiGatewayRunIdFetch();
   const provider = createOpenAI({

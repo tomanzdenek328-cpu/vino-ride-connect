@@ -6,6 +6,8 @@ import { translateText } from "@/lib/translate.functions";
 import { Button } from "@/components/ui/button";
 import { recordWav } from "@/lib/dispatch/record-wav";
 import { playTranslation, transcribeTranslation } from "@/lib/translator-voice";
+import { useAuth } from "@/hooks/use-auth";
+import { translationLanguages, translatorAudioKey, type TranslatorVoice } from "@/lib/translator-settings";
 
 const LANGUAGES: { code: string; label: string }[] = [
   { code: "angličtina", label: "🇬🇧 Angličtina" },
@@ -25,6 +27,8 @@ const LANGUAGES: { code: string; label: string }[] = [
 
 export function TranslatePanel({ onClose }: { onClose: () => void }) {
   const translate = useServerFn(translateText);
+  const { user } = useAuth();
+  const [voice, setVoice] = useState<TranslatorVoice | null>(null);
   const [lang, setLang] = useState("angličtina");
   const [direction, setDirection] = useState<"out" | "in">("out");
   const [text, setText] = useState("");
@@ -36,8 +40,24 @@ export function TranslatePanel({ onClose }: { onClose: () => void }) {
   const [voiceError, setVoiceError] = useState("");
   const recorder = useRef<Awaited<ReturnType<typeof recordWav>> | null>(null);
   const voiceRequest = useRef<AbortController | null>(null);
-  const audioCache = useRef<{ text: string; chunks: Float32Array[] } | null>(null);
+  const audioCache = useRef<{ key: string; chunks: Float32Array[] } | null>(null);
   const disposed = useRef(false);
+  useEffect(() => {
+    setVoice(null);
+    if (!user) return;
+    try {
+      const saved = localStorage.getItem(`translator-voice:${user.id}`);
+      if (saved === 'male' || saved === 'female') setVoice(saved);
+    } catch { /* Storage may be unavailable; selection still works. */ }
+  }, [user?.id]);
+
+  const chooseVoice = (value: TranslatorVoice) => {
+    setVoice(value);
+    audioCache.current = null;
+    if (user) {
+      try { localStorage.setItem(`translator-voice:${user.id}`, value); } catch { /* Optional persistence. */ }
+    }
+  };
   useEffect(() => {
     disposed.current = false;
     return () => {
@@ -71,14 +91,16 @@ export function TranslatePanel({ onClose }: { onClose: () => void }) {
 
   const speak = async () => {
     if (playing) { voiceRequest.current?.abort(); return; }
+    if (!voice) return;
     setPlaying(true); setVoiceError("");
     const controller = new AbortController(); voiceRequest.current = controller;
     let context: AudioContext | undefined;
     try {
       context = new AudioContext({ sampleRate: 24000 });
       await context.resume();
-      const chunks = await playTranslation(result, context, controller.signal, audioCache.current?.text === result ? audioCache.current.chunks : undefined);
-      audioCache.current = { text: result, chunks };
+      const key = translatorAudioKey(result, voice);
+      const chunks = await playTranslation(result, context, controller.signal, voice, audioCache.current?.key === key ? audioCache.current.chunks : undefined);
+      audioCache.current = { key, chunks };
     } catch (error) {
       if (!disposed.current && !controller.signal.aborted) setVoiceError(error instanceof Error ? error.message : 'Přehrání se nezdařilo.');
     } finally {
@@ -97,8 +119,7 @@ export function TranslatePanel({ onClose }: { onClose: () => void }) {
     setLoading(true);
     setResult("");
     try {
-      const sourceLang = direction === "out" ? "češtině" : lang;
-      const targetLang = direction === "out" ? lang : "češtině";
+      const { sourceLang, targetLang } = translationLanguages(direction, lang);
       const res = await translate({ data: { text, targetLang, sourceLang } });
       setResult(res.translated);
     } catch (e) {
@@ -144,10 +165,12 @@ export function TranslatePanel({ onClose }: { onClose: () => void }) {
           </Button>
         </div>
 
-        <label className="block text-[11px] text-muted-foreground mb-1">
-          {direction === "out" ? "Jazyk pro zákazníka" : "Jazyk, ve kterém zákazník píše/mluví"}
+        {direction === "out" ? <>
+        <label htmlFor="translator-language" className="block text-[11px] text-muted-foreground mb-1">
+          Jazyk pro zákazníka
         </label>
         <select
+          id="translator-language"
           value={lang}
           disabled={loading || recording || transcribing || playing}
           onChange={(e) => { setLang(e.target.value); resetResult(); }}
@@ -159,6 +182,17 @@ export function TranslatePanel({ onClose }: { onClose: () => void }) {
             </option>
           ))}
         </select>
+        </> : <div className="mb-3 text-sm text-muted-foreground">Automaticky → Čeština</div>}
+
+        <label className="block text-[11px] text-muted-foreground mb-1">Můj hlas</label>
+        <div className="grid grid-cols-2 gap-2 mb-3" role="group" aria-label="Můj hlas">
+          <Button variant={voice === 'male' ? 'default' : 'outline'} aria-pressed={voice === 'male'} disabled={playing || !user} onClick={() => chooseVoice('male')}>
+            <Volume2 /> Mužský
+          </Button>
+          <Button variant={voice === 'female' ? 'default' : 'outline'} aria-pressed={voice === 'female'} disabled={playing || !user} onClick={() => chooseVoice('female')}>
+            <Volume2 /> Ženský
+          </Button>
+        </div>
 
         <textarea
           aria-label="Text k překladu"
@@ -193,7 +227,7 @@ export function TranslatePanel({ onClose }: { onClose: () => void }) {
             </div>
             <div aria-label="Přeložený text" className="border border-primary/60 bg-muted/30 px-3 py-2 text-sm whitespace-pre-wrap break-words">{result}</div>
             <div className="flex flex-wrap gap-2 mt-2">
-            <Button variant="outline" size="sm" onClick={speak}>
+            <Button variant="outline" size="sm" onClick={speak} disabled={!voice}>
               {playing ? <Square /> : <Volume2 />} {playing ? "ZASTAVIT ZVUK" : "PŘEHRÁT PŘEKLAD"}
             </Button>
             <Button variant="outline" size="sm"

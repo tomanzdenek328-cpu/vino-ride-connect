@@ -1,5 +1,7 @@
 # Roadmap
 
+7. [x] Překladač — příchozí překlad vždy česky, automatický zdrojový jazyk a zapamatovaný mužský/ženský hlas podle účtu; 8 testů prošlo, skutečný anglický přepis, český překlad, oba hlasy a opakování z cache ověřeny v přihlášeném dispečinku na desktopu a mobilním rozměru. APK a publikace neověřeny.
+
 6. [x] Překladač — mikrofon, přehrání překladu v cílovém jazyce a opakování bez dalšího AI volání; skutečný přepis a zvuk v obou směrech ověřeny v přihlášeném dispečinku na desktopu i mobilním rozměru. APK vyžaduje publikaci a oprávnění mikrofonu.
 
 1. [x] Zpoždění nových zakázek — dispečink poll 15s→5s, řidič: guard proti souběhům + okamžité obnovení při návratu do popředí, jízdy/výběry 5s→15s. (Čeká publikace do APK.)

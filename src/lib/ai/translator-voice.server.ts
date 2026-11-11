@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { requestSpeech } from './speech-request.server';
 import { getLovableAiGatewayResponseHeaders } from './run-id';
+import { translatorVoiceName } from '../translator-settings';
 
 export async function translatorSpeech(request: Request) {
   const url = process.env.SUPABASE_URL;
@@ -17,8 +18,11 @@ export async function translatorSpeech(request: Request) {
     if (typeof input.text !== 'string' || !input.text.trim() || input.text.length > 6000) {
       return Response.json({ message: 'Text pro přehrání musí mít 1 až 6000 znaků.' }, { status: 400 });
     }
+    if (input.voice !== 'male' && input.voice !== 'female') {
+      return Response.json({ message: 'Vyberte mužský nebo ženský hlas.' }, { status: 400 });
+    }
     const upstream = await requestSpeech({ baseURL: 'https://ai.gateway.lovable.dev', apiKey: aiKey,
-      model: 'google/gemini-3.1-flash-tts-preview', format: 'gemini', voice: 'Kore' }, input.text, false, request.signal);
+      model: 'google/gemini-3.1-flash-tts-preview', format: 'gemini', voice: translatorVoiceName(input.voice) }, input.text, false, request.signal);
     return new Response(upstream.body, { status: upstream.status, headers: getLovableAiGatewayResponseHeaders(upstream.headers, {
       'Content-Type': upstream.headers.get('content-type') ?? 'text/event-stream', 'Cache-Control': 'no-store',
     }) });

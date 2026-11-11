@@ -5,7 +5,7 @@ export const translateText = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: { text: string; targetLang: string; sourceLang?: string }) => {
     if (!input || !input.text || !input.text.trim()) throw new Error("Chybí text k překladu.");
-    return input;
+    return { ...input, ...(input.sourceLang === 'auto' ? { targetLang: 'čeština' } : {}) };
   })
   .handler(async ({ data }) => {
     const { translateWithAi } = await import("./ai/translate.server");

@@ -1,5 +1,6 @@
 import { createParser } from 'eventsource-parser';
 import { supabase } from '@/integrations/supabase/client';
+import type { TranslatorVoice } from './translator-settings';
 
 export async function voiceHeaders() {
   const { data } = await supabase.auth.getSession();
@@ -56,7 +57,7 @@ export function decodePCM(pending: Uint8Array, incoming: Uint8Array) {
   return { samples, pending: bytes.slice(usable) };
 }
 
-export async function playTranslation(text: string, context: AudioContext, signal: AbortSignal, cached?: Float32Array[]) {
+export async function playTranslation(text: string, context: AudioContext, signal: AbortSignal, voice: TranslatorVoice, cached?: Float32Array[]) {
   const sources = new Set<AudioBufferSourceNode>();
   const chunks: Float32Array[] = [];
   let playhead = 0; let pending = new Uint8Array(0); let completed = false;
@@ -80,7 +81,7 @@ export async function playTranslation(text: string, context: AudioContext, signa
     else {
       const body = await checkResponse(await fetch('/api/public/translator-speech', {
         method: 'POST', headers: { ...await voiceHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }), signal,
+        body: JSON.stringify({ text, voice }), signal,
       }));
       await readEvents(body, raw => {
         const value = JSON.parse(raw);
