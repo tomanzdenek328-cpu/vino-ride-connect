@@ -22,6 +22,8 @@ import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedTaxametrRouteImport } from './routes/_authenticated.taxametr'
 import { Route as JizdaCodeRouteImport } from './routes/jizda.$code'
 import { Route as ApiPublicDictationRouteImport } from './routes/api/public/dictation'
+import { Route as ApiPublicTranslatorSpeechRouteImport } from './routes/api/public/translator-speech'
+import { Route as ApiPublicTranslatorTranscribeRouteImport } from './routes/api/public/translator-transcribe'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -87,6 +89,18 @@ const ApiPublicDictationRoute = ApiPublicDictationRouteImport.update({
   path: '/api/public/dictation',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTranslatorSpeechRoute =
+  ApiPublicTranslatorSpeechRouteImport.update({
+    id: '/api/public/translator-speech',
+    path: '/api/public/translator-speech',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicTranslatorTranscribeRoute =
+  ApiPublicTranslatorTranscribeRouteImport.update({
+    id: '/api/public/translator-transcribe',
+    path: '/api/public/translator-transcribe',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -101,6 +115,8 @@ export interface FileRoutesByFullPath {
   '/taxametr': typeof AuthenticatedTaxametrRoute
   '/jizda/$code': typeof JizdaCodeRoute
   '/api/public/dictation': typeof ApiPublicDictationRoute
+  '/api/public/translator-speech': typeof ApiPublicTranslatorSpeechRoute
+  '/api/public/translator-transcribe': typeof ApiPublicTranslatorTranscribeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -115,6 +131,8 @@ export interface FileRoutesByTo {
   '/taxametr': typeof AuthenticatedTaxametrRoute
   '/jizda/$code': typeof JizdaCodeRoute
   '/api/public/dictation': typeof ApiPublicDictationRoute
+  '/api/public/translator-speech': typeof ApiPublicTranslatorSpeechRoute
+  '/api/public/translator-transcribe': typeof ApiPublicTranslatorTranscribeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -131,6 +149,8 @@ export interface FileRoutesById {
   '/_authenticated/taxametr': typeof AuthenticatedTaxametrRoute
   '/jizda/$code': typeof JizdaCodeRoute
   '/api/public/dictation': typeof ApiPublicDictationRoute
+  '/api/public/translator-speech': typeof ApiPublicTranslatorSpeechRoute
+  '/api/public/translator-transcribe': typeof ApiPublicTranslatorTranscribeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -147,6 +167,8 @@ export interface FileRouteTypes {
     | '/taxametr'
     | '/jizda/$code'
     | '/api/public/dictation'
+    | '/api/public/translator-speech'
+    | '/api/public/translator-transcribe'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -161,6 +183,8 @@ export interface FileRouteTypes {
     | '/taxametr'
     | '/jizda/$code'
     | '/api/public/dictation'
+    | '/api/public/translator-speech'
+    | '/api/public/translator-transcribe'
   id:
     | '__root__'
     | '/'
@@ -176,6 +200,8 @@ export interface FileRouteTypes {
     | '/_authenticated/taxametr'
     | '/jizda/$code'
     | '/api/public/dictation'
+    | '/api/public/translator-speech'
+    | '/api/public/translator-transcribe'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -189,6 +215,8 @@ export interface RootRouteChildren {
   SledovatRoute: typeof SledovatRoute
   JizdaCodeRoute: typeof JizdaCodeRoute
   ApiPublicDictationRoute: typeof ApiPublicDictationRoute
+  ApiPublicTranslatorSpeechRoute: typeof ApiPublicTranslatorSpeechRoute
+  ApiPublicTranslatorTranscribeRoute: typeof ApiPublicTranslatorTranscribeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -284,6 +312,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicDictationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/translator-speech': {
+      id: '/api/public/translator-speech'
+      path: '/api/public/translator-speech'
+      fullPath: '/api/public/translator-speech'
+      preLoaderRoute: typeof ApiPublicTranslatorSpeechRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/translator-transcribe': {
+      id: '/api/public/translator-transcribe'
+      path: '/api/public/translator-transcribe'
+      fullPath: '/api/public/translator-transcribe'
+      preLoaderRoute: typeof ApiPublicTranslatorTranscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -314,6 +356,8 @@ const rootRouteChildren: RootRouteChildren = {
   SledovatRoute: SledovatRoute,
   JizdaCodeRoute: JizdaCodeRoute,
   ApiPublicDictationRoute: ApiPublicDictationRoute,
+  ApiPublicTranslatorSpeechRoute: ApiPublicTranslatorSpeechRoute,
+  ApiPublicTranslatorTranscribeRoute: ApiPublicTranslatorTranscribeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

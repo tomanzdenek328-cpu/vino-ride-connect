@@ -3,7 +3,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { assertDispatcher } from '../dispatch/context.server';
 import { transcribe } from './transcribe.server';
 import { getLovableAiGatewayResponseHeaders } from './run-id.ts';
-export async function uploadSpeech(request: Request) {
+export async function uploadSpeech(request: Request, dispatcherOnly = true) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_PUBLISHABLE_KEY;
   const aiKey = process.env.LOVABLE_API_KEY;
@@ -13,7 +13,9 @@ export async function uploadSpeech(request: Request) {
   const client = createClient<Database>(url,key,{global:{headers:{Authorization:authorization}},auth:{persistSession:false,autoRefreshToken:false}});
   const {data,error} = await client.auth.getUser(authorization.slice(7));
   if (error || !data.user) return Response.json({message:'Přihlaste se znovu.'},{status:401});
-  try { await assertDispatcher(client,data.user.id); } catch { return Response.json({message:'Hlasové zadávání je pouze pro dispečera.'},{status:403}); }
+  if (dispatcherOnly) {
+    try { await assertDispatcher(client,data.user.id); } catch { return Response.json({message:'Hlasové zadávání je pouze pro dispečera.'},{status:403}); }
+  }
   const limit = 24 * 1024 * 1024;
   if (Number(request.headers.get('content-length')) > limit) return Response.json({message:'Nahrávka je příliš velká.'},{status:413});
   if (!request.body) return Response.json({message:'Chybí nahrávka.'},{status:400});
