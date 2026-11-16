@@ -8,6 +8,13 @@
       "when": 1794429505806,
       "tag": "0000_orders_partner_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794792905238,
+      "tag": "0001_customer_arrival_estimates",
+      "breakpoints": true
     }
   ]
 }

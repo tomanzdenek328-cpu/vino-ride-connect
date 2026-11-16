@@ -16,6 +16,8 @@ import { TranslatePanel } from "@/components/TranslatePanel";
 import { useServerFn } from "@tanstack/react-start";
 import { saveDriverPushSubscription } from "@/lib/push.functions";
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array } from "@/lib/vapid";
+import { DriverArrival } from '@/components/DriverArrival';
+import { canManageArrival, hasPreviousRide } from '@/lib/arrival';
 
 async function triggerSOS(driverId: string, vehicleId: string | null) {
   if (!window.confirm("Spustit nouzový SOS signál? Upozorní všechny řidiče i dispečera.")) return;
@@ -66,6 +68,8 @@ interface Order {
   estimated_distance_km?: number | null;
   driver_arrived_at?: string | null;
   tracking_code?: string | null;
+  manual_arrival_at?: string | null;
+  pickup_departed_at?: string | null;
 
   created_at: string;
 }
@@ -708,7 +712,8 @@ function DriverPage() {
           <section>
             <h2 className="font-display text-primary text-sm mb-2">▸ MOJE JÍZDA ({myOrders.length})</h2>
             {myOrders.map((o) => (
-              <div key={o.id} className="p-3 mb-2 border-2 border-primary bg-neutral-500/45 backdrop-blur-[2px] glow">
+              <div key={o.id} className={`p-3 mb-2 border-2 backdrop-blur-[2px] ${o.source === 'customer' ? 'border-customer-order bg-customer-order/10' : 'border-primary bg-neutral-500/45 glow'}`}>
+                {o.source === 'customer' && <div className="text-[10px] font-bold text-customer-order mb-1">🟣 OBJEDNÁVKA ZÁKAZNÍK</div>}
                 <div className="flex items-start justify-between gap-2">
                   <div className="text-primary font-bold flex-1 min-w-0">▸ {o.pickup_address}</div>
                   {o.priority && (
@@ -770,7 +775,7 @@ function DriverPage() {
                       {o.status === "assigned" && (
                         <button onClick={() => setOrderStatus(o.id, "accepted")} className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground">▸ PŘIJMOUT</button>
                       )}
-                      {(o.status === "accepted" || o.status === "assigned") && (
+                      {(o.status === "accepted" || o.status === "assigned") && (o.source !== 'customer' || o.driver_arrived_at) && (
                         <button onClick={() => setOrderStatus(o.id, "in_progress")} className="border border-amber-warn text-amber-warn px-3 py-1 text-xs">▸ JEDU</button>
                       )}
                       {(o.status === "accepted" || o.status === "assigned") && (
@@ -805,6 +810,11 @@ function DriverPage() {
                         <span className="ml-auto text-[10px] text-muted-foreground self-center">Cíl nezadán</span>
                       )}
                     </div>
+                    {user && canManageArrival(o, user.id) && <DriverArrival
+                      id={o.id} manualAt={o.manual_arrival_at} departedAt={o.pickup_departed_at}
+                      previousRide={hasPreviousRide(orders, o.id, user.id)}
+                      onSaved={values => setOrders(current => current.map(row => row.id === o.id ? { ...row, ...values } : row))}
+                    />}
                   </>
                 )}
               </div>
@@ -815,7 +825,8 @@ function DriverPage() {
         <section>
           <h2 className="font-display text-primary text-sm mb-2">▸ VOLNÉ ZAKÁZKY ({pending.length})</h2>
           {pending.map((o) => (
-            <div key={o.id} className={`p-3 mb-2 border-2 backdrop-blur-[2px] ${o.released ? `bg-neutral-500/45 ${o.priority ? "border-destructive" : "border-amber-warn"}` : "bg-neutral-700/55 border-neutral-300/70"}`}>
+            <div key={o.id} className={`p-3 mb-2 border-2 backdrop-blur-[2px] ${o.source === 'customer' ? 'border-customer-order bg-customer-order/10' : o.released ? `bg-neutral-500/45 ${o.priority ? "border-destructive" : "border-amber-warn"}` : "bg-neutral-700/55 border-neutral-300/70"}`}>
+              {o.source === 'customer' && <div className="text-[10px] font-bold text-customer-order mb-1">🟣 OBJEDNÁVKA ZÁKAZNÍK</div>}
               <div className="flex items-start justify-between gap-2">
                 <div className={`font-bold flex-1 min-w-0 ${o.released ? (o.priority ? "text-destructive" : "text-amber-warn") : "text-neutral-100"}`}>▸ {o.pickup_address}</div>
                 {o.priority && (

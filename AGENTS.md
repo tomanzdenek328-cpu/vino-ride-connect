@@ -1,4 +1,5 @@
 # Architecture rules
+- Customer arrival uses a separate pickup-departure timestamp, authenticated assigned-driver writes, and a durable one-minute Routes calculation claim shared by customer viewers; passenger-trip status and public position polling never trigger billable ETA calls.
 - Dispatcher assistance lives in focused UI components and authenticated server functions; server-only modules own AI calls and read live data with the caller's permissions, so recommendations cannot grant privileges or silently alter orders.
 - Voice uploads use a size-bounded, dispatcher-authorized streaming server route and complete PCM WAV recordings, so web and Android recordings remain decodable.
 - Driver recommendations use tariff capacities and fresh locations with deterministic distance ranking, so seating and availability are not invented by AI.

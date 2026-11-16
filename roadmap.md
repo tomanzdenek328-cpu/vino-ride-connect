@@ -1,5 +1,7 @@
 # Roadmap
 
+8. [x] Zákaznické zakázky — ruční odhad příjezdu a jeho čtení zákazníkem, blokace odjezdu během předchozí jízdy, JEDU PRO ZÁKAZNÍKA a odlišení u řidiče ověřeny v přihlášené aplikaci a na mobilním rozměru; 9 testů prošlo. Google Maps výpočet z aktuální polohy je připraven, ale musí být ověřen na publikované stránce; APK neověřena.
+
 7. [x] Překladač — příchozí překlad vždy česky, automatický zdrojový jazyk a zapamatovaný mužský/ženský hlas podle účtu; 8 testů prošlo, skutečný anglický přepis, český překlad, oba hlasy a opakování z cache ověřeny v přihlášeném dispečinku na desktopu a mobilním rozměru. APK a publikace neověřeny.
 
 6. [x] Překladač — mikrofon, přehrání překladu v cílovém jazyce a opakování bez dalšího AI volání; skutečný přepis a zvuk v obou směrech ověřeny v přihlášeném dispečinku na desktopu i mobilním rozměru. APK vyžaduje publikaci a oprávnění mikrofonu.

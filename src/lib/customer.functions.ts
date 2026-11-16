@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { TARIFF_COLUMNS, computeFare, isWeekend, type TariffFull } from "./pricing";
+import { freshArrivalLocation, manualArrivalMinutes } from './arrival';
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_maps";
 
@@ -254,7 +255,7 @@ export const trackOrder = createServerFn({ method: "POST" })
     const { data: order } = await supabaseAdmin
       .from("orders")
       .select(
-        "id,status,approval,pickup_address,pickup_lat,pickup_lng,destination,customer_name,scheduled_time,estimated_price,estimated_distance_km,assigned_driver_id,driver_arrived_at,created_at",
+        "id,status,approval,pickup_address,pickup_lat,pickup_lng,destination,customer_name,scheduled_time,estimated_price,estimated_distance_km,assigned_driver_id,driver_arrived_at,created_at,source,manual_arrival_at,pickup_departed_at,arrival_eta_minutes,arrival_eta_updated_at,arrival_eta_driver_id",
       )
       .eq("tracking_code", data.code.toUpperCase())
       .maybeSingle();
@@ -269,6 +270,7 @@ export const trackOrder = createServerFn({ method: "POST" })
       car_type: string | null;
       photo_url: string | null;
       eta_minutes: number | null;
+      eta_mode: 'manual' | 'route' | 'waiting';
     } | null = null;
 
     if (order.assigned_driver_id) {
@@ -276,7 +278,7 @@ export const trackOrder = createServerFn({ method: "POST" })
         supabaseAdmin.from("profiles").select("call_sign,full_name").eq("id", order.assigned_driver_id).maybeSingle(),
         supabaseAdmin
           .from("driver_locations")
-          .select("lat,lng,vehicle_id")
+          .select("lat,lng,vehicle_id,updated_at")
           .eq("driver_id", order.assigned_driver_id)
           .maybeSingle(),
       ]);
@@ -290,7 +292,19 @@ export const trackOrder = createServerFn({ method: "POST" })
         vehicle = v;
       }
       let eta: number | null = null;
+      let etaMode: 'manual' | 'route' | 'waiting' = 'waiting';
+      if (order.source === 'customer' && ['assigned', 'accepted'].includes(order.status) && !order.driver_arrived_at) {
+        if (!order.pickup_departed_at) {
+          eta = manualArrivalMinutes(order.manual_arrival_at);
+          etaMode = order.manual_arrival_at ? 'manual' : 'waiting';
+        } else if (order.arrival_eta_driver_id === order.assigned_driver_id && freshArrivalLocation(loc?.updated_at)
+          && freshArrivalLocation(order.arrival_eta_updated_at)) {
+          eta = order.arrival_eta_minutes;
+          etaMode = 'route';
+        }
+      }
       if (
+        order.source !== 'customer' && !order.driver_arrived_at &&
         loc?.lat != null &&
         loc?.lng != null &&
         order.pickup_lat != null &&
@@ -302,6 +316,7 @@ export const trackOrder = createServerFn({ method: "POST" })
           { lat: order.pickup_lat, lng: order.pickup_lng },
         );
         eta = r.minutes;
+        etaMode = 'route';
       }
       let photoUrl: string | null = vehicle?.photo_url ?? null;
       if (photoUrl && !photoUrl.startsWith("http")) {
@@ -319,6 +334,7 @@ export const trackOrder = createServerFn({ method: "POST" })
         car_type: vehicle?.car_type ?? null,
         photo_url: photoUrl,
         eta_minutes: eta,
+        eta_mode: etaMode,
       };
 
     }
@@ -339,6 +355,9 @@ export const trackOrder = createServerFn({ method: "POST" })
         scheduled_time: order.scheduled_time,
         created_at: order.created_at,
         driver_arrived_at: order.driver_arrived_at,
+        source: order.source,
+        manual_arrival_at: order.manual_arrival_at,
+        pickup_departed_at: order.pickup_departed_at,
         estimated_price: order.estimated_price,
         estimated_distance_km: order.estimated_distance_km,
         advance,

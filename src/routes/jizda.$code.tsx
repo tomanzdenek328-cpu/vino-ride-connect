@@ -208,8 +208,11 @@ function TrackPage() {
       ? { lat: o.pickup_lat, lng: o.pickup_lng }
       : null;
   const carPosition = livePos ?? (d?.lat != null && d?.lng != null ? { lat: d.lat, lng: d.lng } : null);
-  const liveEta = approximateEtaMinutes(carPosition, pickupPosition);
+  const liveEta = o.source === 'customer' ? d?.eta_minutes ?? null : approximateEtaMinutes(carPosition, pickupPosition) ?? d?.eta_minutes ?? null;
   let st = STATUS[o.status] ?? { label: o.status, color: "text-muted-foreground" };
+  if (o.source === 'customer' && ['assigned', 'accepted'].includes(o.status)) {
+    st = { label: o.pickup_departed_at ? 'ŘIDIČ JEDE K VÁM' : o.manual_arrival_at ? 'ŘIDIČ DOKONČUJE PŘEDCHOZÍ JÍZDU' : 'ŘIDIČ PŘIPRAVUJE PŘÍJEZD', color: 'text-primary' };
+  }
   if (o.driver_arrived_at && (o.status === "accepted" || o.status === "assigned")) {
     st = { label: "🚕 VÁŠ ŘIDIČ DORAZIL", color: "text-primary" };
   }
@@ -282,8 +285,11 @@ function TrackPage() {
               {d.car_type && <div className="text-xs text-muted-foreground">{d.car_type}</div>}
             </div>
           </div>
-          {(liveEta ?? d.eta_minutes) != null && (
-            <div className="text-primary font-bold">Příjezd cca za {formatEta(liveEta ?? d.eta_minutes!)}</div>
+          {['assigned', 'accepted'].includes(o.status) && !o.driver_arrived_at && (
+            liveEta != null ? <div className="text-primary font-bold">
+              {d.eta_mode === 'manual' && liveEta === 0 ? 'Původní odhad uplynul – čekáme na upřesnění řidiče.' : `Příjezd přibližně za ${formatEta(liveEta)}`}
+              {d.eta_mode === 'manual' && <div className="text-xs font-normal text-muted-foreground">Odhad zadaný řidičem.</div>}
+            </div> : <div className="text-xs text-muted-foreground">{o.pickup_departed_at ? 'Čekáme na aktuální odhad dojezdu.' : 'Čekáme na odhad příjezdu od řidiče.'}</div>
           )}
           {d.lat == null && (
             <div className="text-[11px] text-muted-foreground">Polohu vozu zatím nemáme – zobrazí se za chvíli.</div>

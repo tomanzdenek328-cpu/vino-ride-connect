@@ -51,6 +51,7 @@
   --color-phosphor-dim: var(--phosphor-dim);
   --color-amber-warn: var(--amber-warn);
   --color-red-alarm: var(--red-alarm);
+  --color-customer-order: var(--customer-order);
 }
 
 :root {
@@ -63,6 +64,7 @@
   --phosphor-dim: oklch(0.68 0.22 132);
   --amber-warn: oklch(0.82 0.16 75);
   --red-alarm: oklch(0.68 0.22 25);
+  --customer-order: oklch(0.72 0.20 305);
 
   --card: oklch(0.20 0.008 150);
   --card-foreground: oklch(0.97 0.005 150);

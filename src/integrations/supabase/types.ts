@@ -160,6 +160,10 @@ export type Database = {
       orders: {
         Row: {
           approval: string
+          arrival_eta_approx: boolean
+          arrival_eta_driver_id: string | null
+          arrival_eta_minutes: number | null
+          arrival_eta_updated_at: string | null
           assigned_driver_id: string | null
           assigned_driver_ids: string[]
           cancelled_at: string | null
@@ -175,6 +179,7 @@ export type Database = {
           estimated_distance_km: number | null
           estimated_price: number | null
           id: string
+          manual_arrival_at: string | null
           notes: string | null
           partner_direction: string | null
           partner_name: string | null
@@ -183,6 +188,7 @@ export type Database = {
           partner_state: string | null
           passengers: number
           pickup_address: string
+          pickup_departed_at: string | null
           pickup_lat: number | null
           pickup_lng: number | null
           priority: boolean
@@ -196,6 +202,10 @@ export type Database = {
         }
         Insert: {
           approval?: string
+          arrival_eta_approx?: boolean
+          arrival_eta_driver_id?: string | null
+          arrival_eta_minutes?: number | null
+          arrival_eta_updated_at?: string | null
           assigned_driver_id?: string | null
           assigned_driver_ids?: string[]
           cancelled_at?: string | null
@@ -211,6 +221,7 @@ export type Database = {
           estimated_distance_km?: number | null
           estimated_price?: number | null
           id?: string
+          manual_arrival_at?: string | null
           notes?: string | null
           partner_direction?: string | null
           partner_name?: string | null
@@ -219,6 +230,7 @@ export type Database = {
           partner_state?: string | null
           passengers?: number
           pickup_address: string
+          pickup_departed_at?: string | null
           pickup_lat?: number | null
           pickup_lng?: number | null
           priority?: boolean
@@ -232,6 +244,10 @@ export type Database = {
         }
         Update: {
           approval?: string
+          arrival_eta_approx?: boolean
+          arrival_eta_driver_id?: string | null
+          arrival_eta_minutes?: number | null
+          arrival_eta_updated_at?: string | null
           assigned_driver_id?: string | null
           assigned_driver_ids?: string[]
           cancelled_at?: string | null
@@ -247,6 +263,7 @@ export type Database = {
           estimated_distance_km?: number | null
           estimated_price?: number | null
           id?: string
+          manual_arrival_at?: string | null
           notes?: string | null
           partner_direction?: string | null
           partner_name?: string | null
@@ -255,6 +272,7 @@ export type Database = {
           partner_state?: string | null
           passengers?: number
           pickup_address?: string
+          pickup_departed_at?: string | null
           pickup_lat?: number | null
           pickup_lng?: number | null
           priority?: boolean
