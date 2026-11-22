@@ -86,6 +86,29 @@ export type Database = {
         }
         Relationships: []
       }
+      dispatcher_access: {
+        Row: {
+          access: string
+          user_id: string
+        }
+        Insert: {
+          access: string
+          user_id: string
+        }
+        Update: {
+          access?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispatcher_access_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       driver_locations: {
         Row: {
           busy: boolean
@@ -555,6 +578,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_my_dispatch_access: { Args: never; Returns: string }
       get_my_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
@@ -565,6 +589,11 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      is_helper_dispatcher: { Args: { _user_id: string }; Returns: boolean }
+      set_driver_dispatch_access: {
+        Args: { _driver_id: string; _helper: boolean }
+        Returns: undefined
       }
     }
     Enums: {

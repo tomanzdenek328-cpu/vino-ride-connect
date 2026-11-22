@@ -1,16 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 async function assertDispatcher(supabase: any, userId: string) {
-  const { data: roleRow, error: roleErr } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .maybeSingle();
+  const { data: isDispatcher, error: roleErr } = await supabase.rpc("has_role", { _user_id: userId, _role: "dispatcher" });
   if (roleErr) throw new Error(roleErr.message);
-  if (roleRow?.role !== "dispatcher") {
+  if (!isDispatcher) {
     throw new Error("Pouze dispečer může provádět tuto akci.");
   }
 }

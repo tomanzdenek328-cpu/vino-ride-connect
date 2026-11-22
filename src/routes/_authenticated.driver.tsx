@@ -18,6 +18,9 @@ import { saveDriverPushSubscription } from "@/lib/push.functions";
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array } from "@/lib/vapid";
 import { DriverArrival } from '@/components/DriverArrival';
 import { canManageArrival, hasPreviousRide } from '@/lib/arrival';
+import { NewOrderModal } from "@/components/NewOrderModal";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 async function triggerSOS(driverId: string, vehicleId: string | null) {
   if (!window.confirm("Spustit nouzový SOS signál? Upozorní všechny řidiče i dispečera.")) return;
@@ -199,7 +202,8 @@ async function playNewOrderAlert() {
 }
 
 function DriverPage() {
-  const { user, role, loading } = useAuth();
+  const { user, role, loading, dispatchAccess } = useAuth();
+  const [showNewOrder, setShowNewOrder] = useState(false);
   const [online, setOnline] = useState(false);
   const [busy, setBusy] = useState(false);
   const [callSign, setCallSign] = useState("—");
@@ -599,7 +603,8 @@ function DriverPage() {
         </div>
         <div className="text-center">
           <div className="text-xl text-primary glow-text font-display">▸ {callSign}</div>
-          <div className="text-[10px] text-muted-foreground">ŘIDIČ</div>
+          <div className="text-[10px] text-muted-foreground">{dispatchAccess === "helper" ? "POMOCNÝ DISPEČER · ŘIDIČ" : "ŘIDIČ"}</div>
+          {dispatchAccess === "helper" && <Button type="button" className="mt-2 mx-2" onClick={() => setShowNewOrder(true)}><Plus /> NOVÁ ZAKÁZKA</Button>}
           <button onClick={() => supabase.auth.signOut()} className="mt-1 border-2 border-primary px-5 py-2.5 text-sm hover:bg-primary/10 inline-flex items-center gap-2">
             <LogOut className="w-5 h-5" /> ODHLÁSIT
           </button>
@@ -642,10 +647,10 @@ function DriverPage() {
             } disabled:opacity-40`}>
             {busy ? "OBSAZENO" : "VOLNÝ"}
           </button>
-          <button onClick={() => setShowMap(true)}
+          {dispatchAccess !== "helper" && <button onClick={() => setShowMap(true)}
             className="border-2 border-primary px-4 py-2 text-sm font-bold flex items-center gap-2 hover:bg-primary/10">
             <MapIcon className="w-4 h-4" /> MAPA
-          </button>
+          </button>}
           <button onClick={() => setShowTranslate(true)}
             className="border-2 border-primary px-4 py-2 text-sm font-bold flex items-center gap-2 hover:bg-primary/10"
             title="Překladač pro komunikaci se zákazníkem">
@@ -693,7 +698,8 @@ function DriverPage() {
       </header>
 
 
-      {showMap && (
+      {showNewOrder && dispatchAccess === "helper" && user && <NewOrderModal helper userId={user.id} onClose={() => setShowNewOrder(false)} />}
+      {showMap && dispatchAccess !== "helper" && (
         <div className="fixed inset-0 z-[1500] bg-black flex flex-col">
           <div className="border-b border-primary/40 p-3 flex items-center justify-between">
             <div className="font-display text-primary text-sm">▸ MAPA</div>

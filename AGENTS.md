@@ -1,4 +1,6 @@
 # Architecture rules
+- Helper dispatch access is stored separately from profiles and checked by restrictive database read policies; only a protected atomic database function lets the main dispatcher change it, preventing UI bypass and privilege escalation.
+- Dispatcher and helper order entry reuse one form; helpers retain driver access to their own work but never receive driver recommendation or full-dispatch data.
 - Customer arrival uses a separate pickup-departure timestamp, authenticated assigned-driver writes, and a durable one-minute Routes calculation claim shared by customer viewers; passenger-trip status and public position polling never trigger billable ETA calls.
 - Dispatcher assistance lives in focused UI components and authenticated server functions; server-only modules own AI calls and read live data with the caller's permissions, so recommendations cannot grant privileges or silently alter orders.
 - Voice uploads use a size-bounded, dispatcher-authorized streaming server route and complete PCM WAV recordings, so web and Android recordings remain decodable.

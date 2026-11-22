@@ -76,12 +76,17 @@ export const notifyNewOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ order_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const [role, access] = await Promise.all([
+      context.supabase.rpc("has_role", { _user_id: context.userId, _role: "dispatcher" }),
+      context.supabase.rpc("get_my_dispatch_access"),
+    ]);
+    if (!role.data && access.data !== "helper") throw new Error("Forbidden");
+    if (!role.data) {
+      const { data: ownOrder } = await context.supabase.from("orders").select("created_by,status,released,assigned_driver_id,assigned_driver_ids")
+        .eq("id", data.order_id).maybeSingle();
+      if (!ownOrder || ownOrder.created_by !== context.userId || ownOrder.status !== "pending" || !ownOrder.released || ownOrder.assigned_driver_id || ownOrder.assigned_driver_ids.length) throw new Error("Forbidden");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    // Only dispatchers may trigger broadcast.
-    const { data: role } = await context.supabase
-      .from("user_roles").select("role").eq("user_id", context.userId).maybeSingle();
-    if (role?.role !== "dispatcher") throw new Error("Forbidden");
 
     const { data: order } = await supabaseAdmin
       .from("orders")

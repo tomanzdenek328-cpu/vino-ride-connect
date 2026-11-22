@@ -1,8 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { PasswordField } from "@/components/PasswordField";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [
@@ -44,17 +46,17 @@ function LoginPage() {
         </div>
         <form onSubmit={onSubmit} className="space-y-4">
           <Field label="EMAIL" value={email} onChange={setEmail} type="email" required />
-          <Field label="HESLO" value={password} onChange={setPassword} type="password" required />
-          <button
+          <PasswordField value={password} onChange={setPassword} />
+          <Button
             type="submit"
             disabled={loading}
             className="w-full border border-primary text-primary py-3 hover:bg-primary hover:text-primary-foreground transition-colors font-bold tracking-widest disabled:opacity-50"
           >
             {loading ? "▸ NAVAZUJI..." : "▸ PŘIHLÁSIT"}
-          </button>
+          </Button>
         </form>
         <div className="mt-6 text-center text-[11px] text-muted-foreground">
-          Účet zakládá dispečer.
+          <Link to="/signup" className="text-primary hover:underline">VYTVOŘIT ÚČET ŘIDIČE</Link>
         </div>
       </div>
     </div>

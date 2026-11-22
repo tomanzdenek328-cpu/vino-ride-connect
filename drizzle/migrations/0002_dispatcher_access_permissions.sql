@@ -1,0 +1,32 @@
+CREATE TABLE public.dispatcher_access (user_id uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE, access text NOT NULL CHECK (access IN ('main','helper')));
+GRANT SELECT ON public.dispatcher_access TO authenticated;
+GRANT ALL ON public.dispatcher_access TO service_role;
+ALTER TABLE public.dispatcher_access ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "read own dispatcher access" ON public.dispatcher_access FOR SELECT TO authenticated USING (user_id=auth.uid() OR public.has_role(auth.uid(),'dispatcher'));
+INSERT INTO public.dispatcher_access(user_id,access) SELECT id,'main' FROM public.profiles WHERE id='b7636c0d-5323-4bb4-b394-44f5736d6e0d';
+CREATE OR REPLACE FUNCTION public.is_helper_dispatcher(_user_id uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM public.dispatcher_access WHERE user_id=_user_id AND access='helper') $$;
+CREATE OR REPLACE FUNCTION public.get_my_dispatch_access() RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT access FROM public.dispatcher_access WHERE user_id=auth.uid() $$;
+CREATE OR REPLACE FUNCTION public.set_driver_dispatch_access(_driver_id uuid,_helper boolean) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN
+IF NOT EXISTS(SELECT 1 FROM public.dispatcher_access WHERE user_id=auth.uid() AND access='main') OR NOT public.has_role(auth.uid(),'dispatcher') THEN RAISE EXCEPTION 'Pouze hlavní dispečer může měnit role.'; END IF;
+IF _driver_id=auth.uid() OR NOT public.has_role(_driver_id,'driver') OR public.has_role(_driver_id,'dispatcher') THEN RAISE EXCEPTION 'Lze měnit pouze roli registrovaného řidiče.'; END IF;
+IF _helper THEN INSERT INTO public.dispatcher_access(user_id,access) VALUES(_driver_id,'helper') ON CONFLICT(user_id) DO UPDATE SET access='helper' WHERE dispatcher_access.access='helper'; ELSE DELETE FROM public.dispatcher_access WHERE user_id=_driver_id AND access='helper'; END IF;
+END $$;
+REVOKE ALL ON FUNCTION public.set_driver_dispatch_access(uuid,boolean) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.set_driver_dispatch_access(uuid,boolean) TO authenticated;
+REVOKE ALL ON FUNCTION public.get_my_dispatch_access() FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.get_my_dispatch_access() TO authenticated;
+CREATE OR REPLACE FUNCTION public.handle_new_user() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN
+INSERT INTO public.profiles(id,full_name,call_sign) VALUES(NEW.id,COALESCE(NEW.raw_user_meta_data->>'full_name',''),COALESCE(NEW.raw_user_meta_data->>'call_sign',''));
+INSERT INTO public.user_roles(user_id,role) VALUES(NEW.id,'driver');
+INSERT INTO public.driver_locations(driver_id,online) VALUES(NEW.id,false);
+RETURN NEW; END $$;
+CREATE POLICY "helpers add orders" ON public.orders FOR INSERT TO authenticated WITH CHECK(public.is_helper_dispatcher(auth.uid()) AND created_by=auth.uid() AND status='pending' AND assigned_driver_id IS NULL AND cardinality(assigned_driver_ids)=0 AND source='dispatch' AND approval='approved' AND partner_direction IS NULL AND partner_remote_id IS NULL);
+CREATE POLICY "helpers read created pending orders" ON public.orders FOR SELECT TO authenticated USING(public.is_helper_dispatcher(auth.uid()) AND created_by=auth.uid() AND status='pending' AND assigned_driver_id IS NULL AND cardinality(assigned_driver_ids)=0);
+CREATE POLICY "helper orders privacy" ON public.orders AS RESTRICTIVE FOR SELECT TO authenticated USING(NOT public.is_helper_dispatcher(auth.uid()) OR assigned_driver_id=auth.uid() OR auth.uid()=ANY(assigned_driver_ids) OR (status='pending' AND assigned_driver_id IS NULL AND cardinality(assigned_driver_ids)=0));
+CREATE POLICY "helper profiles privacy" ON public.profiles AS RESTRICTIVE FOR SELECT TO authenticated USING(NOT public.is_helper_dispatcher(auth.uid()) OR id=auth.uid());
+CREATE POLICY "helper locations privacy" ON public.driver_locations AS RESTRICTIVE FOR SELECT TO authenticated USING(NOT public.is_helper_dispatcher(auth.uid()) OR driver_id=auth.uid());
+CREATE POLICY "helper rides privacy" ON public.rides AS RESTRICTIVE FOR SELECT TO authenticated USING(NOT public.is_helper_dispatcher(auth.uid()) OR driver_id=auth.uid());
+CREATE POLICY "helper payouts privacy" ON public.cash_payouts AS RESTRICTIVE FOR SELECT TO authenticated USING(NOT public.is_helper_dispatcher(auth.uid()) OR driver_id=auth.uid());
+CREATE POLICY "helper roles privacy" ON public.user_roles AS RESTRICTIVE FOR SELECT TO authenticated USING(NOT public.is_helper_dispatcher(auth.uid()) OR user_id=auth.uid());
+CREATE POLICY "helper sos privacy" ON public.sos_alerts AS RESTRICTIVE FOR SELECT TO authenticated USING(NOT public.is_helper_dispatcher(auth.uid()) OR driver_id=auth.uid());
+CREATE POLICY "helper access privacy" ON public.dispatcher_access AS RESTRICTIVE FOR SELECT TO authenticated USING(NOT public.is_helper_dispatcher(auth.uid()) OR user_id=auth.uid());
