@@ -236,7 +236,7 @@ export function NewOrderModal({ onClose, userId, helper = false }: { onClose: ()
           {priority ? "🚨 URGENTNÍ – KLIKNI PRO ZRUŠENÍ" : "🚨 OZNAČIT JAKO URGENTNÍ / PRIORITNÍ"}
         </Button>
 
-        <Button type="submit" disabled={submitting} className="w-full border border-primary text-primary py-2 hover:bg-primary hover:text-primary-foreground disabled:opacity-50">
+        <Button variant="outline" type="submit" disabled={submitting} className="w-full border border-primary text-primary py-2 hover:bg-primary hover:text-primary-foreground disabled:opacity-50">
           {submitting ? "▸ ODESÍLÁM..." : "▸ ODESLAT"}
         </Button>
       </form>

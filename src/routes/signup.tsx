@@ -59,6 +59,7 @@ function SignupPage() {
           <Field label="EMAIL" value={email} onChange={setEmail} type="email" required />
           <PasswordField label="HESLO (min. 6 znaků)" value={password} onChange={setPassword} autoComplete="new-password" minLength={6} />
           <Button
+            variant="outline"
             type="submit"
             disabled={loading}
             className="w-full border border-primary text-primary py-3 hover:bg-primary hover:text-primary-foreground transition-colors font-bold tracking-widest disabled:opacity-50 mt-2"

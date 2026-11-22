@@ -48,6 +48,7 @@ function LoginPage() {
           <Field label="EMAIL" value={email} onChange={setEmail} type="email" required />
           <PasswordField value={password} onChange={setPassword} />
           <Button
+            variant="outline"
             type="submit"
             disabled={loading}
             className="w-full border border-primary text-primary py-3 hover:bg-primary hover:text-primary-foreground transition-colors font-bold tracking-widest disabled:opacity-50"

@@ -22,6 +22,7 @@ export const createDriver = createServerFn({ method: "POST" })
   .inputValidator((input) => CreateDriverSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertDispatcher(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
@@ -50,6 +51,7 @@ export const updateDriver = createServerFn({ method: "POST" })
   .inputValidator((input) => UpdateDriverSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertDispatcher(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     if (data.full_name || data.call_sign) {
       const patch: { full_name?: string; call_sign?: string } = {};
@@ -76,6 +78,7 @@ export const deleteDriver = createServerFn({ method: "POST" })
   .inputValidator((input) => DriverIdSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertDispatcher(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Clean dependent rows first (no FK cascade defined).
     await supabaseAdmin.from("rides").delete().eq("driver_id", data.driver_id);
@@ -95,6 +98,7 @@ export const resetDriverRides = createServerFn({ method: "POST" })
   .inputValidator((input) => DriverIdSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertDispatcher(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Remove all rides for this driver (resets cash/card totals).
     const { error: ridesErr } = await supabaseAdmin.from("rides").delete().eq("driver_id", data.driver_id);
@@ -118,6 +122,7 @@ export const deleteRide = createServerFn({ method: "POST" })
   .inputValidator((input) => RideIdSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertDispatcher(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { error } = await supabaseAdmin.from("rides").delete().eq("id", data.ride_id);
     if (error) throw new Error(error.message);
@@ -130,6 +135,7 @@ export const getDriverEmail = createServerFn({ method: "POST" })
   .inputValidator((input) => DriverIdSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertDispatcher(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: u, error } = await supabaseAdmin.auth.admin.getUserById(data.driver_id);
     if (error) throw new Error(error.message);
     return { email: u.user?.email ?? null };
