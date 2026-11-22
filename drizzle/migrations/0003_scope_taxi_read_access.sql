@@ -1,0 +1,11 @@
+DROP POLICY IF EXISTS "auth read all profiles" ON public.profiles;
+CREATE POLICY "taxi members read profiles" ON public.profiles FOR SELECT TO authenticated USING (id=auth.uid() OR public.has_role(auth.uid(),'dispatcher') OR public.has_role(auth.uid(),'driver'));
+DROP POLICY IF EXISTS "authenticated read all roles" ON public.user_roles;
+CREATE POLICY "taxi members read roles" ON public.user_roles FOR SELECT TO authenticated USING (user_id=auth.uid() OR public.has_role(auth.uid(),'dispatcher') OR (public.has_role(auth.uid(),'driver') AND role IN ('driver','dispatcher')));
+DROP POLICY IF EXISTS "auth read all locations" ON public.driver_locations;
+CREATE POLICY "dispatch own or emergency locations" ON public.driver_locations FOR SELECT TO authenticated USING (driver_id=auth.uid() OR public.has_role(auth.uid(),'dispatcher') OR (public.has_role(auth.uid(),'driver') AND EXISTS (SELECT 1 FROM public.sos_alerts s WHERE s.driver_id=driver_locations.driver_id AND s.resolved_at IS NULL)));
+DROP POLICY IF EXISTS "auth read all sos" ON public.sos_alerts;
+CREATE POLICY "taxi members read active or own sos" ON public.sos_alerts FOR SELECT TO authenticated USING (driver_id=auth.uid() OR public.has_role(auth.uid(),'dispatcher') OR (public.has_role(auth.uid(),'driver') AND resolved_at IS NULL));
+DROP POLICY IF EXISTS "auth read vehicles" ON public.vehicles;
+CREATE POLICY "taxi members read vehicles" ON public.vehicles FOR SELECT TO authenticated USING (public.has_role(auth.uid(),'driver') OR public.has_role(auth.uid(),'dispatcher'));
+DROP POLICY IF EXISTS "authenticated read vehicle photos" ON storage.objects;

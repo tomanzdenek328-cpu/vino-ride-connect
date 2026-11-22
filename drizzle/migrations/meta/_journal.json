@@ -22,6 +22,20 @@
       "when": 1795379461403,
       "tag": "0002_dispatcher_access_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795381099801,
+      "tag": "0003_scope_taxi_read_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795381151483,
+      "tag": "0004_restrict_helper_lookup_to_members",
+      "breakpoints": true
     }
   ]
 }
