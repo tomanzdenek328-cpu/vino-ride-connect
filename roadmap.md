@@ -1,6 +1,6 @@
 # Roadmap
 
-9. [ ] Oko u hesla, samostatná registrace řidičů a hlavní dispečer TORPÉDO: bezpečné přidělování pomocného dispečera, přidávání zakázek bez přístupu k ostatním řidičům a jejich jízdám; ověřit registraci, role a omezení.
+9. [x] Oko u hesla, vlastní registrace se jménem a volacím znakem, TORPÉDO jako hlavní dispečer a přidělování pomocného dispečera v detailu řidiče. Skutečná registrace vytvořila řidiče, TORPÉDO přidělil roli, pomocný dispečer vytvořil a přečetl zakázku; přímé čtení ostatních řidičů, poloh a jízd i změna rolí byly zablokovány. Telefonní zobrazení ověřeno, zkušební účty a zakázka odstraněny. Zatím nepublikováno, APK neověřena.
 
 8. [x] Zákaznické zakázky — ruční odhad příjezdu a jeho čtení zákazníkem, blokace odjezdu během předchozí jízdy, JEDU PRO ZÁKAZNÍKA a odlišení u řidiče ověřeny v přihlášené aplikaci a na mobilním rozměru; 9 testů prošlo. Google Maps výpočet z aktuální polohy je připraven, ale musí být ověřen na publikované stránce; APK neověřena.
 

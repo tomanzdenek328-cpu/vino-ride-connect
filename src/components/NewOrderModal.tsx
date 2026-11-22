@@ -106,7 +106,7 @@ export function NewOrderModal({ onClose, userId, helper = false }: { onClose: ()
       <form onSubmit={submit} className="bg-background border border-primary glow p-5 max-w-md w-full space-y-3 my-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
         <div className="flex justify-between items-center">
           <h3 className="text-primary font-display text-lg">▸ NOVÁ ZAKÁZKA</h3>
-          <Button type="button" onClick={onClose} className="text-muted-foreground hover:text-primary"><X className="w-5 h-5" /></Button>
+          <Button variant="ghost" size="icon" type="button" aria-label="Zavřít novou zakázku" title="Zavřít" onClick={onClose} className="text-muted-foreground hover:text-primary"><X className="w-5 h-5" /></Button>
         </div>
         {!helper && <OrderDictation onApply={(draft) => {
           if (draft.pickup != null) { setPickup(draft.pickup); setPickupCoords({}); }
@@ -137,7 +137,7 @@ export function NewOrderModal({ onClose, userId, helper = false }: { onClose: ()
           <div className="text-[10px] text-muted-foreground mb-1">ČAS</div>
           <div className="grid grid-cols-2 gap-2 mb-2">
             {(["now", "later"] as const).map((w) => (
-              <Button key={w} type="button" onClick={() => setWhen(w)}
+              <Button variant={when === w ? "default" : "outline"} key={w} type="button" onClick={() => setWhen(w)}
                 className={`border py-1.5 text-xs ${when === w ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
                 {w === "now" ? "▸ HNED" : "▸ NAPLÁNOVAT"}
               </Button>
@@ -153,7 +153,7 @@ export function NewOrderModal({ onClose, userId, helper = false }: { onClose: ()
           <div className="text-[10px] text-muted-foreground mb-1">TYP AUTA</div>
           <div className="grid grid-cols-3 gap-2">
             {([["car", "🚗 OSOBNÍ"], ["van", "🚐 DODÁVKA"], ["limo", "LIMUZÍNA"]] as const).map(([v, label]) => (
-              <Button key={v} type="button" onClick={() => setVehicleType(v)}
+              <Button variant={vehicleType === v ? "default" : "outline"} key={v} type="button" onClick={() => setVehicleType(v)}
                 className={`border py-1.5 px-1 text-[11px] leading-none flex items-center justify-center gap-1 whitespace-nowrap ${vehicleType === v ? "border-primary bg-primary text-primary-foreground glow" : "border-primary/40 text-primary"}`}>
                 {v === "limo" && (
                   <img src={limoSide} alt="" loading="lazy" width={1024} height={512} className="h-3.5 w-auto shrink-0 object-contain" />
@@ -167,14 +167,14 @@ export function NewOrderModal({ onClose, userId, helper = false }: { onClose: ()
         <div>
           <div className="text-[10px] text-muted-foreground mb-1">POČET OSOB ({passengers})</div>
           <div className="flex items-center gap-2">
-            <Button type="button" onClick={() => setPassengers(Math.max(1, passengers - 1))}
+            <Button variant="outline" type="button" aria-label="Méně osob" onClick={() => setPassengers(Math.max(1, passengers - 1))}
               className="border border-primary/40 text-primary w-10 h-10 text-lg">−</Button>
             <input
               type="number" min={1} max={30} value={passengers}
               onChange={(e) => setPassengers(Math.min(30, Math.max(1, parseInt(e.target.value) || 1)))}
               className="flex-1 bg-input border border-primary/40 px-2 py-2 text-primary text-center text-lg"
             />
-            <Button type="button" onClick={() => setPassengers(Math.min(30, passengers + 1))}
+            <Button variant="outline" type="button" aria-label="Více osob" onClick={() => setPassengers(Math.min(30, passengers + 1))}
               className="border border-primary/40 text-primary w-10 h-10 text-lg">+</Button>
           </div>
           <div className="text-[10px] text-muted-foreground mt-1">Max. 30 osob</div>
@@ -225,6 +225,7 @@ export function NewOrderModal({ onClose, userId, helper = false }: { onClose: ()
         <label className="block text-xs text-muted-foreground">POZNÁMKA (nepovinné)<input value={notes} onChange={e => setNotes(e.target.value)} className="mt-1 w-full bg-input border border-primary/40 px-2 py-1.5 text-primary" /></label>
 
         <Button
+          variant={priority ? "destructive" : "outline"}
           type="button"
           onClick={() => setPriority((v) => !v)}
           className={`w-full border py-2 text-xs font-bold ${
