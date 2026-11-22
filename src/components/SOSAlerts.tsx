@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Siren, X, Navigation } from "lucide-react";
 import { toast } from "sonner";
+import { createRefreshQueue } from "@/lib/refresh-queue";
 
 interface SOSRow {
   id: string;
@@ -75,20 +76,21 @@ export function SOSAlerts({ currentUserId, isDispatcher }: Props) {
   const [alerts, setAlerts] = useState<Enriched[]>([]);
   const [open, setOpen] = useState(false);
 
-  const load = async () => {
-    const { data: rows } = await supabase
+  const load = async (signal: AbortSignal) => {
+    const { data: rows, error } = await supabase
       .from("sos_alerts")
       .select("*")
       .is("resolved_at", null)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }).abortSignal(signal);
+    if (error || signal.aborted) return;
     const list = (rows ?? []) as SOSRow[];
     if (list.length === 0) { setAlerts([]); return; }
     const driverIds = [...new Set(list.map((r) => r.driver_id))];
     const vehicleIds = [...new Set(list.map((r) => r.vehicle_id).filter(Boolean) as string[])];
     const [{ data: profs }, { data: vehs }] = await Promise.all([
-      supabase.from("profiles").select("id,call_sign,full_name").in("id", driverIds),
+      supabase.from("profiles").select("id,call_sign,full_name").in("id", driverIds).abortSignal(signal),
       vehicleIds.length
-        ? supabase.from("vehicles").select("id,plate,car_type").in("id", vehicleIds)
+        ? supabase.from("vehicles").select("id,plate,car_type").in("id", vehicleIds).abortSignal(signal)
         : Promise.resolve({ data: [] as any[] }),
     ]);
     const pMap: Record<string, any> = {};
@@ -99,7 +101,8 @@ export function SOSAlerts({ currentUserId, isDispatcher }: Props) {
     const { data: locs } = await supabase
       .from("driver_locations")
       .select("driver_id,lat,lng")
-      .in("driver_id", driverIds);
+      .in("driver_id", driverIds).abortSignal(signal);
+    if (signal.aborted) return;
     const lMap: Record<string, { lat: number | null; lng: number | null }> = {};
     (locs ?? []).forEach((l: any) => { lMap[l.driver_id] = { lat: l.lat, lng: l.lng }; });
     setAlerts(list.map((r) => ({
@@ -114,11 +117,15 @@ export function SOSAlerts({ currentUserId, isDispatcher }: Props) {
   };
 
   useEffect(() => {
-    load();
+    const queue = createRefreshQueue(load);
+    const refresh = () => { if (document.visibilityState === "visible") void queue.refresh(); };
+    refresh();
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
     const ch = supabase
       .channel("sos_alerts_rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "sos_alerts" }, (payload) => {
-        load();
+        void queue.refresh();
         if (payload.eventType === "INSERT") {
           const row: any = payload.new;
           if (row.driver_id !== currentUserId) {
@@ -132,7 +139,7 @@ export function SOSAlerts({ currentUserId, isDispatcher }: Props) {
         }
       })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { queue.dispose(); document.removeEventListener("visibilitychange", refresh); window.removeEventListener("focus", refresh); supabase.removeChannel(ch); };
   }, [currentUserId]);
 
   const active = alerts.length > 0;
@@ -143,7 +150,7 @@ export function SOSAlerts({ currentUserId, isDispatcher }: Props) {
       .from("sos_alerts")
       .update({ resolved_at: new Date().toISOString() })
       .eq("id", id);
-    if (error) toast.error(error.message); else { toast.success("SOS vyřízeno"); setOpen(false); }
+    if (error) toast.error(error.message); else { setAlerts(rows => rows.filter(row => row.id !== id)); toast.success("SOS vyřízeno"); setOpen(false); }
   };
 
   const navigate = (lat: number | null, lng: number | null) => {

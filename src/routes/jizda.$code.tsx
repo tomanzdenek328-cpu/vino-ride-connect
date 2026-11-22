@@ -5,6 +5,7 @@ import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { trackOrder, trackPosition } from "@/lib/customer.functions";
 import { CustomerShell, CustomerCard } from "@/components/CustomerShell";
 import { ADVANCE_ACCEPTED_MESSAGE, OFF_HOURS_MESSAGE } from "@/lib/hours";
+import { createRefreshQueue } from "@/lib/refresh-queue";
 
 
 const CustomerMap = lazy(() => import("@/components/CustomerMap"));
@@ -63,9 +64,10 @@ function TrackPage() {
   const [livePos, setLivePos] = useState<{ lat: number; lng: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (signal: AbortSignal) => {
     try {
       const r: any = await track({ data: { code } });
+      if (signal.aborted) return;
       setState(r);
       try {
         if (r?.found && ["completed", "cancelled"].includes(r.order.status)) {
@@ -79,31 +81,39 @@ function TrackPage() {
     } catch {
       /* ignore */
     } finally {
-      setLoading(false);
+      if (!signal.aborted) setLoading(false);
     }
   }, [track, code]);
 
 
   useEffect(() => {
-    load();
+    const queue = createRefreshQueue(load);
+    const refresh = () => { if (document.visibilityState === "visible") void queue.refresh(); };
+    refresh();
     // full refresh (driver, ETA, status) every 15 s
-    const t = setInterval(load, 15000);
-    return () => clearInterval(t);
+    const t = setInterval(refresh, 15000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { queue.dispose(); clearInterval(t); window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", refresh); };
   }, [load]);
 
   // near-real-time car position (light query every second)
   useEffect(() => {
     let stop = false;
     let timer: number | null = null;
-    const tick = async () => {
+    const queue = createRefreshQueue(async signal => {
       try {
         const p: any = await trackPos({ data: { code } });
-        if (!stop && p?.found && p.lat != null && p.lng != null) {
+        if (!signal.aborted && !stop && p?.found && p.lat != null && p.lng != null) {
           setLivePos({ lat: p.lat, lng: p.lng });
         }
       } catch {
         /* ignore */
-      } finally {
+      }
+    });
+    const tick = async () => {
+      try { if (document.visibilityState === 'visible') await queue.refresh(); }
+      finally {
         // Start the next request only after this one has finished. This avoids
         // older, slower responses moving the car backwards on the map.
         if (!stop) timer = window.setTimeout(tick, 700);
@@ -112,6 +122,7 @@ function TrackPage() {
     tick();
     return () => {
       stop = true;
+      queue.dispose();
       if (timer !== null) window.clearTimeout(timer);
     };
   }, [trackPos, code]);

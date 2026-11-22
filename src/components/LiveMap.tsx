@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import { supabase } from "@/integrations/supabase/client";
+import { createRefreshQueue } from "@/lib/refresh-queue";
 
 // Phosphor SVG marker
 const driverIcon = (online: boolean, label: string) =>
@@ -95,11 +96,12 @@ export function LiveMap({ center, showOrders = false, onOrderClick, followDriver
 
 
   useEffect(() => {
-    const load = async () => {
+    const queue = createRefreshQueue(async signal => {
       const [{ data: locs }, { data: profs }] = await Promise.all([
-        supabase.from("driver_locations").select("*"),
-        supabase.from("profiles").select("id,call_sign,full_name"),
+        supabase.from("driver_locations").select("*").abortSignal(signal),
+        supabase.from("profiles").select("id,call_sign,full_name").abortSignal(signal),
       ]);
+      if (signal.aborted || !locs || !profs) return;
       const pmap: Record<string, { call_sign: string; full_name: string }> = {};
       (profs ?? []).forEach((p: any) => { pmap[p.id] = { call_sign: p.call_sign, full_name: p.full_name }; });
       profilesRef.current = pmap;
@@ -110,8 +112,11 @@ export function LiveMap({ center, showOrders = false, onOrderClick, followDriver
         full_name: pmap[l.driver_id]?.full_name ?? "",
       }));
       setDrivers(list);
-    };
-    load();
+    });
+    const refresh = () => { if (document.visibilityState === "visible") void queue.refresh(); };
+    refresh();
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
 
     const ch = supabase
       .channel("driver_locations_rt")
@@ -135,42 +140,46 @@ export function LiveMap({ center, showOrders = false, onOrderClick, followDriver
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(ch); };
+    return () => { queue.dispose(); window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", refresh); supabase.removeChannel(ch); };
   }, []);
 
   useEffect(() => {
     if (!showOrders) return;
-    const load = async () => {
+    const queue = createRefreshQueue(async signal => {
       const { data } = await supabase
         .from("orders")
         .select("id,pickup_lat,pickup_lng,pickup_address,status")
-        .in("status", ["pending", "assigned", "accepted", "in_progress"]);
+        .in("status", ["pending", "assigned", "accepted", "in_progress"]).abortSignal(signal);
+      if (signal.aborted || !data) return;
       setOrders((data ?? []).filter((o: any) => o.pickup_lat && o.pickup_lng) as OrderMarker[]);
-    };
+    });
+    const load = queue.refresh;
     load();
     const ch = supabase
       .channel("orders_rt_map")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => load())
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { queue.dispose(); supabase.removeChannel(ch); };
   }, [showOrders]);
 
   // Řidiči navzájem polohu nevidí – výjimkou je aktivní SOS
   useEffect(() => {
     if (!selfOnlyDriverId) return;
-    const load = async () => {
+    const queue = createRefreshQueue(async signal => {
       const { data } = await supabase
         .from("sos_alerts")
         .select("driver_id")
-        .is("resolved_at", null);
+        .is("resolved_at", null).abortSignal(signal);
+      if (signal.aborted || !data) return;
       setSosIds([...new Set((data ?? []).map((r: any) => r.driver_id))]);
-    };
+    });
+    const load = queue.refresh;
     load();
     const ch = supabase
       .channel("sos_map_rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "sos_alerts" }, () => load())
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { queue.dispose(); supabase.removeChannel(ch); };
   }, [selfOnlyDriverId]);
 
   // Výchozí střed mapy (nastaví se jen jednou při mountu MapContaineru)
@@ -247,8 +256,8 @@ export function LiveMap({ center, showOrders = false, onOrderClick, followDriver
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <FlyTo center={flyCenter} trigger={activeFollowId ?? "none"} />
-          {visibleDrivers.map((d) => (
-            <Marker key={d.driver_id} position={[d.lat!, d.lng!]} icon={driverIcon(d.online, d.call_sign)}>
+          {visibleDrivers.map((d) => d.lat == null || d.lng == null ? null : (
+            <Marker key={d.driver_id} position={[d.lat, d.lng]} icon={driverIcon(d.online, d.call_sign)}>
               <Popup>
                 <div className="font-mono text-xs">
                   <div className="font-bold text-base">▸ {d.call_sign}</div>

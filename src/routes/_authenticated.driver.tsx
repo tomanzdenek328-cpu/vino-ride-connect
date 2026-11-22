@@ -359,29 +359,32 @@ function DriverPage() {
   }, [user]);
 
 
-  const loadRides = async () => {
+  const loadRides = async (signal?: AbortSignal) => {
     if (!user) return;
     const { data } = await supabase.from("rides")
       .select("id,amount,payment_method,pickup_address,destination,completed_at,plate")
       .eq("driver_id", user.id)
-      .order("completed_at", { ascending: false });
-    setRides((data ?? []) as Ride[]);
+      .order("completed_at", { ascending: false }).abortSignal(signal ?? new AbortController().signal);
+    if (data && !signal?.aborted) setRides(data as Ride[]);
   };
 
-  const loadPayouts = async () => {
+  const loadPayouts = async (signal?: AbortSignal) => {
     if (!user) return;
     const { data } = await supabase.from("cash_payouts")
       .select("id,amount,reason,created_at")
       .eq("driver_id", user.id)
-      .order("created_at", { ascending: false });
-    setPayouts((data ?? []) as Payout[]);
+      .order("created_at", { ascending: false }).abortSignal(signal ?? new AbortController().signal);
+    if (data && !signal?.aborted) setPayouts(data as Payout[]);
   };
 
   useEffect(() => {
-    loadRides(); loadPayouts();
-    // Automatická aktualizace každých 5 sekund
-    const poll = window.setInterval(() => { loadRides(); loadPayouts(); }, 15000);
-    return () => window.clearInterval(poll);
+    const queue = createRefreshQueue(async signal => { await Promise.all([loadRides(signal), loadPayouts(signal)]); });
+    const refresh = () => { if (document.visibilityState === "visible") void queue.refresh(); };
+    refresh();
+    const poll = window.setInterval(refresh, 15000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { queue.dispose(); window.clearInterval(poll); window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", refresh); };
   }, [user]);
 
   // Geolocation streaming + Wake Lock to keep tracking when screen would otherwise sleep
@@ -551,6 +554,8 @@ function DriverPage() {
       .update({ driver_arrived_at: new Date().toISOString() } as any)
       .eq("id", id);
     if (error) { toast.error(error.message); return; }
+    orderRevision.current++;
+    setOrders(rows => rows.map(row => row.id === id ? { ...row, driver_arrived_at: new Date().toISOString() } : row));
     toast.success("▸ ZÁKAZNÍK INFORMOVÁN: JSTE NA MÍSTĚ");
   };
 

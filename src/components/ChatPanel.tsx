@@ -148,17 +148,22 @@ export function ChatPanel({
 
   const send = async () => {
     const body = draft.trim();
-    if (!body || !currentDef) return;
+    if (!body || !currentDef || sending) return;
     setSending(true);
-    const { error } = await supabase.from("chat_messages").insert({
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+    try {
+    const { data, error } = await supabase.from("chat_messages").insert({
       sender_id: currentUserId,
       thread_key: currentDef.key,
       participants: currentDef.participants,
       body,
-    });
-    setSending(false);
+    }).select().abortSignal(controller.signal).single();
     if (error) { toast.error(error.message); return; }
+    if (data) setMessages(rows => rows.some(row => row.id === data.id) ? rows : [...rows, data as ChatMessage]);
     setDraft("");
+    } catch { toast.error("Odeslání se nepotvrdilo. Zkontrolujte připojení a zprávy."); }
+    finally { clearTimeout(timeout); setSending(false); }
   };
 
   if (!open) return null;

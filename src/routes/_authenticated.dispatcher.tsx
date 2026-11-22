@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useSignOut } from "@/hooks/use-sign-out";
+import { createRefreshQueue } from "@/lib/refresh-queue";
+import type { Database } from "@/integrations/supabase/types";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { ChatPanel } from "@/components/ChatPanel";
@@ -160,6 +162,7 @@ function DispatcherPage() {
   const { user, role, loading, dispatchAccess } = useAuth();
   const { signOut, signingOut } = useSignOut();
   const [orders, setOrders] = useState<Order[]>([]);
+  const orderRevision = useRef(0);
   const [archivedOrders, setArchivedOrders] = useState<Order[]>([]);
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -281,18 +284,14 @@ function DispatcherPage() {
 
   useEffect(() => {
     let disposed = false;
-    let loadingOrders = false;
-    let loadingDrivers = false;
 
-    const loadOrders = async () => {
-      if (loadingOrders) return;
-      loadingOrders = true;
+    const ordersQueue = createRefreshQueue(async signal => {
+      const revision = orderRevision.current;
       const { data, error } = await supabase
         .from("orders")
         .select("*")
-        .in("status", ["pending", "assigned", "accepted", "in_progress"]);
-      loadingOrders = false;
-      if (disposed || error) {
+        .in("status", ["pending", "assigned", "accepted", "in_progress"]).abortSignal(signal);
+      if (disposed || signal.aborted || revision !== orderRevision.current || error) {
         if (error) console.error("Načtení zakázek selhalo", error);
         return;
       }
@@ -301,38 +300,35 @@ function DispatcherPage() {
       if (seenCustomerRef.current === null) {
         seenCustomerRef.current = new Set(customerIds);
       } else {
+        const seen = seenCustomerRef.current;
         rows
-          .filter((o) => o.source === "customer" && !seenCustomerRef.current!.has(o.id))
-          .forEach((o) => { seenCustomerRef.current!.add(o.id); alertCustomerOrder(o); });
+          .filter((o) => o.source === "customer" && !seen.has(o.id))
+          .forEach((o) => { seen.add(o.id); alertCustomerOrder(o); });
       }
       setOrders(rows);
-    };
+    });
+    const loadOrders = ordersQueue.refresh;
 
-    const loadDrivers = async () => {
-      if (loadingDrivers) return;
-      loadingDrivers = true;
+    const driversQueue = createRefreshQueue(async signal => {
       const { data: roles, error: rolesError } = await supabase
-        .from("user_roles").select("user_id").eq("role", "driver");
+        .from("user_roles").select("user_id").eq("role", "driver").abortSignal(signal);
       if (rolesError) {
-        loadingDrivers = false;
         console.error("Načtení řidičů selhalo", rolesError);
         return;
       }
       let ids = (roles ?? []).map((r: any) => r.user_id);
       if (user?.id !== ALLOWED_DISPATCHER_ID) ids = ids.filter((id: string) => id !== HIDDEN_DRIVER_ID);
       if (!ids.length) {
-        loadingDrivers = false;
         if (!disposed) setDrivers([]);
         return;
       }
       const [profilesResult, locationsResult, vehiclesResult] = await Promise.all([
-        supabase.from("profiles").select("id,full_name,call_sign").in("id", ids),
-        supabase.from("driver_locations").select("driver_id,online,busy,vehicle_id").in("driver_id", ids),
-        supabase.from("vehicles").select("id,car_type,plate"),
+        supabase.from("profiles").select("id,full_name,call_sign").in("id", ids).abortSignal(signal),
+        supabase.from("driver_locations").select("driver_id,online,busy,vehicle_id").in("driver_id", ids).abortSignal(signal),
+        supabase.from("vehicles").select("id,car_type,plate").abortSignal(signal),
       ]);
-      loadingDrivers = false;
       const queryError = profilesResult.error ?? locationsResult.error ?? vehiclesResult.error;
-      if (disposed || queryError) {
+      if (disposed || signal.aborted || queryError) {
         if (queryError) console.error("Načtení řidičů selhalo", queryError);
         return;
       }
@@ -354,7 +350,8 @@ function DispatcherPage() {
         (a.full_name || "").localeCompare(b.full_name || "", "cs") ||
         a.id.localeCompare(b.id)
       ));
-    };
+    });
+    const loadDrivers = driversQueue.refresh;
 
     const refresh = () => {
       if (document.visibilityState !== "visible") return;
@@ -366,6 +363,7 @@ function DispatcherPage() {
     // Realtime zůstává hlavní; pojistná obnova neběží při skryté aplikaci.
     const poll = window.setInterval(refresh, 5_000);
     document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
 
     const ch = supabase.channel("dispatch_rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => loadOrders())
@@ -373,8 +371,11 @@ function DispatcherPage() {
       .subscribe();
     return () => {
       disposed = true;
+      ordersQueue.dispose();
+      driversQueue.dispose();
       window.clearInterval(poll);
       document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
       supabase.removeChannel(ch);
     };
   }, [user?.id, driversRefresh]);
@@ -458,34 +459,54 @@ function DispatcherPage() {
   const hasOutgoing = orders.some((o) => o.partner_direction === "out" && (o.partner_state === "pending" || o.partner_state === "accepted") && o.status !== "completed" && o.status !== "cancelled");
   useEffect(() => {
     if (!hasOutgoing) return;
-    const run = () => { syncPartnerFn().catch(() => {}); };
+    let inFlight = false;
+    const run = async () => {
+      if (inFlight || document.visibilityState !== "visible") return;
+      inFlight = true;
+      try { await syncPartnerFn(); } catch {} finally { inFlight = false; }
+    };
     run();
     const id = window.setInterval(run, 20_000);
     return () => window.clearInterval(id);
-  }, [hasOutgoing]);
+  }, [hasOutgoing, syncPartnerFn]);
 
   if (loading) return null;
   if (role && role !== "dispatcher") return <Navigate to="/driver" />;
 
+  const updateActiveOrder = async (id: string, values: Database['public']['Tables']['orders']['Update']) => {
+    orderRevision.current++;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+    try {
+      const { data, error } = await supabase.from('orders').update(values).eq('id', id)
+        .select().abortSignal(controller.signal).maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error('Zakázka již není dostupná.');
+      orderRevision.current++;
+      setOrders(rows => rows.map(row => row.id === id ? { ...row, ...data } : row)
+        .filter(row => row.status !== 'completed' && row.status !== 'cancelled'));
+      return true;
+    } catch { toast.error('Změna se nepotvrdila. Zkontrolujte připojení a stav zakázky.'); return false; }
+    finally { clearTimeout(timeout); }
+  };
+
   const assignDrivers = async (orderId: string, driverIds: string[]) => {
     const clean = Array.from(new Set(driverIds.filter(Boolean))).slice(0, 4);
-    const { error } = await supabase.from("orders")
-      .update({
+    const saved = await updateActiveOrder(orderId, {
         assigned_driver_id: clean[0] ?? null,
         assigned_driver_ids: clean,
         status: clean.length ? "assigned" : "pending",
-      })
-      .eq("id", orderId);
-    if (error) toast.error(error.message); else toast.success("▸ PŘIŘAZENO");
+      });
+    if (saved) toast.success("▸ PŘIŘAZENO");
   };
 
 
   const cancelOrder = async (orderId: string) => {
-    await supabase.from("orders").update({
+    await updateActiveOrder(orderId, {
       status: "cancelled",
       cancelled_by: user?.id ?? null,
       cancelled_at: new Date().toISOString(),
-    } as any).eq("id", orderId);
+    });
   };
 
   const partnerAction = async (fn: () => Promise<unknown>, ok: string) => {
@@ -494,13 +515,11 @@ function DispatcherPage() {
   };
 
   const releaseOrder = async (orderId: string) => {
-    const { error } = await supabase.from("orders").update({ released: true }).eq("id", orderId);
-    if (error) toast.error(error.message); else toast.success("▸ UVOLNĚNO PRO ŘIDIČE");
+    if (await updateActiveOrder(orderId, { released: true })) toast.success("▸ UVOLNĚNO PRO ŘIDIČE");
   };
 
   const lockOrder = async (orderId: string) => {
-    const { error } = await supabase.from("orders").update({ released: false }).eq("id", orderId);
-    if (error) toast.error(error.message); else toast.success("▸ ZAKÁZKA UZAMČENA");
+    if (await updateActiveOrder(orderId, { released: false })) toast.success("▸ ZAKÁZKA UZAMČENA");
   };
 
 
@@ -511,16 +530,12 @@ function DispatcherPage() {
   ) => {
     // Předobjednávka (na později) zůstává zamčená a čeká na ruční uvolnění dispečerem.
     const isScheduled = !!scheduled && new Date(scheduled).getTime() > Date.now();
-    const { error } = await supabase
-      .from("orders")
-      .update(
+    const saved = await updateActiveOrder(orderId,
         approval === "approved"
           ? ({ approval: "approved", released: !isScheduled } as any)
           : ({ approval: "rejected", status: "cancelled", cancelled_by: user?.id ?? null, cancelled_at: new Date().toISOString() } as any),
-      )
-      .eq("id", orderId);
-    if (error) toast.error(error.message);
-    else toast.success(approval === "approved" ? "▸ OBJEDNÁVKA POVOLENA" : "▸ OBJEDNÁVKA ODMÍTNUTA");
+      );
+    if (saved) toast.success(approval === "approved" ? "▸ OBJEDNÁVKA POVOLENA" : "▸ OBJEDNÁVKA ODMÍTNUTA");
   };
 
   const toggleCustomerOrders = async () => {
@@ -534,8 +549,7 @@ function DispatcherPage() {
   };
 
   const togglePriority = async (orderId: string, next: boolean) => {
-    const { error } = await supabase.from("orders").update({ priority: next }).eq("id", orderId);
-    if (error) toast.error(error.message); else toast.success(next ? "▸ OZNAČENO JAKO URGENTNÍ" : "▸ PRIORITA ZRUŠENA");
+    if (await updateActiveOrder(orderId, { priority: next })) toast.success(next ? "▸ OZNAČENO JAKO URGENTNÍ" : "▸ PRIORITA ZRUŠENA");
   };
 
   return (

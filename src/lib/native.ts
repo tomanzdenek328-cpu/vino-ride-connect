@@ -1,7 +1,6 @@
 // Native bridge pro Capacitor (Android APK).
 // Na webu je vše no-op, takže se nic nerozbije.
-// Pozn.: Capacitor pluginy načítáme přes runtime require, aby je Vite
-// vůbec nezkoušel resolvnout při buildu webu (jejich main entry je nativní).
+// Pluginy načítáme až při použití nativní funkce.
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import type { BackgroundGeolocationPlugin } from "@capacitor-community/background-geolocation";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,9 +87,7 @@ export async function stopBackgroundGeolocation() {
 
 /**
  * Zaregistruje zařízení pro push notifikace.
- * Token se zatím loguje – pro odesílání push budete potřebovat
- * Firebase projekt (FCM). Až ho budete mít, můžeme tokeny ukládat do DB
- * a odesílat notifikace ze serveru.
+ * Registrace ukládá token pro systémová upozornění bez jeho logování.
  */
 export async function initPushNotifications() {
   if (!isNative()) return;
