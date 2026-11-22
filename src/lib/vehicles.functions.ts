@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 async function assertDispatcher(supabase: any, userId: string) {
   const { data } = await supabase
@@ -25,6 +24,7 @@ export const createVehicle = createServerFn({ method: "POST" })
   .inputValidator((input) => CreateSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertDispatcher(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("vehicles").insert({
       plate: data.plate.trim(),
       car_type: data.car_type?.trim() ?? "",
@@ -48,6 +48,7 @@ export const updateVehicle = createServerFn({ method: "POST" })
   .inputValidator((input) => UpdateSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertDispatcher(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const patch: { plate?: string; car_type?: string; notes?: string | null; active?: boolean; photo_url?: string | null } = {};
     if (data.plate !== undefined) patch.plate = data.plate.trim();
     if (data.car_type !== undefined) patch.car_type = data.car_type.trim();
@@ -67,6 +68,7 @@ export const deleteVehicle = createServerFn({ method: "POST" })
   .inputValidator((input) => IdSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertDispatcher(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("driver_locations").update({ vehicle_id: null }).eq("vehicle_id", data.id);
     const { error } = await supabaseAdmin.from("vehicles").delete().eq("id", data.id);
     if (error) throw new Error(error.message);

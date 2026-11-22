@@ -273,7 +273,8 @@ export const trackOrder = createServerFn({ method: "POST" })
       eta_mode: 'manual' | 'route' | 'waiting';
     } | null = null;
 
-    if (order.assigned_driver_id) {
+    const { canShareDriverLocation } = await import('./tracking-access');
+    if (order.assigned_driver_id && canShareDriverLocation(order.status)) {
       const [{ data: prof }, { data: loc }] = await Promise.all([
         supabaseAdmin.from("profiles").select("call_sign,full_name").eq("id", order.assigned_driver_id).maybeSingle(),
         supabaseAdmin
@@ -382,7 +383,8 @@ export const trackPosition = createServerFn({ method: "POST" })
       .eq("tracking_code", data.code.toUpperCase())
       .maybeSingle();
     if (!order) return { found: false as const };
-    if (!order.assigned_driver_id) return { found: true as const, status: order.status, lat: null, lng: null };
+    const { canShareDriverLocation } = await import('./tracking-access');
+    if (!order.assigned_driver_id || !canShareDriverLocation(order.status)) return { found: true as const, status: order.status, lat: null, lng: null };
     const { data: loc } = await supabaseAdmin
       .from("driver_locations")
       .select("lat,lng,updated_at")
