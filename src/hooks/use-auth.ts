@@ -20,18 +20,30 @@ export function useAuth(): AuthState {
 
   useEffect(() => {
     let mounted = true;
+    let currentUserId: string | null = null;
+    let roleLoading = false;
 
     const loadRole = async (uid: string) => {
-      const [roles, access] = await Promise.all([
-        supabase.from("user_roles").select("role").eq("user_id", uid),
-        supabase.rpc("get_my_dispatch_access"),
-      ]);
-      if (!mounted) return;
-      setRole(roles.data?.some(r => r.role === "dispatcher") ? "dispatcher" : roles.data?.some(r => r.role === "driver") ? "driver" : null);
-      setDispatchAccess(access.data === "main" || access.data === "helper" ? access.data : null);
+      if (roleLoading) return;
+      roleLoading = true;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10_000);
+      try {
+        const [roles, access] = await Promise.all([
+          supabase.from("user_roles").select("role").eq("user_id", uid).abortSignal(controller.signal),
+          supabase.rpc("get_my_dispatch_access").abortSignal(controller.signal),
+        ]);
+        if (!mounted || currentUserId !== uid || roles.error || access.error) return;
+        setRole(roles.data?.some(r => r.role === "dispatcher") ? "dispatcher" : roles.data?.some(r => r.role === "driver") ? "driver" : null);
+        setDispatchAccess(access.data === "main" || access.data === "helper" ? access.data : null);
+      } finally { clearTimeout(timeout); roleLoading = false; }
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted || (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED" && event !== "INITIAL_SESSION")) return;
+      const nextId = session?.user.id ?? null;
+      if (nextId === currentUserId && event !== "USER_UPDATED") return;
+      currentUserId = nextId;
       setUser(session?.user ?? null);
       if (session?.user) {
         setTimeout(() => loadRole(session.user.id), 0);
@@ -43,12 +55,15 @@ export function useAuth(): AuthState {
 
     supabase.auth.getUser().then(async ({ data }) => {
       if (!mounted) return;
-      setUser(data.user ?? null);
+      currentUserId = data.user?.id ?? null;
+      setUser(previous => previous?.id === data.user?.id ? previous : data.user ?? null);
       if (data.user) await loadRole(data.user.id);
       if (mounted) setLoading(false);
     });
     const refresh = window.setInterval(() => {
-      supabase.auth.getUser().then(({ data }) => { if (mounted && data.user) void loadRole(data.user.id); });
+      // Refresh permissions, not the User object: replacing it restarts GPS,
+      // notification listeners and every account-dependent request in the APK.
+      if (mounted && currentUserId) void loadRole(currentUserId);
     }, 15_000);
 
     return () => {
@@ -59,8 +74,4 @@ export function useAuth(): AuthState {
   }, []);
 
   return { user, role, loading, dispatchAccess };
-}
-
-export async function signOut() {
-  await supabase.auth.signOut();
 }

@@ -9,12 +9,16 @@ import { supabase } from "@/integrations/supabase/client";
 export const isNative = () => Capacitor.isNativePlatform?.() ?? false;
 
 let bgWatcherId: string | null = null;
+let bgGeneration = 0;
+let pushInitialization: Promise<void> | null = null;
+let localInitialization: Promise<void> | null = null;
 const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
 
 async function loadNativeModule(name: string): Promise<any> {
-  const spec = name;
-  // @vite-ignore – záměrně dynamický specifikátor, modul existuje jen v APK.
-  return await import(/* @vite-ignore */ spec);
+  // Literal imports are bundled by Vite; bare runtime imports fail in WebView.
+  if (name === "@capacitor/push-notifications") return import("@capacitor/push-notifications");
+  if (name === "@capacitor/local-notifications") return import("@capacitor/local-notifications");
+  throw new Error("Unknown native module");
 }
 
 /**
@@ -23,12 +27,14 @@ async function loadNativeModule(name: string): Promise<any> {
  */
 export async function startBackgroundGeolocation(driverId: string) {
   if (!isNative()) return;
+  const generation = ++bgGeneration;
+  let writing = false;
   try {
     if (bgWatcherId) {
       await BackgroundGeolocation.removeWatcher({ id: bgWatcherId });
       bgWatcherId = null;
     }
-    bgWatcherId = await BackgroundGeolocation.addWatcher(
+    const id = await BackgroundGeolocation.addWatcher(
       {
         backgroundMessage: "Vinné Taxi sleduje vaši polohu",
         backgroundTitle: "Sledování polohy",
@@ -43,7 +49,11 @@ export async function startBackgroundGeolocation(driverId: string) {
           console.warn("[bg-geo]", error);
           return;
         }
-        if (!location) return;
+        if (!location || generation !== bgGeneration || writing) return;
+        writing = true;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10_000);
+        try {
         const { error: updateError } = await supabase.from("driver_locations").upsert({
           driver_id: driverId,
           lat: location.latitude,
@@ -52,23 +62,27 @@ export async function startBackgroundGeolocation(driverId: string) {
           speed: location.speed ?? null,
           online: true,
           updated_at: new Date().toISOString(),
-        });
+        }).abortSignal(controller.signal);
         if (updateError) console.warn("[bg-geo] uložení polohy selhalo", updateError);
+        } finally { clearTimeout(timeout); writing = false; }
       },
     );
+    if (generation !== bgGeneration) await BackgroundGeolocation.removeWatcher({ id });
+    else bgWatcherId = id;
   } catch (e) {
     console.warn("Background geolocation start failed", e);
   }
 }
 
 export async function stopBackgroundGeolocation() {
+  bgGeneration++;
   if (!isNative() || !bgWatcherId) return;
+  const id = bgWatcherId;
+  bgWatcherId = null;
   try {
-    await BackgroundGeolocation.removeWatcher({ id: bgWatcherId });
+    await BackgroundGeolocation.removeWatcher({ id });
   } catch (e) {
     console.warn("Background geolocation stop failed", e);
-  } finally {
-    bgWatcherId = null;
   }
 }
 
@@ -80,15 +94,18 @@ export async function stopBackgroundGeolocation() {
  */
 export async function initPushNotifications() {
   if (!isNative()) return;
+  if (pushInitialization) return pushInitialization;
+  pushInitialization = registerPushNotifications();
+  return pushInitialization;
+}
+
+async function registerPushNotifications() {
   try {
     const mod: any = await loadNativeModule("@capacitor/push-notifications");
     const PushNotifications = mod.PushNotifications ?? mod.default;
     const perm = await PushNotifications.requestPermissions();
     if (perm.receive !== "granted") return;
-    await PushNotifications.register();
-
-    PushNotifications.addListener("registration", async (token: any) => {
-      console.log("[push] token:", token.value);
+    await PushNotifications.addListener("registration", async (token: any) => {
       try {
         const { saveFcmToken } = await import("./push.functions");
         await saveFcmToken({ data: { token: token.value, platform: "android" } });
@@ -96,12 +113,13 @@ export async function initPushNotifications() {
         console.warn("[push] save token failed", e);
       }
     });
-    PushNotifications.addListener("registrationError", (err: any) => {
+    await PushNotifications.addListener("registrationError", (err: any) => {
       console.warn("[push] registration error", err);
     });
-    PushNotifications.addListener("pushNotificationReceived", (n: any) => {
-      console.log("[push] received", n);
+    await PushNotifications.addListener("pushNotificationReceived", () => {
+      window.dispatchEvent(new Event("focus"));
     });
+    await PushNotifications.register();
   } catch (e) {
     console.warn("Push notifications init failed", e);
   }
@@ -112,6 +130,12 @@ export async function initPushNotifications() {
  */
 export async function initLocalNotifications() {
   if (!isNative()) return;
+  if (localInitialization) return localInitialization;
+  localInitialization = requestLocalNotifications();
+  return localInitialization;
+}
+
+async function requestLocalNotifications() {
   try {
     const mod: any = await loadNativeModule("@capacitor/local-notifications");
     const LocalNotifications = mod.LocalNotifications ?? mod.default;

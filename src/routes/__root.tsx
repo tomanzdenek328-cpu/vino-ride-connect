@@ -7,12 +7,10 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
 import { InstallBanner } from "@/components/InstallBanner";
-import { isNative } from "@/lib/native";
 
 function NotFoundComponent() {
   return (
@@ -67,8 +65,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:title", content: "VINNÉ TAXI ▸ DISPATCH" },
       { property: "og:description", content: "Dispečerský systém pro Vinné Taxi" },
       { name: "twitter:description", content: "Dispečerský systém pro Vinné Taxi" },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9d2e146d-b3ee-4933-942a-658b49308448/id-preview-37e02904--c365af5e-ff6f-4fb8-8ed6-0bd82bd36982.lovable.app-1779828027109.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9d2e146d-b3ee-4933-942a-658b49308448/id-preview-37e02904--c365af5e-ff6f-4fb8-8ed6-0bd82bd36982.lovable.app-1779828027109.png" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],
@@ -104,21 +100,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const router = useRouter();
-
-  // Nativní APK: tichá data-only obnova bez reloadu (žádné blikání).
-  useEffect(() => {
-    if (!isNative()) return;
-    const id = window.setInterval(() => {
-      // Neobnovuj, když uživatel zrovna píše
-      const tag = (document.activeElement?.tagName ?? "").toLowerCase();
-      if (tag === "input" || tag === "textarea" || tag === "select") return;
-      // Tichá invalidace – jen refetch dat v pozadí, žádný reload stránky
-      void queryClient.invalidateQueries();
-      void router.invalidate();
-    }, 120_000);
-    return () => window.clearInterval(id);
-  }, [queryClient, router]);
 
   return (
     <QueryClientProvider client={queryClient}>

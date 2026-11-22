@@ -2,6 +2,8 @@ import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useSignOut } from "@/hooks/use-sign-out";
+import { createRefreshQueue } from "@/lib/refresh-queue";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { ChatPanel } from "@/components/ChatPanel";
@@ -203,6 +205,10 @@ async function playNewOrderAlert() {
 
 function DriverPage() {
   const { user, role, loading, dispatchAccess } = useAuth();
+  const { signOut, signingOut } = useSignOut();
+  const [updatingOrder, setUpdatingOrder] = useState<string | null>(null);
+  const updatingOrderRef = useRef<string | null>(null);
+  const orderRevision = useRef(0);
   const [showNewOrder, setShowNewOrder] = useState(false);
   const [online, setOnline] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -249,7 +255,7 @@ function DriverPage() {
     // Web Push: zaregistruj service worker a přihlas k odběru notifikací.
     (async () => {
       try {
-        if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+        if (isNative() || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
         let perm = Notification.permission;
         if (perm === "default") perm = await Notification.requestPermission();
         if (perm !== "granted") return;
@@ -290,21 +296,17 @@ function DriverPage() {
 
   useEffect(() => {
     if (!user) return;
-    let inFlight = false;
-    const load = async () => {
-      if (inFlight) return; // ochrana proti souběžnému načítání → žádné zamrzání
-      inFlight = true;
-      try {
-        const { data } = await supabase.from("orders")
-          .select("*")
-          .or(`assigned_driver_id.eq.${user.id},status.eq.pending,assigned_driver_ids.cs.{${user.id}}`);
-        if (data) setOrders(data as Order[]);
-      } catch (e) {
-        console.error("Načtení zakázek selhalo", e);
-      } finally {
-        inFlight = false;
-      }
-    };
+    const queue = createRefreshQueue(async signal => {
+      const revision = orderRevision.current;
+      const { data, error } = await supabase.from("orders")
+        .select("*")
+        .or(`assigned_driver_id.eq.${user.id},status.eq.pending,assigned_driver_ids.cs.{${user.id}}`)
+        .not("status", "in", "(completed,cancelled)")
+        .abortSignal(signal);
+      if (!signal.aborted && revision === orderRevision.current && data) setOrders(data as Order[]);
+      if (error && !signal.aborted) console.warn("Načtení zakázek selhalo", error);
+    });
+    const load = queue.refresh;
     load();
     // Inicializace nativních notifikací HNED (nezávisle na online stavu)
     if (isNative()) {
@@ -348,6 +350,7 @@ function DriverPage() {
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("focus", onVisible);
     return () => {
+      queue.dispose();
       window.clearInterval(poll);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", onVisible);
@@ -445,7 +448,9 @@ function DriverPage() {
       return;
     }
 
-    startWatch();
+    // Android already supplies GPS through the background plugin. Running the
+    // browser watcher as well duplicates writes and permission prompts.
+    if (!isNative()) startWatch();
     requestWakeLock();
     // Nativní APK (Capacitor): spustit sledování polohy na pozadí.
     if (isNative()) {
@@ -460,7 +465,7 @@ function DriverPage() {
     const onVisibility = () => {
       if (document.visibilityState === "visible") {
         if (!wakeLockRef.current) requestWakeLock();
-        startWatch();
+        if (!isNative()) startWatch();
       }
     };
     document.addEventListener("visibilitychange", onVisibility);
@@ -469,7 +474,7 @@ function DriverPage() {
     // Periodic ping: re-send last known location and keep the row alive even
     // if watchPosition is throttled in the background.
     const keepAlive = window.setInterval(() => {
-      if (!navigator.geolocation) return;
+      if (isNative() || !navigator.geolocation) return;
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
           lastSentRef.current = Date.now();
@@ -494,6 +499,7 @@ function DriverPage() {
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("focus", onVisibility);
       window.clearInterval(keepAlive);
+      void stopBackgroundGeolocation();
     };
   }, [user, online]);
 
@@ -520,9 +526,22 @@ function DriverPage() {
   };
 
   const setOrderStatus = async (id: string, status: "accepted" | "in_progress") => {
-    const { error } = await supabase.from("orders").update({ status }).eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    if (status === "accepted") await setBusyAuto(true);
+    if (updatingOrderRef.current) return;
+    updatingOrderRef.current = id;
+    setUpdatingOrder(id);
+    orderRevision.current++;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+    try {
+      const { data, error } = await supabase.from("orders").update({ status }).eq("id", id)
+        .eq("released", true).select().abortSignal(controller.signal).maybeSingle();
+      if (error) throw error;
+      if (!data) { toast.error("Zakázka již není dostupná nebo je zamčená."); return; }
+      orderRevision.current++;
+      setOrders(rows => rows.map(row => row.id === id ? { ...row, ...data } : row));
+      if (status === "accepted") { toast.success("▸ ZAKÁZKA PŘIJATA"); void setBusyAuto(true); }
+    } catch { toast.error("Změna se nepotvrdila. Zkontrolujte připojení a stav zakázky."); }
+    finally { clearTimeout(timeout); updatingOrderRef.current = null; setUpdatingOrder(null); }
   };
 
   /** Řidič je na místě vyzvednutí – zákazníkovi se v aplikaci zobrazí "Váš řidič dorazil". */
@@ -536,15 +555,25 @@ function DriverPage() {
   };
 
   const acceptPending = async (id: string) => {
-    if (!user) return;
-    const { data, error } = await supabase.from("orders")
-      .update({ assigned_driver_id: user.id, status: "accepted" })
-      .eq("id", id).eq("status", "pending")
-      .select();
-    if (error) { toast.error(error.message); return; }
-    if (!data || !data.length) { toast.error("Zakázku už vzal někdo jiný"); return; }
-    toast.success("▸ ZAKÁZKA TVOJE");
-    await setBusyAuto(true);
+    if (!user || updatingOrderRef.current) return;
+    updatingOrderRef.current = id;
+    setUpdatingOrder(id);
+    orderRevision.current++;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+    try {
+      const { data, error } = await supabase.from("orders")
+        .update({ assigned_driver_id: user.id, status: "accepted" })
+        .eq("id", id).eq("status", "pending").eq("released", true)
+        .select().abortSignal(controller.signal).maybeSingle();
+      if (error) throw error;
+      if (!data) { toast.error("Zakázka je zamčená nebo ji už vzal někdo jiný"); return; }
+      orderRevision.current++;
+      setOrders(rows => rows.map(row => row.id === id ? { ...row, ...data } : row));
+      toast.success("▸ ZAKÁZKA TVOJE");
+      void setBusyAuto(true);
+    } catch { toast.error("Přijetí se nepotvrdilo. Zkontrolujte připojení a stav zakázky."); }
+    finally { clearTimeout(timeout); updatingOrderRef.current = null; setUpdatingOrder(null); }
   };
 
   const submitCompletion = async (amount: number, method: "cash" | "card" | "invoice") => {
@@ -605,9 +634,9 @@ function DriverPage() {
           <div className="text-xl text-primary glow-text font-display">▸ {callSign}</div>
           <div className="text-[10px] text-muted-foreground">{dispatchAccess === "helper" ? "POMOCNÝ DISPEČER · ŘIDIČ" : "ŘIDIČ"}</div>
           {dispatchAccess === "helper" && <Button type="button" className="mt-2 mx-2" onClick={() => setShowNewOrder(true)}><Plus /> NOVÁ ZAKÁZKA</Button>}
-          <button onClick={() => supabase.auth.signOut()} className="mt-1 border-2 border-primary px-5 py-2.5 text-sm hover:bg-primary/10 inline-flex items-center gap-2">
-            <LogOut className="w-5 h-5" /> ODHLÁSIT
-          </button>
+          <Button variant="outline" onClick={signOut} disabled={signingOut} className="mt-1 border-2 border-primary px-5 py-2.5 text-sm hover:bg-primary/10 inline-flex items-center gap-2">
+            <LogOut className="w-5 h-5" /> {signingOut ? "ODHLAŠUJI…" : "ODHLÁSIT"}
+          </Button>
           <Link
             to="/taxametr"
             className="ml-2 mt-1 border-2 border-primary/60 px-4 py-2 text-sm font-bold inline-flex items-center gap-2 hover:bg-primary/10"
@@ -779,7 +808,7 @@ function DriverPage() {
                     )}
                     <div className="mt-2 flex gap-2 flex-wrap">
                       {o.status === "assigned" && (
-                        <button onClick={() => setOrderStatus(o.id, "accepted")} className="border border-primary px-3 py-1 text-xs hover:bg-primary hover:text-primary-foreground">▸ PŘIJMOUT</button>
+                        <Button variant="outline" size="sm" disabled={updatingOrder !== null} onClick={() => setOrderStatus(o.id, "accepted")}>{updatingOrder === o.id ? "PŘIJÍMÁM…" : "▸ PŘIJMOUT"}</Button>
                       )}
                       {(o.status === "accepted" || o.status === "assigned") && (o.source !== 'customer' || o.driver_arrived_at) && (
                         <button onClick={() => setOrderStatus(o.id, "in_progress")} className="border border-amber-warn text-amber-warn px-3 py-1 text-xs">▸ JEDU</button>
@@ -857,10 +886,10 @@ function DriverPage() {
               </div>
 
               {o.released ? (
-                <button onClick={() => acceptPending(o.id)} disabled={!online}
-                  className="mt-2 w-full border-2 border-amber-warn bg-amber-warn/15 text-amber-warn font-bold py-2 text-sm hover:bg-amber-warn hover:text-black disabled:opacity-40">
-                  ▸ VZÍT
-                </button>
+                <Button variant="outline" onClick={() => acceptPending(o.id)} disabled={!online || updatingOrder !== null}
+                  className="mt-2 w-full border-2 border-amber-warn bg-amber-warn/15 text-amber-warn font-bold py-2 text-sm">
+                  {updatingOrder === o.id ? "PŘIJÍMÁM…" : !online ? "PRO PŘIJETÍ SE PŘEPNĚTE ONLINE" : "▸ VZÍT"}
+                </Button>
               ) : (
                 <div className="mt-2 w-full border-2 border-neutral-300/60 bg-neutral-200/10 text-neutral-100 font-bold py-2 text-xs text-center">
                   🔒 ČEKÁ NA UVOLNĚNÍ DISPEČEREM

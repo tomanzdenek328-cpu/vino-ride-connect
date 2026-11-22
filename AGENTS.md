@@ -1,4 +1,6 @@
 # Architecture rules
+- Account-dependent effects keep a stable user identity across permission refreshes; native GPS uses one background watcher and order refreshes coalesce with deadlines, so session renewal cannot repeatedly restart Android tracking or strand stale reads.
+- Driver acceptance updates the visible order only from the persisted write response; sign-out clears protected query state and ends the local device session before replacing navigation, preventing delayed feedback and back-navigation into cached work.
 - Helper dispatch access is stored separately from profiles and checked by restrictive database read policies; only a protected atomic database function lets the main dispatcher change it, preventing UI bypass and privilege escalation.
 - Dispatcher and helper order entry reuse one form; helpers retain driver access to their own work but never receive driver recommendation or full-dispatch data.
 - Customer arrival uses a separate pickup-departure timestamp, authenticated assigned-driver writes, and a durable one-minute Routes calculation claim shared by customer viewers; passenger-trip status and public position polling never trigger billable ETA calls.

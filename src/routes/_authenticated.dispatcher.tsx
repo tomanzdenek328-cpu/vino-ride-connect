@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useSignOut } from "@/hooks/use-sign-out";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { ChatPanel } from "@/components/ChatPanel";
@@ -157,6 +158,7 @@ function playGlassClink() {
 
 function DispatcherPage() {
   const { user, role, loading, dispatchAccess } = useAuth();
+  const { signOut, signingOut } = useSignOut();
   const [orders, setOrders] = useState<Order[]>([]);
   const [archivedOrders, setArchivedOrders] = useState<Order[]>([]);
   const [archiveLoading, setArchiveLoading] = useState(false);
@@ -211,7 +213,7 @@ function DispatcherPage() {
     // Web Push (PWA/prohlížeč) – aby upozornění došlo i při zavřené aplikaci.
     (async () => {
       try {
-        if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+        if (isNative() || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
         let perm = Notification.permission;
         if (perm === "default") perm = await Notification.requestPermission();
         if (perm !== "granted") return;
@@ -551,9 +553,9 @@ function DispatcherPage() {
           <div className="min-w-0">
             <h1 className="text-xl text-primary glow-text font-display truncate">▸ DISPEČINK · {callSign}</h1>
             <div className="text-[10px] text-muted-foreground">VINNÉ TAXI · {drivers.filter(d => d.online).length}/{drivers.length} ONLINE</div>
-            <button onClick={() => supabase.auth.signOut()} className="mt-1 border border-primary/40 px-4 py-2 text-sm hover:border-primary flex items-center gap-1">
-              <LogOut className="w-4 h-4" /> ODHLÁSIT
-            </button>
+            <Button variant="outline" onClick={signOut} disabled={signingOut} className="mt-1 border border-primary/40 px-4 py-2 text-sm hover:border-primary flex items-center gap-1">
+              <LogOut className="w-4 h-4" /> {signingOut ? "ODHLAŠUJI…" : "ODHLÁSIT"}
+            </Button>
           </div>
           <div className="flex gap-2 flex-wrap">
             <button
