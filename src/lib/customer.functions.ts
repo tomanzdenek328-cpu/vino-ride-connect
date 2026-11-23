@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { TARIFF_COLUMNS, computeFare, isWeekend, type TariffFull } from "./pricing";
-import { freshArrivalLocation, manualArrivalMinutes } from './arrival';
+import { customerArrivalEta } from './arrival';
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_maps";
 
@@ -255,7 +255,7 @@ export const trackOrder = createServerFn({ method: "POST" })
     const { data: order } = await supabaseAdmin
       .from("orders")
       .select(
-        "id,status,approval,pickup_address,pickup_lat,pickup_lng,destination,customer_name,scheduled_time,estimated_price,estimated_distance_km,assigned_driver_id,driver_arrived_at,created_at,source,manual_arrival_at,pickup_departed_at,arrival_eta_minutes,arrival_eta_updated_at,arrival_eta_driver_id",
+        "id,status,approval,released,pickup_address,pickup_lat,pickup_lng,destination,customer_name,scheduled_time,estimated_price,estimated_distance_km,assigned_driver_id,driver_arrived_at,created_at,source,manual_arrival_at,pickup_departed_at,arrival_eta_minutes,arrival_eta_updated_at,arrival_eta_driver_id",
       )
       .eq("tracking_code", data.code.toUpperCase())
       .maybeSingle();
@@ -295,14 +295,11 @@ export const trackOrder = createServerFn({ method: "POST" })
       let eta: number | null = null;
       let etaMode: 'manual' | 'route' | 'waiting' = 'waiting';
       if (order.source === 'customer' && ['assigned', 'accepted'].includes(order.status) && !order.driver_arrived_at) {
-        if (!order.pickup_departed_at) {
-          eta = manualArrivalMinutes(order.manual_arrival_at);
-          etaMode = order.manual_arrival_at ? 'manual' : 'waiting';
-        } else if (order.arrival_eta_driver_id === order.assigned_driver_id && freshArrivalLocation(loc?.updated_at)
-          && freshArrivalLocation(order.arrival_eta_updated_at)) {
-          eta = order.arrival_eta_minutes;
-          etaMode = 'route';
-        }
+        const { refreshCustomerArrival } = await import('./arrival-refresh.server');
+        await refreshCustomerArrival(supabaseAdmin, order, loc);
+        const arrival = customerArrivalEta(order, loc?.updated_at);
+        eta = arrival.minutes;
+        etaMode = arrival.mode;
       }
       if (
         order.source !== 'customer' && !order.driver_arrived_at &&

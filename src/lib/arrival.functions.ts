@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
-import { canManageArrival, freshArrivalLocation, hasPreviousRide } from './arrival';
+import { canManageArrival, hasPreviousRide } from './arrival';
 import type { Database } from '@/integrations/supabase/types';
 
 export const updateArrival = createServerFn({ method: 'POST' })
@@ -17,8 +17,10 @@ export const updateArrival = createServerFn({ method: 'POST' })
     const save = async (values: Database['public']['Tables']['orders']['Update']) => {
       let query = db.from('orders').update(values).eq('id', order.id).in('status', ['assigned', 'accepted']).eq('released', true).is('driver_arrived_at', null);
       query = order.assigned_driver_id ? query.eq('assigned_driver_id', order.assigned_driver_id) : query.is('assigned_driver_id', null);
-      const { data: saved, error: failure } = await query.select('id');
+      const { data: saved, error: failure } = await query.select('*');
       if (failure || !saved?.length) throw new Error('Příjezd se nepodařilo uložit. Obnovte zakázku.');
+      const persisted = saved[0];
+      if (persisted) Object.assign(order, persisted);
     };
     if (data.action === 'manual') {
       if (!data.minutes) throw new Error('Zadejte přibližný počet minut.');
@@ -34,24 +36,7 @@ export const updateArrival = createServerFn({ method: 'POST' })
       return { ok: true, warning: null };
     }
     const { data: location } = await db.from('driver_locations').select('lat,lng,updated_at').eq('driver_id', context.userId).maybeSingle();
-    if (location?.lat == null || location.lng == null || !freshArrivalLocation(location.updated_at) || order.pickup_lat == null || order.pickup_lng == null) {
-      return { ok: true, warning: 'Čekáme na aktuální polohu nebo místo vyzvednutí pro výpočet dojezdu.' };
-    }
-    // Claim one calculation per order/minute durably; all customer viewers share the result.
-    let claim = db.from('orders').update({ arrival_eta_updated_at: new Date(now).toISOString(), arrival_eta_minutes: null, arrival_eta_driver_id: context.userId })
-      .eq('id', order.id).not('pickup_departed_at', 'is', null).in('status', ['assigned', 'accepted']).is('driver_arrived_at', null);
-    claim = order.assigned_driver_id ? claim.eq('assigned_driver_id', order.assigned_driver_id) : claim.is('assigned_driver_id', null);
-    claim = claim.or(`arrival_eta_updated_at.is.null,arrival_eta_updated_at.lt.${new Date(now - 60000).toISOString()}`);
-    const { data: claimed, error: claimError } = await claim.select('id');
-    if (claimError) throw new Error('Nepodařilo se připravit výpočet dojezdu.');
-    if (!claimed?.length) return { ok: true, warning: null };
-    try {
-      const { calculateArrival } = await import('./arrival-route.server');
-      const minutes = await calculateArrival({ lat: location.lat, lng: location.lng }, { lat: order.pickup_lat, lng: order.pickup_lng });
-      const { error: saveError } = await db.from('orders').update({ arrival_eta_minutes: minutes, arrival_eta_approx: false }).eq('id', order.id).eq('arrival_eta_updated_at', new Date(now).toISOString()).eq('arrival_eta_driver_id', context.userId).not('pickup_departed_at', 'is', null);
-      if (saveError) throw new Error('Nepodařilo se uložit vypočtený dojezd.');
-      return { ok: true, warning: null };
-    } catch (error) {
-      return { ok: true, warning: error instanceof Error ? error.message : 'Dojezd se nepodařilo spočítat.' };
-    }
+    const { refreshCustomerArrival } = await import('./arrival-refresh.server');
+    const result = await refreshCustomerArrival(db, order, location);
+    return { ok: true, warning: result.warning };
   });

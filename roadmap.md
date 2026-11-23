@@ -1,5 +1,7 @@
 # Roadmap
 
+16. [x] Po „Jedu pro zákazníka“ má odhad podle polohy přednost před ručním časem; zákaznické sledování obnovuje společný minutový výpočet i bez otevřené obrazovky řidiče. Přihlášený řidič zadal 25 minut, zákazník je přečetl a po odjezdu automaticky přestal vidět ruční čas; odjezd zůstal uložen po obnovení. Zkušební zakázka odstraněna. Skutečný výpočet Google Maps a GPS telefonu čeká na ověření s aktuální polohou; při chybě polohy se ukazuje čekání, nikoli původní ruční odhad. Čeká publikace.
+
 15. [ ] Partnerské jízdy: Vinné Taxi rozlišuje přijetí řidičem, příjezd a jízdu se zákazníkem, ověřuje odpověď a aplikuje potvrzené změny každých 5 s. 5 testů prošlo, sestavení bez chyb. Blokátor příjezdu: 2x Stárek ve svém partnerském statusu neposílá driver_arrived_at; nutná úprava a publikace v partnerském projektu, zde je pouze čitelný. Živé zobrazení dispečinku nelze potvrdit s dostupným účtem (Dj Vídně má roli řidiče). Publikace zde dosud neprovedena.
 
 14. [x] Zákaznická ikona na ploše: vlastní manifest se vstupem pro kód jízdy, zákaznický návod místo řidičské APK; 3 testy prošly. Zadání kódu bez přihlášení, neexistující kód, mobilní a desktopové zobrazení i zachování řidičského manifestu ověřeny v prohlížeči. Skutečné přidání ikony na Androidu/iPhonu čeká na publikaci a zkoušku telefonu.

@@ -90,8 +90,8 @@ function TrackPage() {
     const queue = createRefreshQueue(load);
     const refresh = () => { if (document.visibilityState === "visible") void queue.refresh(); };
     refresh();
-    // full refresh (driver, ETA, status) every 15 s
-    const t = setInterval(refresh, 15000);
+    // Pick up departure promptly; road ETA calculations remain limited to one per minute.
+    const t = setInterval(refresh, 5000);
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", refresh);
     return () => { queue.dispose(); clearInterval(t); window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", refresh); };
@@ -300,6 +300,7 @@ function TrackPage() {
             liveEta != null ? <div className="text-primary font-bold">
               {d.eta_mode === 'manual' && liveEta === 0 ? 'Původní odhad uplynul – čekáme na upřesnění řidiče.' : `Příjezd přibližně za ${formatEta(liveEta)}`}
               {d.eta_mode === 'manual' && <div className="text-xs font-normal text-muted-foreground">Odhad zadaný řidičem.</div>}
+              {d.eta_mode === 'route' && o.source === 'customer' && <div className="text-xs font-normal text-muted-foreground">Odhad podle aktuální polohy a provozu.</div>}
             </div> : <div className="text-xs text-muted-foreground">{o.pickup_departed_at ? 'Čekáme na aktuální odhad dojezdu.' : 'Čekáme na odhad příjezdu od řidiče.'}</div>
           )}
           {d.lat == null && (

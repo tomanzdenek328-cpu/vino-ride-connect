@@ -30,3 +30,23 @@ export function freshArrivalLocation(updatedAt: string | null | undefined, now =
   const time = updatedAt ? Date.parse(updatedAt) : NaN;
   return Number.isFinite(time) && now - time <= 120000 && time <= now + 10000;
 }
+
+export function customerArrivalEta(order: {
+  pickup_departed_at: string | null;
+  manual_arrival_at: string | null;
+  assigned_driver_id: string | null;
+  arrival_eta_driver_id: string | null;
+  arrival_eta_updated_at: string | null;
+  arrival_eta_minutes: number | null;
+}, locationUpdatedAt: string | null | undefined, now = Date.now()): { minutes: number | null; mode: 'manual' | 'route' | 'waiting' } {
+  if (!order.pickup_departed_at) {
+    return { minutes: manualArrivalMinutes(order.manual_arrival_at, now), mode: order.manual_arrival_at ? 'manual' : 'waiting' };
+  }
+  // Departure always supersedes the manual estimate, including while GPS is unavailable.
+  if (order.assigned_driver_id && order.arrival_eta_driver_id === order.assigned_driver_id
+    && freshArrivalLocation(locationUpdatedAt, now) && freshArrivalLocation(order.arrival_eta_updated_at, now)
+    && order.arrival_eta_minutes != null) {
+    return { minutes: order.arrival_eta_minutes, mode: 'route' };
+  }
+  return { minutes: null, mode: 'waiting' };
+}
