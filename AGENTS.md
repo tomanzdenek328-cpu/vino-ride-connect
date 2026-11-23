@@ -11,3 +11,4 @@
 - Driver recommendations use tariff capacities and fresh locations with deterministic distance ranking, so seating and availability are not invented by AI.
 - Translator voice uses authenticated, bounded WAV uploads and streamed PCM speech; completed audio is reused within the open panel to avoid billing again on replay.
 - Translator language and voice rules live in a shared browser-safe settings module; voice preference is stored per account locally and audio cache keys include voice, avoiding gender inference and incorrect cached playback.
+- Partner-forwarded orders are hidden from drivers and helpers by a restrictive database policy, so the UI cannot leak them.
