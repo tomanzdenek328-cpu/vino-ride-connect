@@ -43,6 +43,13 @@
       "when": 1795462350468,
       "tag": "0005_hide_partner_orders_from_drivers",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795464818073,
+      "tag": "0006_dispatcher_signup_code",
+      "breakpoints": true
     }
   ]
 }

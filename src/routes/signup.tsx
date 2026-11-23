@@ -23,24 +23,32 @@ function SignupPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [callSign, setCallSign] = useState("");
+  const [role, setRole] = useState<"driver" | "dispatcher">("driver");
+  const [code, setCode] = useState("");
   const [confirmation, setConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (role === "dispatcher" && !code.trim()) { toast.error("Zadej kód dispečera."); return; }
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
-        data: { full_name: fullName, call_sign: callSign },
+        data: role === "dispatcher"
+          ? { full_name: fullName, call_sign: callSign, requested_role: "dispatcher", dispatch_code: code.trim() }
+          : { full_name: fullName, call_sign: callSign },
       },
     });
     setLoading(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(role === "dispatcher" && /database|saving|INVALID_DISPATCH_CODE/i.test(error.message) ? "Špatný kód dispečera – registrace nebyla dokončena." : error.message);
+      return;
+    }
     if (!data.session) { setConfirmation(true); return; }
-    toast.success("▸ ÚČET ŘIDIČE ZALOŽEN");
+    toast.success(role === "dispatcher" ? "▸ ÚČET DISPEČERA ZALOŽEN" : "▸ ÚČET ŘIDIČE ZALOŽEN");
     navigate({ to: "/" });
   };
 
@@ -48,12 +56,21 @@ function SignupPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md border border-primary glow p-6 bg-card">
         <div className="text-center mb-6">
-          <h1 className="text-3xl text-primary glow-text font-display">REGISTRACE ŘIDIČE</h1>
+          <h1 className="text-3xl text-primary glow-text font-display">{role === "dispatcher" ? "REGISTRACE DISPEČERA" : "REGISTRACE ŘIDIČE"}</h1>
         </div>
         {confirmation ? <div className="text-center space-y-3" role="status">
           <h2 className="text-primary font-bold">POTVRĎTE SVŮJ EMAIL</h2>
           <p className="text-sm text-muted-foreground">Na zadaný email jsme poslali odkaz pro potvrzení účtu. Poté se můžete přihlásit.</p>
         </div> : <form onSubmit={onSubmit} className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            {(["driver", "dispatcher"] as const).map((r) => (
+              <button key={r} type="button" onClick={() => setRole(r)}
+                className={`border py-2 text-xs font-bold ${role === r ? "border-primary bg-primary text-primary-foreground" : "border-primary/40 text-primary"}`}>
+                {r === "driver" ? "ŘIDIČ" : "DISPEČER"}
+              </button>
+            ))}
+          </div>
+          {role === "dispatcher" && <PasswordField label="KÓD DISPEČERA" value={code} onChange={setCode} autoComplete="off" />}
           <Field label="CELÉ JMÉNO" value={fullName} onChange={setFullName} required />
           <Field label="VOLACÍ ZNAK (např. ALFA-7)" value={callSign} onChange={setCallSign} required />
           <Field label="EMAIL" value={email} onChange={setEmail} type="email" required />
