@@ -32,7 +32,7 @@ import logoVinneTaxi from "@/assets/logo-vinne-taxi-transparent.png";
 import limoSide from "@/assets/limo-side-black.png";
 import { SOSAlerts } from "@/components/SOSAlerts";
 import { estimateRide } from "@/lib/customer.functions";
-import { sendToPartner, recallFromPartner, respondPartnerOffer, syncPartnerOrders } from "@/lib/partner.functions";
+import { sendToPartner, recallFromPartner, cancelAtPartner, respondPartnerOffer, syncPartnerOrders } from "@/lib/partner.functions";
 import { computeFare, isWeekend, FARE_MODE_LABELS, type FareMode, type TariffFull } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/dispatcher")({
@@ -455,6 +455,7 @@ function DispatcherPage() {
   const sendPartnerFn = useServerFn(sendToPartner);
   const recallPartnerFn = useServerFn(recallFromPartner);
   const respondPartnerFn = useServerFn(respondPartnerOffer);
+  const cancelPartnerFn = useServerFn(cancelAtPartner);
   const syncPartnerFn = useServerFn(syncPartnerOrders);
   const hasOutgoing = orders.some((o) => o.partner_direction === "out" && (o.partner_state === "pending" || o.partner_state === "accepted") && o.status !== "completed" && o.status !== "cancelled");
   useEffect(() => {
@@ -787,6 +788,10 @@ function DispatcherPage() {
                 {o.partner_direction === "out" && (o.partner_state === "pending" || o.partner_state === "accepted") && (
                   <button onClick={() => partnerAction(() => recallPartnerFn({ data: { orderId: o.id } }), "▸ ZAKÁZKA VZATA ZPĚT")}
                     className="mt-2 w-full border border-cyan-400 text-cyan-300 py-1.5 text-[11px] font-bold hover:bg-cyan-400/20">↩ VZÍT ZPĚT OD PARTNERA</button>
+                )}
+                {o.partner_direction === "out" && (o.partner_state === "pending" || o.partner_state === "accepted") && (
+                  <button onClick={() => { if (window.confirm("Opravdu zrušit jízdu? Zmizí i u partnera.")) partnerAction(() => cancelPartnerFn({ data: { orderId: o.id } }), "▸ JÍZDA ZRUŠENA"); }}
+                    className="mt-2 w-full border border-destructive text-destructive py-1.5 text-[11px] font-bold hover:bg-destructive/20">✖ ZRUŠIT JÍZDU (I U PARTNERA)</button>
                 )}
                 {needsApproval && (
                   <div className="mt-2 flex gap-2">

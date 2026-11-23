@@ -52,6 +52,21 @@ export const recallFromPartner = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const cancelAtPartner = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => Id.parse(i))
+  .handler(async ({ data, context }) => {
+    await assertDispatcher(context.supabase, context.userId);
+    const { callPartner } = await import("@/lib/partner.server");
+    await callPartner("inbox", { action: "cancel", remote_id: data.orderId });
+    const { error } = await context.supabase.from("orders").update({
+      partner_state: "cancelled", status: "cancelled" as const,
+      cancelled_by: context.userId, cancelled_at: new Date().toISOString(),
+    }).eq("id", data.orderId).eq("partner_direction", "out");
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const respondPartnerOffer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ orderId: z.string().uuid(), accept: z.boolean() }).parse(i))
