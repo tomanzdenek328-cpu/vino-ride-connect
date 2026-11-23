@@ -1,0 +1,17 @@
+{
+  "id": "/sledovat",
+  "name": "Vinné Taxi – zákazník",
+  "short_name": "Moje taxi",
+  "description": "Sledování vlastní jízdy podle kódu bez přihlášení a registrace.",
+  "lang": "cs",
+  "start_url": "/sledovat",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#39FF14",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

@@ -6,11 +6,13 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  useRouterState,
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
 import { InstallBanner } from "@/components/InstallBanner";
+import { appManifestForPath, isCustomerPath } from "@/lib/customer-install";
 
 function NotFoundComponent() {
   return (
@@ -72,7 +74,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "stylesheet", href: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" },
-      { rel: "manifest", href: "/manifest.json" },
       { rel: "icon", href: "/icon-192.png", type: "image/png" },
       { rel: "apple-touch-icon", href: "/icon-192.png" },
     ],
@@ -85,10 +86,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   return (
     <html lang="cs">
       <head>
         <HeadContent />
+        <link rel="manifest" href={appManifestForPath(pathname)} />
+        <meta name="theme-color" content="#39FF14" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content={isCustomerPath(pathname) ? "Moje taxi" : "Vinné Taxi"} />
       </head>
       <body className="vine-bg">
         {children}

@@ -17,6 +17,7 @@ import { Route as ObjednatRouteImport } from './routes/objednat'
 import { Route as QrRouteImport } from './routes/qr'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SledovatRouteImport } from './routes/sledovat'
+import { Route as ZakaznikInstalaceRouteImport } from './routes/zakaznik-instalace'
 import { Route as AuthenticatedDispatcherRouteImport } from './routes/_authenticated.dispatcher'
 import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated.driver'
 import { Route as AuthenticatedTaxametrRouteImport } from './routes/_authenticated.taxametr'
@@ -64,6 +65,11 @@ const SignupRoute = SignupRouteImport.update({
 const SledovatRoute = SledovatRouteImport.update({
   id: '/sledovat',
   path: '/sledovat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ZakaznikInstalaceRoute = ZakaznikInstalaceRouteImport.update({
+  id: '/zakaznik-instalace',
+  path: '/zakaznik-instalace',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDispatcherRoute = AuthenticatedDispatcherRouteImport.update({
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/qr': typeof QrRoute
   '/signup': typeof SignupRoute
   '/sledovat': typeof SledovatRoute
+  '/zakaznik-instalace': typeof ZakaznikInstalaceRoute
   '/dispatcher': typeof AuthenticatedDispatcherRoute
   '/driver': typeof AuthenticatedDriverRoute
   '/taxametr': typeof AuthenticatedTaxametrRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/qr': typeof QrRoute
   '/signup': typeof SignupRoute
   '/sledovat': typeof SledovatRoute
+  '/zakaznik-instalace': typeof ZakaznikInstalaceRoute
   '/dispatcher': typeof AuthenticatedDispatcherRoute
   '/driver': typeof AuthenticatedDriverRoute
   '/taxametr': typeof AuthenticatedTaxametrRoute
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/qr': typeof QrRoute
   '/signup': typeof SignupRoute
   '/sledovat': typeof SledovatRoute
+  '/zakaznik-instalace': typeof ZakaznikInstalaceRoute
   '/_authenticated/dispatcher': typeof AuthenticatedDispatcherRoute
   '/_authenticated/driver': typeof AuthenticatedDriverRoute
   '/_authenticated/taxametr': typeof AuthenticatedTaxametrRoute
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/qr'
     | '/signup'
     | '/sledovat'
+    | '/zakaznik-instalace'
     | '/dispatcher'
     | '/driver'
     | '/taxametr'
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/qr'
     | '/signup'
     | '/sledovat'
+    | '/zakaznik-instalace'
     | '/dispatcher'
     | '/driver'
     | '/taxametr'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/qr'
     | '/signup'
     | '/sledovat'
+    | '/zakaznik-instalace'
     | '/_authenticated/dispatcher'
     | '/_authenticated/driver'
     | '/_authenticated/taxametr'
@@ -237,6 +249,7 @@ export interface RootRouteChildren {
   QrRoute: typeof QrRoute
   SignupRoute: typeof SignupRoute
   SledovatRoute: typeof SledovatRoute
+  ZakaznikInstalaceRoute: typeof ZakaznikInstalaceRoute
   JizdaCodeRoute: typeof JizdaCodeRoute
   ApiPublicDictationRoute: typeof ApiPublicDictationRoute
   ApiPublicTranslatorSpeechRoute: typeof ApiPublicTranslatorSpeechRoute
@@ -301,6 +314,13 @@ declare module '@tanstack/react-router' {
       path: '/sledovat'
       fullPath: '/sledovat'
       preLoaderRoute: typeof SledovatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/zakaznik-instalace': {
+      id: '/zakaznik-instalace'
+      path: '/zakaznik-instalace'
+      fullPath: '/zakaznik-instalace'
+      preLoaderRoute: typeof ZakaznikInstalaceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dispatcher': {
@@ -394,6 +414,7 @@ const rootRouteChildren: RootRouteChildren = {
   QrRoute: QrRoute,
   SignupRoute: SignupRoute,
   SledovatRoute: SledovatRoute,
+  ZakaznikInstalaceRoute: ZakaznikInstalaceRoute,
   JizdaCodeRoute: JizdaCodeRoute,
   ApiPublicDictationRoute: ApiPublicDictationRoute,
   ApiPublicTranslatorSpeechRoute: ApiPublicTranslatorSpeechRoute,

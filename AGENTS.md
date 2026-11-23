@@ -1,4 +1,5 @@
 # Architecture rules
+- Customer home-screen installation uses a separate manifest identity and ride-code start URL selected by pathname; staff retain their original manifest, and no app-shell service worker is introduced.
 - Both customer tracking responses expose live driver data only for assigned active rides; closed ride codes retain their receipt/status without becoming permanent GPS links.
 - Read policies require taxi membership for shared chat identity and vehicles; ordinary drivers read only their own or active-SOS locations, and only dispatchers download vehicle photos directly, preserving private storage and existing helper restrictions.
 - Account-dependent effects keep a stable user identity across permission refreshes; native GPS uses one background watcher and live orders, financial lists, maps, SOS and customer status refreshes coalesce with deadlines and dispose stale reads, so renewal cannot restart Android tracking or strand stale lists.
