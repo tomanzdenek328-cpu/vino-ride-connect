@@ -12,9 +12,10 @@ export const Route = createFileRoute("/api/public/partner/status")({
     if (!parsed.success) return new Response("Bad request", { status: 400 });
     if (!parsed.data.ids.length) return Response.json({ items: [] });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin.from("orders")
-      .select("partner_remote_id, partner_state, status")
+    const { data, error } = await supabaseAdmin.from("orders")
+      .select("partner_remote_id, partner_state, status, driver_arrived_at")
       .eq("partner_direction", "in").in("partner_remote_id", parsed.data.ids);
-    return Response.json({ items: (data ?? []).map((r) => ({ id: r.partner_remote_id, state: r.partner_state, status: r.status })) });
+    if (error) return new Response("Error", { status: 500 });
+    return Response.json({ items: (data ?? []).map((r) => ({ id: r.partner_remote_id, state: r.partner_state, status: r.status, driver_arrived_at: r.driver_arrived_at })) }, { headers: { "Cache-Control": "no-store" } });
   } } },
 });

@@ -33,6 +33,7 @@ import limoSide from "@/assets/limo-side-black.png";
 import { SOSAlerts } from "@/components/SOSAlerts";
 import { estimateRide } from "@/lib/customer.functions";
 import { sendToPartner, recallFromPartner, cancelAtPartner, respondPartnerOffer, syncPartnerOrders } from "@/lib/partner.functions";
+import { partnerProgressLabel } from "@/lib/partner-progress";
 import { computeFare, isWeekend, FARE_MODE_LABELS, type FareMode, type TariffFull } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/dispatcher")({
@@ -461,14 +462,32 @@ function DispatcherPage() {
   useEffect(() => {
     if (!hasOutgoing) return;
     let inFlight = false;
+    let disposed = false;
     const run = async () => {
       if (inFlight || document.visibilityState !== "visible") return;
       inFlight = true;
-      try { await syncPartnerFn(); } catch {} finally { inFlight = false; }
+      try {
+        const result = await syncPartnerFn();
+        if (disposed || !("changes" in result) || !result.changes?.length) return;
+        orderRevision.current++;
+        setOrders(previous => previous.flatMap(order => {
+          const change = result.changes.find(item => item.id === order.id);
+          if (!change || order.partner_direction !== "out" || !["pending", "accepted"].includes(order.partner_state ?? "")) return [order];
+          if (change.status === "completed") return [];
+          return [{ ...order, ...change }];
+        }));
+      } catch {} finally { inFlight = false; }
     };
     run();
-    const id = window.setInterval(run, 20_000);
-    return () => window.clearInterval(id);
+    const id = window.setInterval(run, 5_000);
+    window.addEventListener("focus", run);
+    document.addEventListener("visibilitychange", run);
+    return () => {
+      disposed = true;
+      window.clearInterval(id);
+      window.removeEventListener("focus", run);
+      document.removeEventListener("visibilitychange", run);
+    };
   }, [hasOutgoing, syncPartnerFn]);
 
   if (loading) return null;
@@ -775,10 +794,8 @@ function DispatcherPage() {
                   </div>
                 )}
                 {o.partner_direction === "out" && (
-                  <div className="mt-2 text-[11px] font-bold text-cyan-300">
-                    🤝 U PARTNERA: {o.partner_state === "pending" ? "ČEKÁ NA PŘIJETÍ"
-                      : o.partner_state === "rejected" ? "ODMÍTNUTO – ZAKÁZKA JE ZPĚT U VÁS"
-                      : `PŘIJATO · ${STATUS_LABEL[o.partner_remote_status ?? ""] ?? o.partner_remote_status ?? ""}`}
+                  <div className="mt-2 text-[11px] font-bold text-primary" role="status">
+                    🤝 U PARTNERA: {partnerProgressLabel(o.partner_state, o.partner_remote_status)}
                   </div>
                 )}
                 {o.partner_direction !== "in" && (o.partner_direction !== "out" || o.partner_state === "rejected") && (

@@ -32,6 +32,7 @@ export async function callPartner<T = any>(path: string, payload: unknown): Prom
     method: "POST",
     headers: { "content-type": "application/json", "x-partner-signature": await hmac(body, secret) },
     body,
+    signal: AbortSignal.timeout(8000),
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`Partner neodpověděl (${res.status}).`);

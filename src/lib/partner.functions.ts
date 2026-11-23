@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { PartnerStatusResponse, partnerProgressStatus } from "@/lib/partner-progress";
 
 async function assertDispatcher(supabase: any, userId: string) {
   const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "dispatcher" });
@@ -92,24 +93,33 @@ export const syncPartnerOrders = createServerFn({ method: "POST" })
       .not("status", "in", "(completed,cancelled)").limit(100);
     if (!outs?.length) return { updated: 0 };
     const { callPartner } = await import("@/lib/partner.server");
-    const res = await callPartner<{ items: { id: string; state: string | null; status: string }[] }>("status", { ids: outs.map((o) => o.id) });
+    const res = PartnerStatusResponse.parse(await callPartner("status", { ids: outs.map((o) => o.id) }));
     let updated = 0;
+    const changes: { id: string; partner_state: string | null; partner_remote_status: string; status?: "completed" }[] = [];
     for (const it of res.items ?? []) {
       const cur = outs.find((o) => o.id === it.id);
       if (!cur) continue;
+      const progress = partnerProgressStatus(it);
       let patch: Record<string, any> | null = null;
       if (it.state === "rejected" || (it.state === "accepted" && it.status === "cancelled") || it.state === "cancelled") {
         // vráceno zpět k nám
         patch = { partner_state: "rejected", partner_remote_status: it.status };
       } else if (it.state === "accepted" && it.status === "completed") {
         patch = { partner_state: "accepted", partner_remote_status: "completed", status: "completed" };
-      } else if (it.state !== cur.partner_state || it.status !== cur.partner_remote_status) {
-        patch = { partner_state: it.state, partner_remote_status: it.status };
+      } else if (it.state !== cur.partner_state || progress !== cur.partner_remote_status) {
+        patch = { partner_state: it.state, partner_remote_status: progress };
       }
       if (patch) {
-        await context.supabase.from("orders").update(patch as any).eq("id", it.id);
+        const { data: saved, error } = await context.supabase.from("orders").update(patch as any).eq("id", it.id)
+          .eq("partner_direction", "out").in("partner_state", ["pending", "accepted"])
+          .not("status", "in", "(completed,cancelled)")
+          .select("id, partner_state, partner_remote_status, status").maybeSingle();
+        if (error) throw new Error("Nepodařilo se uložit stav partnerské jízdy.");
+        if (!saved) continue;
+        changes.push({ id: saved.id, partner_state: saved.partner_state, partner_remote_status: saved.partner_remote_status ?? progress,
+          ...(saved.status === "completed" ? { status: "completed" as const } : {}) });
         updated++;
       }
     }
-    return { updated };
+    return { updated, changes };
   });
