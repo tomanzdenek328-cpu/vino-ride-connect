@@ -1,5 +1,8 @@
 # Roadmap
 
+17. [x] Připravena Android verze 1.1.0 / 2 se zachovanou identitou a oprávněními; 4 testy a kontrola YAML/shell kroků prošly. Automatické sestavení se spustí po synchronizaci změn na main GitHubu; jeho dokončení zde zatím nelze potvrdit.
+18. [ ] Stáhnout a ověřit APK 1.1.0 v telefonu — čeká na dokončení nového sestavení na GitHubu a telefon uživatele; místní prostředí nemá Android SDK. Při odlišném ladicím podpisu bude nutná nová instalace a přihlášení.
+
 16. [x] Po „Jedu pro zákazníka“ má odhad podle polohy přednost před ručním časem; zákaznické sledování obnovuje společný minutový výpočet i bez otevřené obrazovky řidiče. Přihlášený řidič zadal 25 minut, zákazník je přečetl a po odjezdu automaticky přestal vidět ruční čas; odjezd zůstal uložen po obnovení. Zkušební zakázka odstraněna. Skutečný výpočet Google Maps a GPS telefonu čeká na ověření s aktuální polohou; při chybě polohy se ukazuje čekání, nikoli původní ruční odhad. Čeká publikace.
 
 15. [ ] Partnerské jízdy: Vinné Taxi rozlišuje přijetí řidičem, příjezd a jízdu se zákazníkem, ověřuje odpověď a aplikuje potvrzené změny každých 5 s. 5 testů prošlo, sestavení bez chyb. Blokátor příjezdu: 2x Stárek ve svém partnerském statusu neposílá driver_arrived_at; nutná úprava a publikace v partnerském projektu, zde je pouze čitelný. Živé zobrazení dispečinku nelze potvrdit s dostupným účtem (Dj Vídně má roli řidiče). Publikace zde dosud neprovedena.

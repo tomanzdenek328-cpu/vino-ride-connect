@@ -1,11 +1,16 @@
 name: Build Android APK
 
 # Spustí se ručně z GitHubu (Actions → Build Android APK → Run workflow)
-# nebo automaticky při push tagu ve formátu v1.0.0
-# Sync trigger 2026-06-07 #2 — vynucená synchronizace do GitHubu.
+# Nové číslo verze spustí sestavení automaticky po uložení na main.
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
+    paths:
+      - android-release.json
+      - scripts/android-version.mjs
+      - .github/workflows/android-apk.yml
     tags:
       - "v*"
 
@@ -35,6 +40,9 @@ jobs:
       - name: Patch Bluetooth serial plugin
         run: node scripts/patch-bluetooth-serial.mjs
 
+      - name: Test Android version configuration
+        run: node --test scripts/android-version.test.mjs
+
       - name: Prepare webDir (dist/)
         run: |
           # Capacitor používá server.url (načítá web z https://vino-ride-connect.lovable.app),
@@ -57,6 +65,11 @@ jobs:
             cp /tmp/gs-backup/google-services.json android/app/google-services.json
           fi
           bunx cap sync android
+
+      - name: Set Android release version
+        run: |
+          node scripts/android-version.mjs
+          echo "APK_VERSION=$(node -p "JSON.parse(require('fs').readFileSync('android-release.json', 'utf8')).versionName")" >> "$GITHUB_ENV"
 
       - name: Generate app icon + splash from resources/
         run: |
@@ -122,10 +135,25 @@ jobs:
       - name: Rename APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk vinne-taxi.apk
 
+      - name: Verify APK version and permissions
+        run: |
+          AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)
+          "$AAPT" dump badging vinne-taxi.apk > /tmp/apk-badging.txt
+          grep -F "name='app.lovable.vinnetaxi'" /tmp/apk-badging.txt
+          grep -F "versionName='$APK_VERSION'" /tmp/apk-badging.txt
+          VERSION_CODE=$(node -p "JSON.parse(require('fs').readFileSync('android-release.json', 'utf8')).versionCode")
+          grep -F "versionCode='$VERSION_CODE'" /tmp/apk-badging.txt
+          for permission in RECORD_AUDIO ACCESS_FINE_LOCATION ACCESS_BACKGROUND_LOCATION POST_NOTIFICATIONS BLUETOOTH_CONNECT; do
+            grep -F "android.permission.$permission'" /tmp/apk-badging.txt
+          done
+          echo "### Vinné Taxi $APK_VERSION" >> "$GITHUB_STEP_SUMMARY"
+          echo 'Stáhněte níže artefakt APK, rozbalte ZIP a otevřete vinne-taxi.apk v telefonu.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Při konfliktu podpisu je potřeba odinstalovat starou APK; poté se znovu přihlaste.' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v5
         with:
-          name: vinne-taxi-apk
+          name: vinne-taxi-apk-${{ env.APK_VERSION }}
           path: vinne-taxi.apk
           retention-days: 30
 

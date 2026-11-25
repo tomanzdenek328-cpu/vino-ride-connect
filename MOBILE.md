@@ -17,6 +17,15 @@ V repu je workflow `.github/workflows/android-apk.yml`, který APK postaví za v
 4. Rozbalte ZIP → uvnitř je `vinne-taxi.apk`.
 5. Pošlete řidičům (e-mail, WhatsApp, nebo přes stránku `/install`).
 
+### Aktuální verze 1.1.0
+
+- Verze a její interní číslo jsou v `android-release.json` (1.1.0 / 2).
+- Po změně verze na větvi `main` se automaticky spustí **Build Android APK**; lze jej také spustit ručně.
+- U úspěšného běhu stáhněte artefakt **vinne-taxi-apk-1.1.0**, rozbalte ZIP a otevřete `vinne-taxi.apk`.
+- Sestavení kontroluje číslo verze, identitu aplikace a oprávnění mikrofonu, polohy, upozornění a Bluetooth přímo v APK.
+- APK je zatím podepsaná dočasným ladicím klíčem GitHubu. Pokud telefon odmítne aktualizaci kvůli odlišnému podpisu, odinstalujte starou aplikaci a nainstalujte novou; budete se muset znovu přihlásit a povolit oprávnění. Uložené jízdy zůstávají na serveru.
+- Nová APK načítá publikovanou webovou verzi; nepublikované změny z náhledu v ní dostupné nejsou.
+
 **Vytvoření veřejné release** (s trvalým odkazem ke stažení):
 
 ```bash
