@@ -46,3 +46,22 @@ test('disposal aborts an active refresh and prevents new work', async () => {
   assert.equal(signal?.aborted, true);
   assert.equal(calls, 1);
 });
+
+test('second-by-second polling skips busy reads instead of queuing continuous work', async () => {
+  let calls = 0;
+  let release: (() => void) | undefined;
+  const queue = createRefreshQueue(async () => {
+    calls++;
+    if (calls === 1) await new Promise<void>(resolve => { release = resolve; });
+  });
+  const first = queue.poll();
+  await queue.poll();
+  await queue.poll();
+  assert.equal(calls, 1);
+  release?.();
+  await first;
+  assert.equal(calls, 1);
+  await queue.poll();
+  assert.equal(calls, 2);
+  queue.dispose();
+});

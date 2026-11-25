@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useSignOut } from "@/hooks/use-sign-out";
 import { createRefreshQueue } from "@/lib/refresh-queue";
+import { ORDER_REFRESH_MS, createOrderAlertTracker, stableRows } from '@/lib/live-updates';
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
 import { ChatPanel } from "@/components/ChatPanel";
@@ -23,8 +24,9 @@ import { canManageArrival, hasPreviousRide } from '@/lib/arrival';
 import { NewOrderModal } from "@/components/NewOrderModal";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { notifyActivity } from '@/lib/activity-notifications.functions';
 
-async function triggerSOS(driverId: string, vehicleId: string | null) {
+async function triggerSOS(driverId: string, vehicleId: string | null, notify: (id: string) => Promise<unknown>) {
   if (!window.confirm("Spustit nouzový SOS signál? Upozorní všechny řidiče i dispečera.")) return;
   let lat: number | null = null;
   let lng: number | null = null;
@@ -34,10 +36,11 @@ async function triggerSOS(driverId: string, vehicleId: string | null) {
     });
     lat = pos.coords.latitude; lng = pos.coords.longitude;
   } catch {}
-  const { error } = await supabase.from("sos_alerts").insert({
+  const { data, error } = await supabase.from("sos_alerts").insert({
     driver_id: driverId, vehicle_id: vehicleId, lat, lng,
-  });
+  }).select('id').single();
   if (error) toast.error(error.message); else toast.success("🚨 SOS odesláno");
+  if (data) void notify(data.id).catch(() => console.warn('Upozornění SOS se nepodařilo odeslat'));
 }
 
 
@@ -204,6 +207,7 @@ async function playNewOrderAlert() {
 }
 
 function DriverPage() {
+  const notifyActivityFn = useServerFn(notifyActivity);
   const { user, role, loading, dispatchAccess } = useAuth();
   const { signOut, signingOut } = useSignOut();
   const [updatingOrder, setUpdatingOrder] = useState<string | null>(null);
@@ -296,56 +300,47 @@ function DriverPage() {
 
   useEffect(() => {
     if (!user) return;
+    const findNewOrders = createOrderAlertTracker(user.id);
     const queue = createRefreshQueue(async signal => {
       const revision = orderRevision.current;
       const { data, error } = await supabase.from("orders")
         .select("*")
         .or(`assigned_driver_id.eq.${user.id},status.eq.pending,assigned_driver_ids.cs.{${user.id}}`)
         .not("status", "in", "(completed,cancelled)")
+        .order('created_at')
         .abortSignal(signal);
-      if (!signal.aborted && revision === orderRevision.current && data) setOrders(data as Order[]);
+      if (!signal.aborted && revision === orderRevision.current && data) {
+        const rows = data as Order[];
+        for (const row of findNewOrders(rows)) {
+          void playNewOrderAlert();
+          const title = row.priority ? '🚨 URGENTNÍ ZAKÁZKA' : '▸ NOVÁ ZAKÁZKA';
+          toast.success(title, { description: row.pickup_address, duration: row.priority ? 15000 : 8000 });
+          if (isNative()) void showLocalNotification(title, row.pickup_address);
+          else try {
+            if ('Notification' in window && Notification.permission === 'granted') new Notification(title, { body: row.pickup_address });
+          } catch {}
+        }
+        setOrders(previous => stableRows(previous, rows));
+      }
       if (error && !signal.aborted) console.warn("Načtení zakázek selhalo", error);
     });
     const load = queue.refresh;
     load();
     // Inicializace nativních notifikací HNED (nezávisle na online stavu)
     if (isNative()) {
-      initPushNotifications();
+      initPushNotifications(user.id);
       initLocalNotifications();
     }
-    const ch = supabase.channel("driver_orders_rt")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
-        const row: any = payload.new;
-        const isNewPending = payload.eventType === "INSERT" && row?.status === "pending";
-        const assignedToMe =
-          row?.assigned_driver_id === user.id ||
-          (Array.isArray(row?.assigned_driver_ids) && row.assigned_driver_ids.includes(user.id));
-        const isAssignment =
-          payload.eventType === "UPDATE" && assignedToMe &&
-          (payload.old as any)?.assigned_driver_id !== user.id;
-        if (isNewPending || isAssignment) {
-          playNewOrderAlert();
-          const title = row?.priority ? "🚨 URGENTNÍ ZAKÁZKA" : "▸ NOVÁ ZAKÁZKA";
-          toast.success(title, {
-            description: row.pickup_address ?? "Nová jízda čeká",
-            duration: row?.priority ? 15000 : 8000,
-          });
-          try {
-            if ("Notification" in window && Notification.permission === "granted") {
-              new Notification(title, { body: row.pickup_address ?? "Nová jízda čeká" });
-            }
-          } catch {}
-          // Nativní APK: systémová notifikace (i když je app na pozadí v paměti).
-          showLocalNotification(title, row.pickup_address ?? "Nová jízda čeká");
-        }
-        load();
-      })
-      .subscribe();
-    // Automatická aktualizace každých 5 sekund
-    const poll = window.setInterval(() => { load(); }, 5000);
+    // Small confirmed reads replace the broad realtime order subscription.
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void queue.poll();
+    }, ORDER_REFRESH_MS);
     // Po návratu aplikace do popředí okamžitě stáhnout čerstvá data
     const onVisible = () => {
-      if (document.visibilityState === "visible") load();
+      if (document.visibilityState === "visible") {
+        void load();
+        void initPushNotifications(user.id);
+      }
     };
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("focus", onVisible);
@@ -354,7 +349,6 @@ function DriverPage() {
       window.clearInterval(poll);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", onVisible);
-      supabase.removeChannel(ch);
     };
   }, [user]);
 
@@ -458,7 +452,7 @@ function DriverPage() {
     // Nativní APK (Capacitor): spustit sledování polohy na pozadí.
     if (isNative()) {
       startBackgroundGeolocation(user.id);
-      initPushNotifications();
+      initPushNotifications(user.id);
       initLocalNotifications();
     }
 
@@ -650,7 +644,7 @@ function DriverPage() {
             <Bluetooth className="w-5 h-5" /> TAXAMETR
           </Link>
           <button
-            onClick={() => user && triggerSOS(user.id, vehicleId)}
+            onClick={() => user && triggerSOS(user.id, vehicleId, id => notifyActivityFn({ data: { kind: 'sos', id } }))}
             className="ml-2 mt-1 border-2 border-primary px-4 py-2 text-sm font-bold inline-flex items-center gap-2 bg-black hover:bg-primary/10"
             title="Spustit nouzový signál"
           >

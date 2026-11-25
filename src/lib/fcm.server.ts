@@ -1,5 +1,6 @@
 // FCM HTTP v1 sender — signs a JWT via Web Crypto (Worker-compatible).
 // Service account JSON lives in process.env.FIREBASE_SERVICE_ACCOUNT_JSON.
+import { ANDROID_FCM_ALERT } from './native-settings';
 
 interface ServiceAccount {
   project_id: string;
@@ -100,7 +101,7 @@ export async function sendFcmToTokens(
           data: payload.data ?? {},
           android: {
             priority: "HIGH" as const,
-            notification: { sound: "default" },
+            notification: ANDROID_FCM_ALERT,
           },
         },
       };

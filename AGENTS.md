@@ -15,3 +15,7 @@
 - Translator language and voice rules live in a shared browser-safe settings module; voice preference is stored per account locally and audio cache keys include voice, avoiding gender inference and incorrect cached playback.
 - Partner-forwarded orders are hidden from drivers and helpers by a restrictive database policy, so the UI cannot leak them.
 - Android releases use android-release.json, applied after platform generation and verified against the APK; changing it triggers GitHub Actions so regenerated native files cannot silently revert the installed version.
+- Active order polling skips busy ticks and retains identical rows; driver alerts compare confirmed reads so reconnects and fallback polling cannot repeat assignment alerts.
+- Native GPS uses the legacy bridge and explicit CapacitorHttp with the signed-in user's bearer token; web fetch remains untouched because Android throttles background WebView requests while server-function serialization still needs normal fetch.
+- Native local and FCM alerts share a high-importance system-sound channel; notification initialization retries failures and re-registers per account without adding duplicate listeners.
+- Chat and SOS background pushes require a caller-authored readable event, use membership-scoped recipients respecting helper restrictions, and carry no private message body or driver identity on the lock screen.

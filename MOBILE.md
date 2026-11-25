@@ -17,11 +17,14 @@ V repu je workflow `.github/workflows/android-apk.yml`, který APK postaví za v
 4. Rozbalte ZIP → uvnitř je `vinne-taxi.apk`.
 5. Pošlete řidičům (e-mail, WhatsApp, nebo přes stránku `/install`).
 
-### Aktuální verze 1.1.0
+### Aktuální verze 1.1.1
 
-- Verze a její interní číslo jsou v `android-release.json` (1.1.0 / 2).
+- Verze a její interní číslo jsou v `android-release.json` (1.1.1 / 3).
 - Po změně verze na větvi `main` se automaticky spustí **Build Android APK**; lze jej také spustit ručně.
-- U úspěšného běhu stáhněte artefakt **vinne-taxi-apk-1.1.0**, rozbalte ZIP a otevřete `vinne-taxi.apk`.
+- U úspěšného běhu stáhněte artefakt **vinne-taxi-apk-1.1.1**, rozbalte ZIP a otevřete `vinne-taxi.apk`.
+- Aktivní zakázky se v popředí načítají každou sekundu; pomalé čtení blokuje další pravidelný pokus, nikoli obrazovku. Nezměněné výsledky nepřekreslují formulář.
+- GPS používá legacy bridge a nativní HTTP místo požadavků prohlížeče, které Android po pěti minutách na pozadí omezuje. Bez internetu nebo po vynuceném ukončení aplikace nelze zaručit sledování; na Xiaomi povolte automatické spouštění, polohu vždy a baterii bez omezení.
+- Android upozornění mají společný kanál s vysokou důležitostí, systémovým zvukem a vibrací. Soukromý obsah zpráv se neposílá na zamčenou obrazovku. Ztlumení, režim Nerušit nebo zakázaná oprávnění v telefonu zvuk mohou vypnout.
 - Sestavení kontroluje číslo verze, identitu aplikace a oprávnění mikrofonu, polohy, upozornění a Bluetooth přímo v APK.
 - APK je zatím podepsaná dočasným ladicím klíčem GitHubu. Pokud telefon odmítne aktualizaci kvůli odlišnému podpisu, odinstalujte starou aplikaci a nainstalujte novou; budete se muset znovu přihlásit a povolit oprávnění. Uložené jízdy zůstávají na serveru.
 - Nová APK načítá publikovanou webovou verzi; nepublikované změny z náhledu v ní dostupné nejsou.

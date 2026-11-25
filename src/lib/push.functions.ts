@@ -114,7 +114,10 @@ export const notifyNewOrder = createServerFn({ method: "POST" })
       .select("id,endpoint,p256dh,auth,user_id")
       .in("user_id", targetUserIds);
 
-    const result = await sendToSubscriptions((subs ?? []) as any, payload);
+    // A browser-push failure must not suppress independent Android FCM delivery.
+    let result = { sent: 0, removed: 0 };
+    try { result = await sendToSubscriptions((subs ?? []) as any, payload); }
+    catch { console.warn('Web push selhal; Android upozornění pokračují'); }
 
     // Also send FCM (native APK) to those users.
     let fcmSent = 0;

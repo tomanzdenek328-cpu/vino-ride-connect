@@ -13,6 +13,8 @@ const config: CapacitorConfig = {
   },
   android: {
     allowMixedContent: false,
+    // Required by the background location plugin after five minutes hidden.
+    useLegacyBridge: true,
   },
   plugins: {
     PushNotifications: {

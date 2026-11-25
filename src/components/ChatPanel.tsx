@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { X, Send, Users, MessageSquare, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from '@tanstack/react-start';
+import { notifyActivity } from '@/lib/activity-notifications.functions';
 
 interface ChatPanelProps {
   open: boolean;
@@ -53,6 +55,7 @@ export function ChatPanel({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const notifyActivityFn = useServerFn(notifyActivity);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   // Load peers (both roles, except self)
@@ -160,7 +163,10 @@ export function ChatPanel({
       body,
     }).select().abortSignal(controller.signal).single();
     if (error) { toast.error(error.message); return; }
-    if (data) setMessages(rows => rows.some(row => row.id === data.id) ? rows : [...rows, data as ChatMessage]);
+    if (data) {
+      setMessages(rows => rows.some(row => row.id === data.id) ? rows : [...rows, data as ChatMessage]);
+      void notifyActivityFn({ data: { kind: 'chat', id: data.id } }).catch(() => console.warn('Upozornění na zprávu se nepodařilo odeslat'));
+    }
     setDraft("");
     } catch { toast.error("Odeslání se nepotvrdilo. Zkontrolujte připojení a zprávy."); }
     finally { clearTimeout(timeout); setSending(false); }

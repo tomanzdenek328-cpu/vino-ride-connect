@@ -1,15 +1,18 @@
 // Native bridge pro Capacitor (Android APK).
 // Na webu je vše no-op, takže se nic nerozbije.
 // Pluginy načítáme až při použití nativní funkce.
-import { Capacitor, registerPlugin } from "@capacitor/core";
+import { Capacitor, CapacitorHttp, registerPlugin } from "@capacitor/core";
 import type { BackgroundGeolocationPlugin } from "@capacitor-community/background-geolocation";
 import { supabase } from "@/integrations/supabase/client";
+import { ANDROID_ALERT_CHANNEL, BACKGROUND_LOCATION_OPTIONS } from './native-settings';
 
 export const isNative = () => Capacitor.isNativePlatform?.() ?? false;
 
 let bgWatcherId: string | null = null;
 let bgGeneration = 0;
 let pushInitialization: Promise<void> | null = null;
+let pushUserId: string | null = null;
+let pushListenersReady = false;
 let localInitialization: Promise<void> | null = null;
 const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
 
@@ -29,20 +32,15 @@ export async function startBackgroundGeolocation(driverId: string) {
   const generation = ++bgGeneration;
   let writing = false;
   try {
+    // Android 13 requires this before the GPS service can show its notification.
+    await initLocalNotifications();
+    if (generation !== bgGeneration) return;
     if (bgWatcherId) {
       await BackgroundGeolocation.removeWatcher({ id: bgWatcherId });
       bgWatcherId = null;
     }
     const id = await BackgroundGeolocation.addWatcher(
-      {
-        backgroundMessage: "Vinné Taxi sleduje vaši polohu",
-        backgroundTitle: "Sledování polohy",
-        requestPermissions: true,
-        stale: false,
-        // Ten metres caused visible pauses at city speeds. A short filter keeps
-        // movement fluid while still letting Android batch tiny GPS jitter.
-        distanceFilter: 2,
-      },
+      BACKGROUND_LOCATION_OPTIONS,
       async (location: any, error: any) => {
         if (error) {
           console.warn("[bg-geo]", error);
@@ -53,7 +51,25 @@ export async function startBackgroundGeolocation(driverId: string) {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10_000);
         try {
-        const { error: updateError } = await supabase.from("driver_locations").upsert({
+        const sessionResult = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise<null>(resolve => controller.signal.addEventListener('abort', () => resolve(null), { once: true })),
+        ]);
+        const session = sessionResult?.data.session;
+        if (!session || session.user.id !== driverId || generation !== bgGeneration || controller.signal.aborted) return;
+        // Native HTTP is not throttled with WebView fetch after five minutes.
+        // This uses the user's bearer token and ordinary row permissions, not admin.
+        const response = await CapacitorHttp.post({
+          url: `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/driver_locations?on_conflict=driver_id`,
+          headers: {
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            Prefer: 'resolution=merge-duplicates,return=minimal',
+          },
+          connectTimeout: 10_000,
+          readTimeout: 10_000,
+          data: {
           driver_id: driverId,
           lat: location.latitude,
           lng: location.longitude,
@@ -61,8 +77,10 @@ export async function startBackgroundGeolocation(driverId: string) {
           speed: location.speed ?? null,
           online: true,
           updated_at: new Date().toISOString(),
-        }).abortSignal(controller.signal);
-        if (updateError) console.warn("[bg-geo] uložení polohy selhalo", updateError);
+          },
+        });
+        if (response.status >= 400) console.warn('[bg-geo] uložení polohy selhalo', response.status);
+        } catch { console.warn('[bg-geo] přenos polohy selhal');
         } finally { clearTimeout(timeout); writing = false; }
       },
     );
@@ -89,10 +107,16 @@ export async function stopBackgroundGeolocation() {
  * Zaregistruje zařízení pro push notifikace.
  * Registrace ukládá token pro systémová upozornění bez jeho logování.
  */
-export async function initPushNotifications() {
+export async function initPushNotifications(userId: string) {
   if (!isNative()) return;
-  if (pushInitialization) return pushInitialization;
-  pushInitialization = registerPushNotifications();
+  if (pushInitialization && pushUserId === userId) return pushInitialization;
+  const previous = pushInitialization;
+  pushUserId = userId;
+  pushInitialization = (async () => {
+    await previous;
+    const registered = await registerPushNotifications();
+    if (!registered && pushUserId === userId) pushInitialization = null;
+  })();
   return pushInitialization;
 }
 
@@ -101,7 +125,9 @@ async function registerPushNotifications() {
     const mod: any = await loadNativeModule("@capacitor/push-notifications");
     const PushNotifications = mod.PushNotifications ?? mod.default;
     const perm = await PushNotifications.requestPermissions();
-    if (perm.receive !== "granted") return;
+    if (perm.receive !== "granted") return false;
+    await PushNotifications.createChannel(ANDROID_ALERT_CHANNEL);
+    if (!pushListenersReady) {
     await PushNotifications.addListener("registration", async (token: any) => {
       try {
         const { saveFcmToken } = await import("./push.functions");
@@ -111,14 +137,22 @@ async function registerPushNotifications() {
       }
     });
     await PushNotifications.addListener("registrationError", (err: any) => {
+      pushInitialization = null;
       console.warn("[push] registration error", err);
     });
     await PushNotifications.addListener("pushNotificationReceived", () => {
       window.dispatchEvent(new Event("focus"));
     });
+    await PushNotifications.addListener('pushNotificationActionPerformed', () => {
+      window.dispatchEvent(new Event('focus'));
+    });
+    pushListenersReady = true;
+    }
     await PushNotifications.register();
+    return true;
   } catch (e) {
     console.warn("Push notifications init failed", e);
+    return false;
   }
 }
 
@@ -136,8 +170,11 @@ async function requestLocalNotifications() {
   try {
     const mod: any = await loadNativeModule("@capacitor/local-notifications");
     const LocalNotifications = mod.LocalNotifications ?? mod.default;
-    await LocalNotifications.requestPermissions();
+    const permission = await LocalNotifications.requestPermissions();
+    if (permission.display !== 'granted') { localInitialization = null; return; }
+    await LocalNotifications.createChannel(ANDROID_ALERT_CHANNEL);
   } catch (e) {
+    localInitialization = null;
     console.warn("Local notifications init failed", e);
   }
 }
@@ -149,6 +186,7 @@ async function requestLocalNotifications() {
 export async function showLocalNotification(title: string, body: string) {
   if (!isNative()) return;
   try {
+    await initLocalNotifications();
     const mod: any = await loadNativeModule("@capacitor/local-notifications");
     const LocalNotifications = mod.LocalNotifications ?? mod.default;
     await LocalNotifications.schedule({
@@ -157,8 +195,7 @@ export async function showLocalNotification(title: string, body: string) {
           id: Math.floor(Math.random() * 2_000_000_000),
           title,
           body,
-          smallIcon: "ic_stat_icon_config_sample",
-          sound: undefined,
+          channelId: ANDROID_ALERT_CHANNEL.id,
         },
       ],
     });

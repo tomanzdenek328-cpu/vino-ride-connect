@@ -1,5 +1,7 @@
 # Roadmap
 
+19. [x] Aktivní zakázky se v popředí obnovují každou sekundu, pomalé pravidelné pokusy se neřadí za sebe a shodné výsledky nepřekreslují formuláře. Zvukový Android kanál sjednocen pro lokální i FCM upozornění; zprávy a SOS nově odesílají i chráněné upozornění na pozadí. GPS používá legacy bridge a nativní HTTP s vlastním účtem, oprávnění upozornění se vyžádá před službou GPS. Připravena APK 1.1.1 / 3. 33 testů a 4 testy verze prošly; přihlášený řidič má 6 úspěšných čtení za 5,2 s, vidí uloženou zkušební jízdu a rozepsaný chat zůstává po čtyřech obnovách. Odhlášení přešlo na /login bez runtime chyby; zkušební jízda odstraněna. Skutečný Android zvuk, GPS po více než pěti minutách a nové APK vyžadují telefon, publikaci a dokončení sestavení.
+
 17. [x] Připravena Android verze 1.1.0 / 2 se zachovanou identitou a oprávněními; 4 testy a kontrola YAML/shell kroků prošly. Automatické sestavení se spustí po synchronizaci změn na main GitHubu; jeho dokončení zde zatím nelze potvrdit.
 18. [ ] Stáhnout a ověřit APK 1.1.0 v telefonu — čeká na dokončení nového sestavení na GitHubu a telefon uživatele; místní prostředí nemá Android SDK. Při odlišném ladicím podpisu bude nutná nová instalace a přihlášení.
 

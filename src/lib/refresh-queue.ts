@@ -30,6 +30,8 @@ export function createRefreshQueue(run: (signal: AbortSignal) => Promise<void>, 
   };
   return {
     refresh,
+    // Periodic ticks must not sustain an endless catch-up loop on slow networks.
+    poll: async () => { if (!active && !disposed) await refresh(); },
     dispose: () => { disposed = true; controller?.abort(); },
   };
 }

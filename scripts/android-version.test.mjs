@@ -12,10 +12,10 @@ const gradle = `android {
   }
 }`;
 
-it('sets the new APK to version 1.1.0 with a higher version code', () => {
+it('sets the new APK to version 1.1.1 with a higher version code', () => {
   const updated = applyAndroidVersion(gradle, release);
-  assert.match(updated, /versionName "1\.1\.0"/);
-  assert.match(updated, /versionCode 2\b/);
+  assert.match(updated, /versionName "1\.1\.1"/);
+  assert.match(updated, /versionCode 3\b/);
   assert.equal(applyAndroidVersion(updated, release), updated);
 });
 

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Siren, X, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { createRefreshQueue } from "@/lib/refresh-queue";
+import { showLocalNotification } from '@/lib/native';
 
 interface SOSRow {
   id: string;
@@ -130,6 +131,7 @@ export function SOSAlerts({ currentUserId, isDispatcher }: Props) {
           const row: any = payload.new;
           if (row.driver_id !== currentUserId) {
             setOpen(true);
+            void showLocalNotification('🚨 SOS – řidič v nouzi', 'Klikni na majáček v aplikaci');
             try {
               if ("Notification" in window && Notification.permission === "granted") {
                 new Notification("🚨 SOS – řidič v nouzi", { body: "Klikni na majáček v aplikaci" });

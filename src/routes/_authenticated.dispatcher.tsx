@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useSignOut } from "@/hooks/use-sign-out";
 import { createRefreshQueue } from "@/lib/refresh-queue";
+import { ORDER_REFRESH_MS, stableRows } from '@/lib/live-updates';
 import type { Database } from "@/integrations/supabase/types";
 import { LiveMap } from "@/components/LiveMap";
 import { WalkieTalkie } from "@/components/WalkieTalkie";
@@ -210,7 +211,7 @@ function DispatcherPage() {
 
     // Nativní APK: push + lokální notifikace
     if (isNative()) {
-      initPushNotifications();
+      initPushNotifications(user.id);
       initLocalNotifications();
     }
 
@@ -291,7 +292,7 @@ function DispatcherPage() {
       const { data, error } = await supabase
         .from("orders")
         .select("*")
-        .in("status", ["pending", "assigned", "accepted", "in_progress"]).abortSignal(signal);
+        .in("status", ["pending", "assigned", "accepted", "in_progress"]).order('created_at').abortSignal(signal);
       if (disposed || signal.aborted || revision !== orderRevision.current || error) {
         if (error) console.error("Načtení zakázek selhalo", error);
         return;
@@ -306,7 +307,7 @@ function DispatcherPage() {
           .filter((o) => o.source === "customer" && !seen.has(o.id))
           .forEach((o) => { seen.add(o.id); alertCustomerOrder(o); });
       }
-      setOrders(rows);
+      setOrders(previous => stableRows(previous, rows));
     });
     const loadOrders = ordersQueue.refresh;
 
@@ -358,26 +359,29 @@ function DispatcherPage() {
       if (document.visibilityState !== "visible") return;
       void loadOrders();
       void loadDrivers();
+      if (user) void initPushNotifications(user.id);
     };
     refresh();
 
     // Realtime zůstává hlavní; pojistná obnova neběží při skryté aplikaci.
-    const poll = window.setInterval(refresh, 5_000);
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void ordersQueue.poll();
+    }, ORDER_REFRESH_MS);
+    // Driver identities and vehicle lists are not downloaded every second.
+    const driversPoll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void driversQueue.poll();
+    }, 5_000);
     document.addEventListener("visibilitychange", refresh);
     window.addEventListener("focus", refresh);
 
-    const ch = supabase.channel("dispatch_rt")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => loadOrders())
-      .on("postgres_changes", { event: "*", schema: "public", table: "driver_locations" }, () => loadDrivers())
-      .subscribe();
     return () => {
       disposed = true;
       ordersQueue.dispose();
       driversQueue.dispose();
       window.clearInterval(poll);
+      window.clearInterval(driversPoll);
       document.removeEventListener("visibilitychange", refresh);
       window.removeEventListener("focus", refresh);
-      supabase.removeChannel(ch);
     };
   }, [user?.id, driversRefresh]);
 
@@ -424,6 +428,7 @@ function DispatcherPage() {
           const title = "⏰ UVOLNI ZAKÁZKU";
           const body = `Za ${mins} min: ${o.pickup_address}`;
           toast.warning(title, { description: body, duration: 15000 });
+          void showLocalNotification(title, body);
           try {
             if ("Notification" in window && Notification.permission === "granted") {
               new Notification(title, { body });

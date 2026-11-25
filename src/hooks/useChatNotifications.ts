@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { showLocalNotification } from '@/lib/native';
 
 interface IncomingMsg {
   id: string;
@@ -118,6 +119,7 @@ export function useChatNotifications(opts: {
           setLastSenderName(name);
 
           toast(`✉ Nová zpráva od: ${name}`, { description: m.body.slice(0, 80) });
+          void showLocalNotification(`Nová zpráva od: ${name}`, m.body.slice(0, 120));
           try {
             if (typeof Notification !== "undefined" && Notification.permission === "granted") {
               new Notification(`Nová zpráva od: ${name}`, { body: m.body.slice(0, 120), tag: m.thread_key });
